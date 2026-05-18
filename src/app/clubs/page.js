@@ -12,11 +12,11 @@ import styles from './page.module.css';
 const CATEGORIES = ['All', 'Tech', 'Engineering', 'Arts & Media', 'Academic', 'Business', 'Sports', 'Social'];
 
 const CATEGORY_META = {
-    Tech: { emoji: '💻', color: '#3b82f6' },
+    Tech: { emoji: '💻', color: '#dc2626' },
     Engineering: { emoji: '⚙️', color: '#f59e0b' },
-    'Arts & Media': { emoji: '🎨', color: '#ec4899' },
+    'Arts & Media': { emoji: '🎨', color: '#22c55e' },
     Academic: { emoji: '📚', color: '#10b981' },
-    Business: { emoji: '💼', color: '#8b5cf6' },
+    Business: { emoji: '💼', color: '#b91c1c' },
     Sports: { emoji: '⚽', color: '#22c55e' },
     Social: { emoji: '🤝', color: '#f97316' },
 };
@@ -32,7 +32,9 @@ export default function ClubsPage() {
         const fetchClubs = async () => {
             try {
                 const snapshot = await getDocs(collection(db, 'clubs'));
-                const clubsData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                let clubsData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                // Filter out pending clubs unless the current user is the creator
+                clubsData = clubsData.filter(c => c.status === 'approved' || !c.status || c.adminId === user?.uid);
                 setClubs(clubsData);
             } catch (error) {
                 console.error('Error fetching clubs', error);
@@ -227,7 +229,7 @@ export default function ClubsPage() {
                                 key={club.id}
                                 href={`/clubs/${club.id}`}
                                 className={styles.clubCard}
-                                style={{ animationDelay: `${(i % 6) * 60}ms`, '--card-color': club.color || '#3b82f6' }}
+                                style={{ animationDelay: `${(i % 6) * 60}ms`, '--card-color': club.color || '#dc2626' }}
                             >
                                 {/* Card glow top strip */}
                                 <div className={styles.cardTopStrip} style={{ background: club.gradient || 'var(--gradient-brand)' }}></div>

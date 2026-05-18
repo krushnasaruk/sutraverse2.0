@@ -31,20 +31,20 @@ const PREDEFINED_ROLES = [
 
 const ROLE_COLORS = {
     'Admin': '#f59e0b',
-    'Core Team': '#6366f1',
-    'Vice President': '#ec4899',
-    'Secretary': '#06b6d4',
+    'Core Team': '#991b1b',
+    'Vice President': '#22c55e',
+    'Secretary': '#15803d',
     'Treasurer': '#10b981',
-    'Webmaster': '#3b82f6',
+    'Webmaster': '#dc2626',
     'Event Coordinator': '#f97316',
-    'Marketing Lead': '#8b5cf6',
+    'Marketing Lead': '#b91c1c',
     'PR Head': '#14b8a6',
     'Design Lead': '#e879f9',
     'Technical Lead': '#0ea5e9',
     'Member': '#94a3b8',
 };
 
-const AVATAR_COLORS = ['#6366f1','#ec4899','#f59e0b','#10b981','#06b6d4','#8b5cf6','#f97316','#3b82f6'];
+const AVATAR_COLORS = ['#991b1b','#22c55e','#f59e0b','#10b981','#15803d','#b91c1c','#f97316','#dc2626'];
 
 export default function ClubManagementPage() {
     const { user, loading: authLoading } = useAuth();
@@ -80,7 +80,7 @@ export default function ClubManagementPage() {
                 const snap = await getDocs(collection(db, 'clubs'));
                 const clubs = snap.docs.map(d => ({ id: d.id, ...d.data() }));
                 const userClubs = clubs.filter(c =>
-                    c.adminId === user.uid || (c.memberRoles && c.memberRoles[user.uid])
+                    c.adminId === user.uid
                 );
                 setManagedClubs(userClubs);
                 if (userClubs.length > 0) setSelectedClubId(userClubs[0].id);
@@ -444,25 +444,25 @@ export default function ClubManagementPage() {
                         {/* ── Stats Row ── */}
                         <div className={styles.statsRow}>
                             <div className={styles.statCard}>
-                                <div className={styles.statCardAccent} style={{ background: 'linear-gradient(90deg, #6366f1, #8b5cf6)' }}></div>
+                                <div className={styles.statCardAccent} style={{ background: 'linear-gradient(90deg, #991b1b, #b91c1c)' }}></div>
                                 <div className={styles.statIcon}>👥</div>
                                 <div className={styles.statValue}>{stats.total}</div>
                                 <div className={styles.statLabel}>Total Members</div>
                             </div>
                             <div className={styles.statCard}>
-                                <div className={styles.statCardAccent} style={{ background: 'linear-gradient(90deg, #ec4899, #f97316)' }}></div>
+                                <div className={styles.statCardAccent} style={{ background: 'linear-gradient(90deg, #22c55e, #f97316)' }}></div>
                                 <div className={styles.statIcon}>🌟</div>
                                 <div className={styles.statValue}>{stats.special}</div>
                                 <div className={styles.statLabel}>Special Roles</div>
                             </div>
                             <div className={styles.statCard}>
-                                <div className={styles.statCardAccent} style={{ background: 'linear-gradient(90deg, #06b6d4, #3b82f6)' }}></div>
+                                <div className={styles.statCardAccent} style={{ background: 'linear-gradient(90deg, #15803d, #dc2626)' }}></div>
                                 <div className={styles.statIcon}>📢</div>
                                 <div className={styles.statValue}>{stats.announcements}</div>
                                 <div className={styles.statLabel}>Announcements</div>
                             </div>
                             <div className={styles.statCard}>
-                                <div className={styles.statCardAccent} style={{ background: 'linear-gradient(90deg, #10b981, #6366f1)' }}></div>
+                                <div className={styles.statCardAccent} style={{ background: 'linear-gradient(90deg, #10b981, #991b1b)' }}></div>
                                 <div className={styles.statIcon}>{activeClub.emoji || '🏢'}</div>
                                 <div className={styles.statValue} style={{ fontSize: '1rem' }}>{stats.category}</div>
                                 <div className={styles.statLabel}>Category</div>

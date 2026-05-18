@@ -3,9 +3,11 @@
 import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { collection, getDocs, query, orderBy, limit, onSnapshot } from 'firebase/firestore';
+import { collection, getDocs, query, orderBy, limit, where, onSnapshot } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { useAuth } from '@/context/AuthContext';
+import { useCollege } from '@/context/CollegeContext';
+import { useTheme } from '@/context/ThemeContext';
 import { awardDownloadPoints } from '@/lib/points';
 import { ScrollReveal, CountUp } from '@/components/Animations';
 import styles from './page.module.css';
@@ -32,29 +34,55 @@ export default function HomePage() {
   const [clubsCount, setClubsCount] = useState(0);
   const router = useRouter();
   const { user } = useAuth();
+  const { branding } = useCollege();
+  const { theme } = useTheme();
   const heroRef = useRef(null);
 
   useEffect(() => {
     let cancelled = false;
-    const fetchRecent = async () => {
+      const fetchRecent = async () => {
       setLoadingFiles(true);
       try {
         if (!db) throw new Error('Firestore not initialized');
-        const timeout = new Promise((_, reject) => setTimeout(() => reject(new Error('Timeout')), 8000));
-        const fetchPromise = getDocs(collection(db, 'files'));
-        const snapshot = await Promise.race([fetchPromise, timeout]);
+        let timeoutId;
+        const timeout = new Promise((_, reject) => {
+            timeoutId = setTimeout(() => reject(new Error('Timeout')), 6000);
+        });
+        
+        // Only fetch the 6 most recent approved files — not the entire collection
+        const recentQ = query(
+          collection(db, 'files'),
+          where('status', '==', 'approved'),
+          orderBy('createdAt', 'desc'),
+          limit(6)
+        );
+        const snapshot = await Promise.race([getDocs(recentQ), timeout]);
+        clearTimeout(timeoutId);
+        
         if (cancelled) return;
         
-        const data = snapshot.docs
-          .map(d => ({ id: d.id, ...d.data() }))
-          .filter(f => f.status === 'approved');
-          
-        let notesCount = 0;
-        let pyqsCount = 0;
+        const data = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
+        setRecentFiles(data);
+      } catch (error) {
+        console.warn('Error fetching recent files:', error);
+        if (!cancelled) setRecentFiles([]);
+      }
+      if (!cancelled) setLoadingFiles(false);
+    };
+
+    // Separate lightweight stats fetch — runs in background, doesn't block UI
+    const fetchStats = async () => {
+      try {
+        const statsSnapshot = await getDocs(collection(db, 'files'));
+        if (cancelled) return;
+        
+        let notesCount = 0, pyqsCount = 0;
         const subjectsSet = new Set();
         const uploadersSet = new Set();
 
-        data.forEach(f => {
+        statsSnapshot.docs.forEach(d => {
+            const f = d.data();
+            if (f.status !== 'approved') return;
             if (f.type === 'Notes') notesCount++;
             if (f.type === 'PYQ') pyqsCount++;
             if (f.subject) subjectsSet.add(f.subject);
@@ -67,14 +95,9 @@ export default function HomePage() {
             subjects: subjectsSet.size > 0 ? subjectsSet.size : 5,
             students: uploadersSet.size > 0 ? uploadersSet.size * 2 : 10 
         });
-
-        data.sort((a, b) => (b.createdAt || '').localeCompare(a.createdAt || ''));
-        setRecentFiles(data.slice(0, 6));
-      } catch (error) {
-        console.error('Error fetching recent files:', error);
-        if (!cancelled) setRecentFiles([]);
+      } catch (e) {
+        console.warn('Stats fetch error:', e);
       }
-      if (!cancelled) setLoadingFiles(false);
     };
 
     const fetchLeaderboard = async () => {
@@ -85,7 +108,7 @@ export default function HomePage() {
             const users = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
             setTopContributors(users);
         } catch (e) {
-            console.error('Leaderboard error:', e);
+            console.warn('Leaderboard error:', e);
         }
     };
 
@@ -144,6 +167,7 @@ export default function HomePage() {
     }
 
     fetchRecent();
+    fetchStats();
     fetchLeaderboard();
     fetchClubsCount();
     return () => {
@@ -156,17 +180,29 @@ export default function HomePage() {
   const handleHeroSearch = (e) => {
     e.preventDefault();
     if (heroQuery.trim()) {
-      router.push(`/notes?q=${encodeURIComponent(heroQuery.trim())}`);
+      router.push(`/subjects?q=${encodeURIComponent(heroQuery.trim())}`);
     }
   };
 
   const handleDownload = async (file) => {
-    if (!file.fileURL) return;
+    let url = file.fileURL || file.fileUrl;
+    if (!url) return;
+
+    if (!url.includes('firebasestorage')) {
+      let relativePath = '';
+      if (url.includes('/api/downloads/')) relativePath = url.split('/api/downloads/')[1];
+      else if (url.includes('/uploads/')) relativePath = url.split('/uploads/')[1];
+      else relativePath = url.split('/').pop();
+      
+      relativePath = relativePath.split('?')[0];
+      url = '/api/downloads/' + relativePath;
+    }
+
     try {
       await awardDownloadPoints(file.id, file.uploaderUID, user?.uid);
       setRecentFiles(prev => prev.map(f => f.id === file.id ? { ...f, downloads: (f.downloads || 0) + 1 } : f));
     } catch (e) { console.warn('Could not update download count:', e.message); }
-    window.open(file.fileURL, '_blank');
+    window.open(url, '_blank');
   };
 
   const getInitials = (name) => {
@@ -187,8 +223,8 @@ export default function HomePage() {
   const getNewsTypeColor = (type) => {
     switch (type) {
       case 'Urgent': return '#ef4444';
-      case 'Event': return '#06b6d4';
-      default: return '#3b82f6';
+      case 'Event': return '#15803d';
+      default: return '#dc2626';
     }
   };
 
@@ -230,18 +266,31 @@ export default function HomePage() {
         <div className={styles.heroInner}>
           <div className={styles.heroBadge}>
             <span className={styles.heroBadgeDot}></span>
-            Student OS — Built for Campus Life
+            {branding.tagline}
           </div>
 
           <h1 className={styles.heroTitle}>
-            <span className={styles.heroLine1}>Your College,</span>
+            <span className={styles.heroLine1}>{branding.collegeName}</span>
             <span className={styles.heroLine2}>
-              <span className={styles.heroGradientText}>Simplified.</span>
+              <span className={styles.heroGradientText}>
+                {branding.collegeShortName.split('').map((letter, i) => {
+                  const activeLetterColors = theme === 'light' ? branding.letterColorsLight : branding.letterColors;
+                  const color = activeLetterColors[i];
+                  return (
+                    <span
+                      key={i}
+                      style={color ? { color } : {}}
+                    >
+                      {letter}
+                    </span>
+                  );
+                })}
+              </span>
             </span>
           </h1>
 
           <p className={styles.heroSubtitle}>
-            Notes, PYQs, clubs, community, and campus news — beautifully organized in one platform that students actually love using.
+            {branding.heroSubtitle}
           </p>
 
           <form className={styles.heroSearchBar} onSubmit={handleHeroSearch}>
@@ -282,13 +331,13 @@ export default function HomePage() {
       <section className={styles.dockSection}>
         <div className={styles.dockContainer}>
           {[
-            { href: '/notes', icon: <IconNotes size={26} />, label: 'Notes', color: '#3b82f6', desc: 'Study material' },
-            { href: '/assistant', icon: null, emoji: '🤖', label: 'AI Tutor', color: '#8b5cf6', desc: 'Study help' },
-            { href: '/pyqs', icon: <IconPyq size={26} />, label: 'PYQs', color: '#22d3ee', desc: 'Past papers' },
-            { href: '/assignments', icon: <IconAssignment size={26} />, label: 'Assignments', color: '#f472b6', desc: 'Solutions' },
-            { href: '/community', icon: null, emoji: '💬', label: 'Community', color: '#06b6d4', desc: 'Discussions' },
-            { href: '/clubs', icon: null, emoji: '🏢', label: 'Clubs', color: '#ef4444', desc: 'Campus clubs' },
-            { href: '/news', icon: null, emoji: '📰', label: 'News', color: '#10b981', desc: 'Announcements' },
+            { href: '/subjects', icon: <IconNotes size={26} />, label: 'Subjects', color: '#dc2626', desc: 'Faculty material' },
+            { href: '/pyqs', icon: <IconPyq size={26} />, label: 'Exam Prep', color: '#16a34a', desc: 'PYQs & solutions' },
+            { href: '/assignments', icon: <IconAssignment size={26} />, label: 'Assignments', color: '#22c55e', desc: 'Submissions' },
+            { href: '/assistant', icon: null, emoji: '🤖', label: 'AI Tutor', color: '#b91c1c', desc: 'Doubt solving' },
+            { href: '/community', icon: null, emoji: '💬', label: 'Discussions', color: '#15803d', desc: 'Peer support' },
+            { href: '/news', icon: null, emoji: '📰', label: 'Notice Board', color: '#10b981', desc: 'Official updates' },
+            { href: '/clubs', icon: null, emoji: '🏢', label: 'Clubs', color: '#ef4444', desc: 'Campus life' },
           ].map((item, i) => (
             <ScrollReveal key={item.href} delay={i * 60}>
               <Link href={item.href} className={styles.dockItem}>
@@ -337,7 +386,7 @@ export default function HomePage() {
             <div className={styles.campusHeaderLeft}>
               <span className={styles.campusBadge}>🏫 Beyond the classroom</span>
               <h2 className={styles.campusTitle}>Campus Life</h2>
-              <p className={styles.campusSubtitle}>Connect, collaborate, and never miss what's happening on campus.</p>
+              <p className={styles.campusSubtitle}>Connect, collaborate, and never miss what&apos;s happening on campus.</p>
             </div>
           </div>
         </ScrollReveal>
@@ -347,10 +396,10 @@ export default function HomePage() {
           <ScrollReveal delay={0}>
             <Link href="/community" className={`${styles.campusCard} ${styles.campusCardHero}`}>
               <div className={styles.campusCardShimmer}></div>
-              <div className={styles.campusCardGradient} style={{ background: 'linear-gradient(160deg, #8b5cf630 0%, #06b6d415 100%)' }}></div>
+              <div className={styles.campusCardGradient} style={{ background: 'linear-gradient(160deg, #b91c1c30 0%, #15803d15 100%)' }}></div>
               <div className={styles.campusCardInner}>
                 <div className={styles.campusCardTop}>
-                  <div className={styles.campusCardIconLg} style={{ background: 'linear-gradient(135deg, #8b5cf6, #06b6d4)' }}>
+                  <div className={styles.campusCardIconLg} style={{ background: 'linear-gradient(135deg, #b91c1c, #15803d)' }}>
                     💬
                   </div>
                   <div className={styles.campusLiveDot}>
@@ -368,7 +417,7 @@ export default function HomePage() {
                   <div className={styles.campusFeed}>
                     {communityPosts.slice(0, 3).map((post, i) => (
                       <div key={post.id} className={styles.campusFeedItem} style={{ animationDelay: `${i * 150}ms` }}>
-                        <div className={styles.campusFeedAvatar} style={{ background: ['#8b5cf6','#3b82f6','#ec4899'][i % 3] }}>
+                        <div className={styles.campusFeedAvatar} style={{ background: ['#b91c1c','#dc2626','#22c55e'][i % 3] }}>
                           {post.authorName?.charAt(0) || '?'}
                         </div>
                         <div className={styles.campusFeedBody}>
@@ -413,11 +462,11 @@ export default function HomePage() {
 
                   <div className={styles.campusTagsRow}>
                     {[
-                      { label: '💻 Tech', color: '#3b82f6' },
-                      { label: '🎨 Arts', color: '#ec4899' },
+                      { label: '💻 Tech', color: '#dc2626' },
+                      { label: '🎨 Arts', color: '#22c55e' },
                       { label: '⚽ Sports', color: '#22c55e' },
                       { label: '💼 Business', color: '#f59e0b' },
-                      { label: '🔬 Science', color: '#8b5cf6' },
+                      { label: '🔬 Science', color: '#b91c1c' },
                     ].map(tag => (
                       <span key={tag.label} className={styles.campusTag} style={{ color: tag.color, borderColor: `${tag.color}40`, background: `${tag.color}10` }}>
                         {tag.label}
@@ -483,7 +532,7 @@ export default function HomePage() {
         <ScrollReveal>
           <div className={styles.sectionHeader}>
             <h2 className={styles.sectionTitle}>{sectionLabel}</h2>
-            <Link href="/notes" className={styles.sectionLink}>View all →</Link>
+            <Link href="/subjects" className={styles.sectionLink}>View all →</Link>
           </div>
         </ScrollReveal>
         <div className={styles.uploadsGrid}>
@@ -495,7 +544,7 @@ export default function HomePage() {
             </>
           ) : displayFiles.length === 0 ? (
             <div className={styles.emptyGrid}>
-              No approved uploads yet. <Link href="/upload" style={{ color: 'var(--primary)', fontWeight: 600 }}>Be the first to upload!</Link>
+              No approved uploads yet.
             </div>
           ) : (
             displayFiles.map((note, i) => (
@@ -531,19 +580,24 @@ export default function HomePage() {
       </section>
 
       {/* ══════════════════════════════════════════════════ */}
-      {/* ═══ WHY SUTRAS + HOW IT WORKS (SPLIT) ══════════ */}
+      {/* ═══ ACADEMIC IMPACT & FACULTY SUPPORT ════════════ */}
       {/* ══════════════════════════════════════════════════ */}
       <section className={styles.whySection}>
         <ScrollReveal>
           <div className={styles.sectionHeader} style={{ justifyContent: 'center', textAlign: 'center', display: 'block' }}>
-            <h2 className={styles.sectionTitle}>✨ Why Students Love Sutras</h2>
+            <span className={styles.campusBadge}>Institutional Value</span>
+            <h2 className={styles.sectionTitle}>Academic Impact & Consistency</h2>
+            <p className={styles.campusSubtitle} style={{ margin: '0 auto', maxWidth: '700px', marginTop: '10px' }}>
+              Sutraverse improves exam performance by reducing dependency on scattered WhatsApp materials and encouraging standardized, faculty-approved resources across all departments.
+            </p>
           </div>
         </ScrollReveal>
+        
         <div className={styles.whyGrid}>
           {[
-            { emoji: '🚀', title: 'Instant Access', desc: 'Premium notes and solutions on any device. No paywalls, no waiting — ever.' },
-            { emoji: '🤝', title: 'Community Driven', desc: 'Upload notes, earn points, climb the leaderboard, and help juniors succeed.' },
-            { emoji: '⚡', title: 'Exam Mode', desc: 'AI-powered last-night prep with unit summaries and most-asked questions.' }
+            { emoji: '📊', title: 'Improves Performance', desc: 'Aims to increase pass percentage and consistency across batches with structured resources.' },
+            { emoji: '🔐', title: 'Institutional Control', desc: 'College-controlled content, secure student login, and moderated uploads ensure data integrity.' },
+            { emoji: '💼', title: 'Placement Readiness', desc: 'Supports career readiness by providing curated aptitude, coding resources, and interview prep.' }
           ].map((f, i) => (
             <ScrollReveal key={f.title} delay={i * 100}>
               <div className={styles.whyCard}>
@@ -555,88 +609,113 @@ export default function HomePage() {
           ))}
         </div>
 
-        {/* How it works — inline process */}
+        {/* How it supports faculty */}
         <ScrollReveal delay={100}>
-          <div className={styles.processBar}>
-            {[
-              { step: '1', title: 'Create Profile', desc: 'Sign up and select your major' },
-              { step: '2', title: 'Download Materials', desc: 'Instant free access to notes' },
-              { step: '3', title: 'Upload & Rank Up', desc: 'Earn rep points & badges' },
-            ].map((s, i) => (
-              <div key={s.step} className={styles.processStep}>
-                <div className={styles.processNum}>{s.step}</div>
-                <div className={styles.processInfo}>
-                  <div className={styles.processTitle}>{s.title}</div>
-                  <div className={styles.processDesc}>{s.desc}</div>
+          <div className={styles.facultySupportContainer}>
+            <div className={styles.facultySupportHeader}>
+              <h3>🎓 How Sutraverse Supports Faculty</h3>
+              <p>Built in collaboration with educators to function as a seamless teaching assistant system.</p>
+            </div>
+            <div className={styles.processBar}>
+              {[
+                { step: '1', title: 'Manage Notes', desc: 'Upload and organize syllabus materials easily' },
+                { step: '2', title: 'Digital Assignments', desc: 'Share and track assignment submissions securely' },
+                { step: '3', title: 'Track Engagement', desc: 'Centralized communication and usage analytics per subject' },
+              ].map((s, i) => (
+                <div key={s.step} className={styles.processStep}>
+                  <div className={styles.processNum}>{s.step}</div>
+                  <div className={styles.processInfo}>
+                    <div className={styles.processTitle}>{s.title}</div>
+                    <div className={styles.processDesc}>{s.desc}</div>
+                  </div>
+                  {i < 2 && <div className={styles.processConnector}></div>}
                 </div>
-                {i < 2 && <div className={styles.processConnector}></div>}
-              </div>
-            ))}
+              ))}
+            </div>
           </div>
         </ScrollReveal>
       </section>
 
       {/* ══════════════════════════════════════════════════ */}
-      {/* ═══ LEADERBOARD + STATS COMBINED ════════════════ */}
+      {/* ═══ FUTURE VISION & ANALYTICS MOCKUP ════════════ */}
       {/* ══════════════════════════════════════════════════ */}
       <section className={styles.socialProofSection}>
+        <ScrollReveal>
+          <div className={styles.sectionHeader} style={{ justifyContent: 'center', textAlign: 'center', display: 'block', marginBottom: '2rem' }}>
+            <span className={styles.campusBadge}>Scalability</span>
+            <h2 className={styles.sectionTitle}>Future Vision & Analytics</h2>
+            <p className={styles.campusSubtitle} style={{ margin: '0 auto', maxWidth: '700px', marginTop: '10px' }}>
+              Sutraverse is designed to scale into a full-fledged LMS with advanced analytics, AI integration, and placement support.
+            </p>
+          </div>
+        </ScrollReveal>
+        
         <div className={styles.socialProofGrid}>
-          {/* Leaderboard */}
+          {/* Future Scope / Roadmap */}
           <ScrollReveal delay={0}>
-            <div className={styles.leaderboardCard}>
+            <div className={styles.roadmapCard}>
               <div className={styles.leaderboardHeader}>
-                <h3>🏆 Top Contributors</h3>
-                <span>Monthly</span>
+                <h3>🚀 Development Roadmap</h3>
+                <span>Phase 2</span>
               </div>
-              <div className={styles.leaderboardList}>
-                {topContributors.length === 0 ? (
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', padding: '8px 0' }}>
-                    {[1,2,3,4].map(i => <Skeleton key={i} variant="avatar-row" size={44} />)}
+              <div className={styles.roadmapList}>
+                <div className={styles.roadmapItem}>
+                  <div className={styles.roadmapIcon}>🤖</div>
+                  <div className={styles.roadmapInfo}>
+                    <h4>AI-Powered Doubt Solving</h4>
+                    <p>Instant contextual answers from syllabus.</p>
                   </div>
-                ) : (
-                  topContributors.map((c, i) => (
-                    <div key={c.id} className={styles.leaderboardRow}>
-                      <span className={styles.leaderboardRank}>{rankEmojis[i] || `#${i+1}`}</span>
-                      <div className={styles.leaderboardAvatar}>
-                        {c.photoURL ? <img src={c.photoURL} alt="" /> : getInitials(c.name)}
-                      </div>
-                      <div className={styles.leaderboardInfo}>
-                        <span className={styles.leaderboardName}>{c.name}</span>
-                        <span className={styles.leaderboardPts}>⭐ {c.points || 0} pts</span>
-                      </div>
-                    </div>
-                  ))
-                )}
+                </div>
+                <div className={styles.roadmapItem}>
+                  <div className={styles.roadmapIcon}>📈</div>
+                  <div className={styles.roadmapInfo}>
+                    <h4>LMS & Attendance Integration</h4>
+                    <p>Sync with existing college ERP systems.</p>
+                  </div>
+                </div>
+                <div className={styles.roadmapItem}>
+                  <div className={styles.roadmapIcon}>🌐</div>
+                  <div className={styles.roadmapInfo}>
+                    <h4>Alumni & Internship Portal</h4>
+                    <p>Direct connect for job opportunities.</p>
+                  </div>
+                </div>
               </div>
             </div>
           </ScrollReveal>
 
-          {/* Stats Grid */}
+          {/* Analytics Mockup */}
           <ScrollReveal delay={100}>
-            <div className={styles.statsCard}>
-              <h3 className={styles.statsCardTitle}>📊 Platform at a Glance</h3>
-              <div className={styles.statsInnerGrid}>
+            <div className={styles.analyticsMockupCard}>
+              <div className={styles.analyticsHeader}>
+                <h3>📊 Faculty Dashboard Preview</h3>
+                <span className={styles.mockupBadge}>Coming Soon</span>
+              </div>
+              
+              <div className={styles.statsInnerGrid} style={{ marginBottom: '16px' }}>
                 <div className={styles.statCell}>
-                  <div className={styles.statCellIcon} style={{ background: '#3b82f618', color: '#3b82f6' }}>📄</div>
-                  <div className={styles.statCellNum}><CountUp end={platformStats.notes} suffix="+" /></div>
-                  <div className={styles.statCellLabel}>Notes</div>
+                  <div className={styles.statCellLabel}>Active Students</div>
+                  <div className={styles.statCellNum} style={{ fontSize: '1.2rem' }}>842</div>
                 </div>
                 <div className={styles.statCell}>
-                  <div className={styles.statCellIcon} style={{ background: '#22d3ee18', color: '#22d3ee' }}>👥</div>
-                  <div className={styles.statCellNum}><CountUp end={platformStats.students} suffix="+" /></div>
-                  <div className={styles.statCellLabel}>Students</div>
+                  <div className={styles.statCellLabel}>Resource Usage</div>
+                  <div className={styles.statCellNum} style={{ fontSize: '1.2rem' }}>94%</div>
                 </div>
                 <div className={styles.statCell}>
-                  <div className={styles.statCellIcon} style={{ background: '#f472b618', color: '#f472b6' }}>📝</div>
-                  <div className={styles.statCellNum}><CountUp end={platformStats.pyqs} suffix="+" /></div>
-                  <div className={styles.statCellLabel}>PYQs</div>
-                </div>
-                <div className={styles.statCell}>
-                  <div className={styles.statCellIcon} style={{ background: '#f59e0b18', color: '#f59e0b' }}>📚</div>
-                  <div className={styles.statCellNum}><CountUp end={platformStats.subjects} suffix="+" /></div>
-                  <div className={styles.statCellLabel}>Subjects</div>
+                  <div className={styles.statCellLabel}>Avg. Engagement</div>
+                  <div className={styles.statCellNum} style={{ fontSize: '1.2rem' }}>4.2 hrs</div>
                 </div>
               </div>
+
+              <div className={styles.mockupChart}>
+                <div className={styles.chartBar} style={{ height: '40%' }}></div>
+                <div className={styles.chartBar} style={{ height: '70%' }}></div>
+                <div className={styles.chartBar} style={{ height: '50%' }}></div>
+                <div className={styles.chartBar} style={{ height: '90%', background: 'var(--primary)' }}></div>
+                <div className={styles.chartBar} style={{ height: '60%' }}></div>
+                <div className={styles.chartBar} style={{ height: '85%' }}></div>
+              </div>
+              <p className={styles.chartLabel}>Weekly Subject-wise Engagement</p>
             </div>
           </ScrollReveal>
         </div>
@@ -650,22 +729,17 @@ export default function HomePage() {
           <div className={styles.ctaCard}>
             <div className={styles.ctaOrb}></div>
             <div className={styles.ctaContent}>
-              <h2 className={styles.ctaTitle}>Ready to level up your college experience?</h2>
+              <h2 className={styles.ctaTitle}>Partner With Us</h2>
               <p className={styles.ctaDesc}>
-                Join thousands of students already using Sutras to ace exams, build connections, and make campus life unforgettable.
+                Seeking institutional support to scale Sutraverse across all departments at {branding.collegeShortName}. <br/><br/>
+                <strong style={{color: 'var(--primary)', fontWeight: '800'}}>Sutraverse can evolve into {branding.collegeShortName}’s official academic digital platform.</strong>
               </p>
               <div className={styles.ctaActions}>
-                {!user ? (
-                  <Link href="/signup" className={styles.ctaBtnPrimary}>
-                    Get Started Free →
-                  </Link>
-                ) : (
-                  <Link href="/upload" className={styles.ctaBtnPrimary}>
-                    Upload Resources →
-                  </Link>
-                )}
-                <Link href="/community" className={styles.ctaBtnSecondary}>
-                  Explore Community
+                <Link href={`mailto:admin@${branding.collegeShortName.toLowerCase() || 'sutraverse'}.edu`} className={styles.ctaBtnPrimary}>
+                  Pilot Implementation
+                </Link>
+                <Link href="/about" className={styles.ctaBtnSecondary}>
+                  Faculty Onboarding
                 </Link>
               </div>
             </div>
@@ -680,16 +754,16 @@ export default function HomePage() {
         <div className={styles.footerInner}>
           <div className={styles.footerTop}>
             <div className={styles.footerBrand}>
-              <span className={styles.footerLogo}>📚 Sutras</span>
-              <p className={styles.footerTagline}>The Student OS — Built for Campus Life</p>
+              <span className={styles.footerLogo}>📚 Sutraverse</span>
+              <p className={styles.footerTagline}>Digital Academic Ecosystem for {branding.collegeShortName}</p>
             </div>
             <div className={styles.footerColumns}>
               <div className={styles.footerCol}>
                 <h4>Resources</h4>
-                <Link href="/notes">Notes</Link>
+                <Link href="/subjects">Subjects</Link>
                 <Link href="/pyqs">PYQs</Link>
                 <Link href="/assignments">Assignments</Link>
-                <Link href="/upload">Upload</Link>
+                <Link href="/subjects">Subjects</Link>
               </div>
               <div className={styles.footerCol}>
                 <h4>Campus</h4>
@@ -707,7 +781,7 @@ export default function HomePage() {
             </div>
           </div>
           <div className={styles.footerBottom}>
-            <span>© 2026 Sutras. All rights reserved.</span>
+            <span>© 2026 Sutraverse. All rights reserved. (Deployed via Automated CI/CD Pipeline 🚀)</span>
           </div>
         </div>
       </footer>

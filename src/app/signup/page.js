@@ -1,51 +1,66 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
-import { COLLEGES, BRANCHES, YEARS, SEMESTERS, getSubjects } from '@/lib/subjectMap';
 import styles from './page.module.css';
 
 export default function SignupPage() {
-    const [step, setStep] = useState(1);
-
     // Step 1: Account
     const [name, setName] = useState('');
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
 
-    // Step 2: Profile
-    const [college, setCollege] = useState('');
-    const [branch, setBranch] = useState('');
-    const [year, setYear] = useState('');
-    const [semester, setSemester] = useState('');
-    const [selectedSubjects, setSelectedSubjects] = useState([]);
+
 
     const [error, setError] = useState('');
     const [loading, setLoading] = useState(false);
 
+    // Bot protection
+    const [mathA, setMathA] = useState(0);
+    const [mathB, setMathB] = useState(0);
+    const [captchaAnswer, setCaptchaAnswer] = useState('');
+    const [honeypot, setHoneypot] = useState('');
+
+    useEffect(() => {
+        setMathA(Math.floor(Math.random() * 10) + 1);
+        setMathB(Math.floor(Math.random() * 10) + 1);
+    }, []);
+
     const { signUpWithEmail, loginWithGoogle } = useAuth();
     const router = useRouter();
 
-    // Derived data
-    const availableSemesters = year ? (SEMESTERS[year] || []) : [];
-    const availableSubjects = (branch && semester) ? getSubjects(branch, semester) : [];
 
-    const toggleSubject = (subj) => {
-        setSelectedSubjects(prev =>
-            prev.includes(subj) ? prev.filter(s => s !== subj) : [...prev, subj]
-        );
-    };
 
-    const handleStep1 = (e) => {
+    const handleStep1 = async (e) => {
         e.preventDefault();
         setError('');
+        
+        if (honeypot) {
+            setError('Spam detected.');
+            return;
+        }
+
+        if (parseInt(captchaAnswer) !== mathA + mathB) {
+            setError('Incorrect security question answer.');
+            return;
+        }
+
         if (password.length < 6) {
             setError('Password must be at least 6 characters.');
             return;
         }
-        setStep(2);
+
+        setLoading(true);
+        try {
+            await signUpWithEmail(email, password, name, {});
+            // AuthContext will automatically redirect to /onboarding
+        } catch (err) {
+            setError(getFriendlyError(err));
+        } finally {
+            setLoading(false);
+        }
     };
 
     const getFriendlyError = (err) => {
@@ -58,35 +73,11 @@ export default function SignupPage() {
         return err.message || 'Failed to create account. Please try again.';
     };
 
-    const handleStep2 = async (e) => {
-        e.preventDefault();
-        setError('');
-        if (!branch || !year || !semester) {
-            setError('Please select your branch, year, and semester.');
-            return;
-        }
-        setLoading(true);
-        try {
-            await signUpWithEmail(email, password, name, {
-                college,
-                branch,
-                year,
-                semester,
-                subjects: selectedSubjects.length > 0 ? selectedSubjects : availableSubjects,
-            });
-            router.push('/');
-        } catch (err) {
-            setError(getFriendlyError(err));
-        } finally {
-            setLoading(false);
-        }
-    };
-
     const handleGoogleLogin = async () => {
         setError('');
         try {
             await loginWithGoogle();
-            router.push('/');
+            // AuthContext will handle redirect
         } catch (err) {
             setError('Google sign-up failed. Please try again.');
         }
@@ -95,19 +86,10 @@ export default function SignupPage() {
     return (
         <div className={styles.pageWrapper}>
             <div className={styles.authContainer}>
-                {/* Progress bar */}
-                <div className={styles.stepProgress}>
-                    <div className={`${styles.stepDot} ${step >= 1 ? styles.stepDotActive : ''}`}>1</div>
-                    <div className={`${styles.stepLine} ${step >= 2 ? styles.stepLineActive : ''}`}></div>
-                    <div className={`${styles.stepDot} ${step >= 2 ? styles.stepDotActive : ''}`}>2</div>
+                <div className={styles.authHeader}>
+                    <h1 className={styles.title}>Create Account</h1>
+                    <p className={styles.subtitle}>Join Sutras to share and access notes.</p>
                 </div>
-
-                {step === 1 && (
-                    <>
-                        <div className={styles.authHeader}>
-                            <h1 className={styles.title}>Create Account</h1>
-                            <p className={styles.subtitle}>Join Sutras to share and access notes.</p>
-                        </div>
 
                         {error && <div className={styles.errorAlert}>{error}</div>}
 
@@ -124,7 +106,33 @@ export default function SignupPage() {
                                 <label className={styles.label}>Password</label>
                                 <input type="password" className={styles.input} placeholder="••••••••" value={password} onChange={(e) => setPassword(e.target.value)} required />
                             </div>
-                            <button type="submit" className={styles.submitBtn}>Next — Set Up Profile →</button>
+
+                            {/* Honeypot Field */}
+                            <input 
+                                type="text" 
+                                style={{ display: 'none' }} 
+                                value={honeypot} 
+                                onChange={e => setHoneypot(e.target.value)} 
+                                tabIndex="-1" 
+                                autoComplete="off" 
+                            />
+
+                            {/* Math Captcha */}
+                            <div className={styles.inputGroup}>
+                                <label className={styles.label}>Security Question: What is {mathA} + {mathB}?</label>
+                                <input
+                                    type="number"
+                                    className={styles.input}
+                                    placeholder="Answer"
+                                    value={captchaAnswer}
+                                    onChange={(e) => setCaptchaAnswer(e.target.value)}
+                                    required
+                                />
+                            </div>
+
+                            <button type="submit" className={styles.submitBtn} disabled={loading}>
+                                {loading ? 'Creating Account...' : 'Create Account'}
+                            </button>
                         </form>
 
                         <div className={styles.divider}><span>OR</span></div>
@@ -133,79 +141,6 @@ export default function SignupPage() {
                             Sign up with Google
                         </button>
                         <p className={styles.bottomText}>Already have an account? <Link href="/login" className={styles.link}>Sign In</Link></p>
-                    </>
-                )}
-
-                {step === 2 && (
-                    <>
-                        <div className={styles.authHeader}>
-                            <h1 className={styles.title}>Your Profile</h1>
-                            <p className={styles.subtitle}>Tell us about your studies so we can personalize your feed.</p>
-                        </div>
-
-                        {error && <div className={styles.errorAlert}>{error}</div>}
-
-                        <form className={styles.form} onSubmit={handleStep2}>
-                            <div className={styles.inputGroup}>
-                                <label className={styles.label}>College</label>
-                                <select className={styles.select} value={college} onChange={(e) => setCollege(e.target.value)}>
-                                    <option value="">Select your college</option>
-                                    {COLLEGES.map(c => <option key={c} value={c}>{c}</option>)}
-                                </select>
-                            </div>
-
-                            <div className={styles.rowGroup}>
-                                <div className={styles.inputGroup}>
-                                    <label className={styles.label}>Branch</label>
-                                    <select className={styles.select} value={branch} onChange={(e) => { setBranch(e.target.value); setSemester(''); setSelectedSubjects([]); }} required>
-                                        <option value="">Select</option>
-                                        {BRANCHES.map(b => <option key={b} value={b}>{b}</option>)}
-                                    </select>
-                                </div>
-                                <div className={styles.inputGroup}>
-                                    <label className={styles.label}>Year</label>
-                                    <select className={styles.select} value={year} onChange={(e) => { setYear(e.target.value); setSemester(''); setSelectedSubjects([]); }} required>
-                                        <option value="">Select</option>
-                                        {YEARS.map(y => <option key={y} value={y}>{y}</option>)}
-                                    </select>
-                                </div>
-                            </div>
-
-                            <div className={styles.inputGroup}>
-                                <label className={styles.label}>Semester</label>
-                                <select className={styles.select} value={semester} onChange={(e) => { setSemester(e.target.value); setSelectedSubjects([]); }} required disabled={!year}>
-                                    <option value="">Select semester</option>
-                                    {availableSemesters.map(s => <option key={s} value={s}>{s}</option>)}
-                                </select>
-                            </div>
-
-                            {availableSubjects.length > 0 && (
-                                <div className={styles.inputGroup}>
-                                    <label className={styles.label}>Your Subjects <span style={{ fontWeight: 400, textTransform: 'none', letterSpacing: 0 }}>(tap to select)</span></label>
-                                    <div className={styles.chipGrid}>
-                                        {availableSubjects.map(subj => (
-                                            <button
-                                                key={subj}
-                                                type="button"
-                                                className={`${styles.chip} ${selectedSubjects.includes(subj) ? styles.chipActive : ''}`}
-                                                onClick={() => toggleSubject(subj)}
-                                            >
-                                                {subj}
-                                            </button>
-                                        ))}
-                                    </div>
-                                </div>
-                            )}
-
-                            <div className={styles.btnRow}>
-                                <button type="button" className={styles.backBtn} onClick={() => setStep(1)}>← Back</button>
-                                <button type="submit" className={styles.submitBtn} disabled={loading} style={{ flex: 1 }}>
-                                    {loading ? 'Creating Account...' : 'Create Account'}
-                                </button>
-                            </div>
-                        </form>
-                    </>
-                )}
             </div>
         </div>
     );

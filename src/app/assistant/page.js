@@ -4,39 +4,11 @@ import { useState, useRef, useEffect } from 'react';
 import styles from './page.module.css';
 import { useAuth } from '@/context/AuthContext';
 
-// Simple formatter for AI responses (bolding and headers)
-const formatMarkdown = (text) => {
-  return text.split('\n').map((line, i) => {
-    // Headers
-    if (line.startsWith('### ')) {
-      return <h3 key={i}>{line.substring(4)}</h3>;
-    }
-    if (line.startsWith('## ')) {
-      return <h3 key={i} style={{fontSize: '1.2rem'}}>{line.substring(3)}</h3>;
-    }
-    
-    // Bold text (**text**)
-    const parts = line.split(/(\*\*.*?\*\*)/g);
-    return (
-      <span key={i} style={{ display: 'block', minHeight: line.trim() === '' ? '12px' : 'auto' }}>
-        {parts.map((part, j) => {
-          if (part.startsWith('**') && part.endsWith('**')) {
-            return <strong key={j}>{part.slice(2, -2)}</strong>;
-          }
-          if (part.startsWith('*') && part.endsWith('*')) {
-             return <em key={j}>{part.slice(1, -1)}</em>;
-          }
-          return part;
-        })}
-      </span>
-    );
-  });
-};
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 
 export default function AssistantPage() {
   const { user } = useAuth();
-  const ADMIN_EMAILS = ['sutraverse11@gmail.com'];
-  const isAdmin = user && (ADMIN_EMAILS.includes(user.email) || user.isAdmin);
 
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState('');
@@ -66,19 +38,7 @@ export default function AssistantPage() {
     );
   }
 
-  if (!isAdmin) {
-    return (
-      <div className={styles.container}>
-        <div className={styles.chatWindow} style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', padding: '2rem' }}>
-          <div className={styles.avatar} style={{ width: 80, height: 80, fontSize: '3rem', marginBottom: '1rem', background: 'var(--bg-input)' }}>🚧</div>
-          <h2 className={styles.emptyTitle}>Maintenance Mode</h2>
-          <p className={styles.emptySubtitle} style={{ marginTop: '1rem' }}>
-            Sutras AI is currently undergoing scheduled upgrades and maintenance. It will be back online soon!
-          </p>
-        </div>
-      </div>
-    );
-  }
+
 
   const handleSend = async (textToSend = input) => {
     if (!textToSend.trim()) return;
@@ -94,16 +54,49 @@ export default function AssistantPage() {
       const res = await fetch('/api/assistant', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ messages: updatedMessages }),
+        body: JSON.stringify({ 
+          messages: updatedMessages,
+          context: {
+            name: user.name,
+            branch: user.branch,
+            year: user.year,
+            semester: user.semester,
+          }
+        }),
       });
 
-      const data = await res.json();
-
       if (!res.ok) {
-        throw new Error(data.error || 'Failed to fetch response');
+        let errMessage = 'Failed to fetch response';
+        try {
+            const data = await res.json();
+            errMessage = data.error || errMessage;
+        } catch(e) {}
+        throw new Error(errMessage);
       }
 
-      setMessages(prev => [...prev, { role: 'model', content: data.reply }]);
+      // Add a placeholder message for the model
+      setMessages(prev => [...prev, { role: 'model', content: '' }]);
+      
+      const reader = res.body.getReader();
+      const decoder = new TextDecoder();
+      let done = false;
+
+      while (!done) {
+        const { value, done: doneReading } = await reader.read();
+        done = doneReading;
+        if (value) {
+          const chunkValue = decoder.decode(value, { stream: true });
+          setMessages(prev => {
+            const newMessages = [...prev];
+            const lastIndex = newMessages.length - 1;
+            newMessages[lastIndex] = {
+              ...newMessages[lastIndex],
+              content: newMessages[lastIndex].content + chunkValue
+            };
+            return newMessages;
+          });
+        }
+      }
     } catch (err) {
       setMessages(prev => [...prev, { 
         role: 'model', 
@@ -133,6 +126,15 @@ export default function AssistantPage() {
               </div>
             </div>
           </div>
+          {messages.length > 0 && (
+            <button 
+              className={styles.clearBtn} 
+              onClick={() => setMessages([])}
+              title="Clear chat history"
+            >
+              Clear Chat
+            </button>
+          )}
         </div>
 
         {/* Chat Area */}
@@ -145,14 +147,14 @@ export default function AssistantPage() {
                 Ask me to explain concepts, plan a study schedule, or summarize topics for your upcoming exams.
               </p>
               <div className={styles.suggestions}>
-                <button className={styles.suggestionPill} onClick={() => handleSuggestionClick("Explain Dijkstra's algorithm simply")}>
-                  Explain Dijkstra's algorithm
+                <button className={styles.suggestionPill} onClick={() => handleSuggestionClick("Suggest YouTube videos for Engineering Physics")}>
+                  Suggest YouTube Videos
                 </button>
-                <button className={styles.suggestionPill} onClick={() => handleSuggestionClick("Create a 3-day study plan for Operating Systems")}>
-                  Study plan for OS
+                <button className={styles.suggestionPill} onClick={() => handleSuggestionClick("Create a 3-day study plan for Engineering Mathematics II")}>
+                  Study plan for M2
                 </button>
-                <button className={styles.suggestionPill} onClick={() => handleSuggestionClick("What are the key differences between SQL and NoSQL?")}>
-                  SQL vs NoSQL
+                <button className={styles.suggestionPill} onClick={() => handleSuggestionClick("Can you provide notes on Data Structures?")}>
+                  Notes on Data Structures
                 </button>
               </div>
             </div>
@@ -160,7 +162,11 @@ export default function AssistantPage() {
             messages.map((msg, idx) => (
               <div key={idx} className={`${styles.messageRow} ${msg.role === 'user' ? styles.userRow : styles.modelRow}`}>
                 <div className={`${styles.message} ${msg.role === 'user' ? styles.userMessage : styles.modelMessage}`}>
-                  {msg.role === 'user' ? msg.content : formatMarkdown(msg.content)}
+                  {msg.role === 'user' ? msg.content : (
+                    <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                      {msg.content}
+                    </ReactMarkdown>
+                  )}
                 </div>
               </div>
             ))

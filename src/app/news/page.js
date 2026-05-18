@@ -13,8 +13,8 @@ import styles from './page.module.css';
 
 const TYPE_META = {
     Urgent: { emoji: '🚨', color: '#ef4444', gradient: 'linear-gradient(135deg, #ef4444, #dc2626)' },
-    Event: { emoji: '📅', color: '#06b6d4', gradient: 'linear-gradient(135deg, #06b6d4, #3b82f6)' },
-    General: { emoji: 'ℹ️', color: '#3b82f6', gradient: 'linear-gradient(135deg, #3b82f6, #8b5cf6)' },
+    Event: { emoji: '📅', color: '#15803d', gradient: 'linear-gradient(135deg, #15803d, #dc2626)' },
+    General: { emoji: 'ℹ️', color: '#dc2626', gradient: 'linear-gradient(135deg, #dc2626, #b91c1c)' },
 };
 
 const FILTER_TYPES = ['All', 'Urgent', 'Event', 'General'];
@@ -162,11 +162,11 @@ export default function NewsPage() {
                 {/* ── ADMIN CONTROLS ── */}
                 {isAdminOrTeacher && (
                     <ScrollReveal delay={50}>
-                        <div className={styles.adminControls} style={{ display: 'flex', justifyContent: 'space-between', flexWrap: 'wrap', gap: '1rem' }}>
-                            <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
+                        <div className={styles.adminControls}>
+                            <div className={styles.adminControlsLeft}>
                                 <div style={{ color: 'var(--text-secondary)', fontWeight: 600 }}>📢 You have permission to post & moderate news.</div>
                             </div>
-                            <div style={{ display: 'flex', gap: '1rem' }}>
+                            <div className={styles.adminControlsRight}>
                                 <button 
                                     className={`${styles.postNewsBtn} ${viewPending ? styles.filterChipActive : ''}`}
                                     onClick={() => setViewPending(!viewPending)}

@@ -161,3 +161,7 @@
     background: var(--text-muted);
     box-shadow: none;
 }
+
+@media(max-width:768px){.formCard{padding:24px}.formTitle{font-size:1.5rem}}
+@media(max-width:480px){.formCard{padding:16px;margin:0 12px}.formTitle{font-size:1.3rem}}
+@media(max-width:360px){.formCard{padding:14px}.formTitle{font-size:1.1rem}}

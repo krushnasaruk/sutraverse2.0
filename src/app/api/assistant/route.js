@@ -12,25 +12,31 @@ export async function POST(req) {
         }
 
         const body = await req.json();
-        const { messages } = body;
+        const { messages, context } = body;
 
         if (!messages || !Array.isArray(messages)) {
             return NextResponse.json({ error: 'Missing or invalid "messages" array in request body.' }, { status: 400 });
         }
 
-        const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
-
-        // Map the messages array to the format Gemini expects for history
-        // The user messages shouldn't contain system prompts so we'll prepend it to the first message 
-        // to set the persona.
-        
-        const systemPrompt = `
+        const systemInstruction = `
 You are Sutras AI, an elite academic study assistant and professor designed to help college students.
+${context ? `
+You are currently talking to ${context.name || 'a student'}.
+They are studying in Branch: ${context.branch || 'Unknown'}, Year: ${context.year || 'Unknown'}.
+Please tailor your examples and study plans to match their academic background.
+` : ''}
 Your personality is encouraging, knowledgeable, and concise. 
+You must proactively suggest suitable study plans, recommend notes, and suggest relevant YouTube video topics based on the student's questions.
+Solve their queries thoroughly while maintaining an academic tone.
 Use modern formatting like markdown headers, lists, code blocks, and bold text for readability.
 If a student asks you to explain a concept, explain it clearly with analogies if helpful.
 Do not reply with extremely long essays unless deeply complex. Keep it structured.
         `;
+
+        const model = genAI.getGenerativeModel({ 
+            model: "gemini-2.5-flash",
+            systemInstruction
+        });
 
         // Format history
         const formattedHistory = [];
@@ -49,19 +55,33 @@ Do not reply with extremely long essays unless deeply complex. Keep it structure
             },
         });
 
-        // The latest message
         const lastMessage = messages[messages.length - 1].content;
         
-        // If it's the very first message in the conversation, prepend the system prompt
-        const promptToSend = formattedHistory.length === 0 
-           ? `${systemPrompt}\n\nStudent Question: ${lastMessage}`
-           : lastMessage;
+        // Use streaming API
+        const resultStream = await chat.sendMessageStream(lastMessage);
 
-        const result = await chat.sendMessage(promptToSend);
-        const response = await result.response;
-        const text = response.text();
+        // Convert the async generator into a standard web ReadableStream
+        const stream = new ReadableStream({
+            async start(controller) {
+                try {
+                    for await (const chunk of resultStream.stream) {
+                        const chunkText = chunk.text();
+                        controller.enqueue(new TextEncoder().encode(chunkText));
+                    }
+                    controller.close();
+                } catch (e) {
+                    controller.error(e);
+                }
+            }
+        });
 
-        return NextResponse.json({ reply: text });
+        return new Response(stream, {
+            headers: {
+                'Content-Type': 'text/plain; charset=utf-8',
+                'Transfer-Encoding': 'chunked',
+                'Cache-Control': 'no-cache',
+            }
+        });
 
     } catch (error) {
         console.error('Gemini Chat Error:', error);

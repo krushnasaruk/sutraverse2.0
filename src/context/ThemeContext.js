@@ -5,15 +5,16 @@ import { createContext, useContext, useEffect, useState } from 'react';
 const ThemeContext = createContext();
 
 export function ThemeProvider({ children }) {
-    const [theme, setTheme] = useState('light'); // default to Light (notebook style)
+    const [theme, setTheme] = useState('dark'); // default to Dark (notebook style)
 
     useEffect(() => {
         const saved = localStorage.getItem('sutras-theme');
-        if (saved === 'dark') {
-            setTheme('dark');
-            document.documentElement.classList.add('dark');
+        if (saved === 'light') {
+            setTheme('light');
+            document.documentElement.classList.add('light');
         } else {
-            document.documentElement.classList.remove('dark');
+            setTheme('dark');
+            document.documentElement.classList.remove('light');
         }
     }, []);
 
@@ -21,11 +22,11 @@ export function ThemeProvider({ children }) {
         if (theme === 'light') {
             setTheme('dark');
             localStorage.setItem('sutras-theme', 'dark');
-            document.documentElement.classList.add('dark');
+            document.documentElement.classList.remove('light');
         } else {
             setTheme('light');
             localStorage.setItem('sutras-theme', 'light');
-            document.documentElement.classList.remove('dark');
+            document.documentElement.classList.add('light');
         }
     };
 

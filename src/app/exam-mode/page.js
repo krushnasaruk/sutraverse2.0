@@ -72,25 +72,25 @@ export default function ExamModePage() {
         );
     }
 
-    const ADMIN_EMAILS = ['sutraverse11@gmail.com'];
-    const isAdmin = user && (ADMIN_EMAILS.includes(user.email) || user.isAdmin);
-
-    if (!isAdmin) {
+    // Flashcard Component
+    const Flashcard = ({ term, definition }) => {
+        const [flipped, setFlipped] = useState(false);
         return (
-            <div className={styles.pageWrapper}>
-                <div className={styles.pageInner}>
-                    <div style={{ textAlign: 'center', padding: 'var(--space-3xl)', background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: 'var(--radius-xl)', maxWidth: '440px', margin: 'var(--space-3xl) auto', backdropFilter: 'blur(20px)' }}>
-                        <div style={{ color: 'var(--accent)', marginBottom: 'var(--space-lg)' }}><IconSparkles size={64} /></div>
-                        <h2 style={{ fontFamily: 'var(--font-heading)', fontSize: '1.5rem', fontWeight: 700, color: 'var(--text-primary)', marginBottom: 'var(--space-sm)' }}>Under Construction</h2>
-                        <p style={{ color: 'var(--text-secondary)', marginBottom: 'var(--space-xl)' }}>The AI-Powered Exam Mode is currently in internal beta testing. It will be released to all students very soon!</p>
-                        <Link href="/dashboard" style={{ display: 'inline-block', padding: '12px 32px', background: 'var(--primary)', color: '#fff', borderRadius: 'var(--radius-full)', fontWeight: 700, textDecoration: 'none', transition: 'all 0.3s ease' }}>
-                            Return to Dashboard
-                        </Link>
+            <div className={styles.flashcardContainer} onClick={() => setFlipped(!flipped)}>
+                <div className={`${styles.flashcardInner} ${flipped ? styles.flipped : ''}`}>
+                    <div className={styles.flashcardFront}>
+                        <div className={styles.flashcardLabel}>Term</div>
+                        <div className={styles.flashcardTerm}>{term}</div>
+                        <div className={styles.flipHint}><IconSparkles size={14} /> Click to flip</div>
+                    </div>
+                    <div className={styles.flashcardBack}>
+                        <div className={styles.flashcardLabel}>Definition</div>
+                        <div className={styles.flashcardDef}>{definition}</div>
                     </div>
                 </div>
             </div>
         );
-    }
+    };
 
     return (
         <div className={styles.pageWrapper}>
@@ -103,51 +103,63 @@ export default function ExamModePage() {
                             <span className={`${styles.examTitleAccent} text-shimmer`}>AI Last Night</span> Prep
                         </h1>
                         <p className={styles.examDesc}>
-                            Configure your syllabus. Our intelligence engine will rapidly generate unit-wise summaries and the most critical questions to secure your grade.
+                            Configure your syllabus. Our intelligence engine will rapidly generate unit-wise summaries, critical PYQ-based questions, and flashcards to secure your grade.
                         </p>
                     </div>
                 </ScrollReveal>
 
                 {/* AI Configuration Engine */}
                 <ScrollReveal delay={100}>
-                    <div className={styles.aiConfigCard} style={{ background: 'var(--bg-card)', padding: '24px', borderRadius: 'var(--radius-xl)', border: '1px solid var(--border)', marginBottom: '32px' }}>
-                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '16px', marginBottom: '20px' }}>
-                            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                                <label style={{ fontSize: '0.875rem', fontWeight: 600, color: 'var(--text-secondary)' }}>Academic Year</label>
-                                <select value={year} onChange={(e) => setYear(e.target.value)} style={{ padding: '12px', borderRadius: 'var(--radius-md)', border: '1px solid var(--border)', background: 'var(--bg-input)', color: 'var(--text-primary)' }}>
+                    <div className={styles.aiConfigCard}>
+                        <div className={styles.configGrid}>
+                            <div className={styles.inputGroup}>
+                                <label className={styles.inputLabel}>Academic Year</label>
+                                <select value={year} onChange={(e) => setYear(e.target.value)} className={styles.selectField}>
                                     <option value="">Select Year...</option>
                                     {YEARS.map(y => <option key={y} value={y}>{y}</option>)}
                                 </select>
                             </div>
-                            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                                <label style={{ fontSize: '0.875rem', fontWeight: 600, color: 'var(--text-secondary)' }}>Engineering Branch</label>
-                                <select value={branch} onChange={(e) => setBranch(e.target.value)} style={{ padding: '12px', borderRadius: 'var(--radius-md)', border: '1px solid var(--border)', background: 'var(--bg-input)', color: 'var(--text-primary)' }}>
+                            <div className={styles.inputGroup}>
+                                <label className={styles.inputLabel}>Engineering Branch</label>
+                                <select value={branch} onChange={(e) => setBranch(e.target.value)} className={styles.selectField}>
                                     <option value="">Select Branch...</option>
                                     {BRANCHES.map(b => <option key={b} value={b}>{b}</option>)}
                                 </select>
                             </div>
-                            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                                <label style={{ fontSize: '0.875rem', fontWeight: 600, color: 'var(--text-secondary)' }}>Subject to Prepare</label>
+                            <div className={styles.inputGroup}>
+                                <label className={styles.inputLabel}>Subject to Prepare</label>
                                 <input 
                                     type="text" 
+                                    list="common-subjects"
                                     value={subject} 
                                     onChange={(e) => setSubject(e.target.value)} 
                                     placeholder="e.g. Distributed Database Systems"
-                                    style={{ padding: '12px', borderRadius: 'var(--radius-md)', border: '1px solid var(--border)', background: 'var(--bg-input)', color: 'var(--text-primary)' }} 
+                                    className={styles.inputField} 
                                 />
+                                <datalist id="common-subjects">
+                                    <option value="Engineering Physics" />
+                                    <option value="Engineering Chemistry" />
+                                    <option value="Engineering Mathematics I" />
+                                    <option value="Engineering Mathematics II" />
+                                    <option value="Engineering Mathematics III" />
+                                    <option value="Data Structures" />
+                                    <option value="Algorithms" />
+                                    <option value="Operating Systems" />
+                                    <option value="Computer Networks" />
+                                    <option value="Database Management Systems" />
+                                    <option value="Software Engineering" />
+                                </datalist>
                             </div>
                         </div>
 
-                        {error && <div style={{ color: 'var(--danger)', marginBottom: '16px', fontSize: '0.875rem', fontWeight: 600 }}>{error}</div>}
+                        {error && <div className={styles.errorMessage}>{error}</div>}
 
                         <button 
                             onClick={generateAIPlan} 
                             disabled={isGenerating}
-                            style={{ 
-                                width: '100%', padding: '14px', borderRadius: 'var(--radius-full)', background: 'var(--primary)', color: 'white', fontWeight: 700, fontSize: '1rem', border: 'none', cursor: isGenerating ? 'not-allowed' : 'pointer', transition: 'all 0.3s ease', display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '8px', opacity: isGenerating ? 0.7 : 1
-                            }}
+                            className={`${styles.generateBtn} ${isGenerating ? styles.generating : ''}`}
                         >
-                            <IconSparkles size={20} />
+                            <IconSparkles size={20} className={isGenerating ? styles.spinIcon : ''} />
                             {isGenerating ? 'Synthesizing Knowledge... Please Wait (up to 15s)' : 'Generate AI Master Plan'}
                         </button>
                     </div>
@@ -159,7 +171,7 @@ export default function ExamModePage() {
                         <div className={styles.tipCard}>
                             <div className={styles.tipTitle}><IconLightbulb size={20} /> Pro Tip</div>
                             <div className={styles.tipText}>
-                                Select your exact year and branch alongside the subject. The AI will cross-reference academic curriculums to formulate precise summaries and predict high-value exam questions tailored for you.
+                                Select your exact year and branch alongside the subject. The AI will cross-reference academic curriculums and Previous Year Question (PYQ) patterns to formulate precise summaries and predict high-value exam questions tailored for you.
                             </div>
                         </div>
                     </ScrollReveal>
@@ -168,40 +180,60 @@ export default function ExamModePage() {
                 {/* Display Generated Plan */}
                 {plan && (
                     <>
-                        <ScrollReveal delay={100}>
-                            <h2 className={styles.sectionTitle}><IconClipboard size={28} /> AI Unit Summaries — {subject}</h2>
-                        </ScrollReveal>
-                        <div className={styles.summaryGrid}>
-                            {plan.summaries.map((s, i) => (
-                                <ScrollReveal key={i} delay={i * 100}>
-                                    <div className={`${styles.summaryCard} ${styles.hoverLift}`}>
-                                        <span className={styles.unitLabel}>{s.unit}</span>
-                                        <h3 className={styles.summaryTitle}>{s.title}</h3>
-                                        <div className={styles.summaryPoints}>
-                                            {s.points.map((p, j) => (
-                                                <div key={j} className={styles.summaryPoint}>{p}</div>
-                                            ))}
-                                        </div>
-                                    </div>
+                        {/* Flashcards Section */}
+                        {plan.flashcards && plan.flashcards.length > 0 && (
+                            <div className={styles.sectionContainer}>
+                                <ScrollReveal delay={100}>
+                                    <h2 className={styles.sectionTitle}><IconSparkles size={28} /> Rapid Review Flashcards</h2>
                                 </ScrollReveal>
-                            ))}
+                                <div className={styles.flashcardGrid}>
+                                    {plan.flashcards.map((fc, i) => (
+                                        <ScrollReveal key={i} delay={i * 50}>
+                                            <Flashcard term={fc.term} definition={fc.definition} />
+                                        </ScrollReveal>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
+
+                        <div className={styles.sectionContainer}>
+                            <ScrollReveal delay={100}>
+                                <h2 className={styles.sectionTitle}><IconClipboard size={28} /> AI Unit Summaries — {subject}</h2>
+                            </ScrollReveal>
+                            <div className={styles.summaryGrid}>
+                                {plan.summaries.map((s, i) => (
+                                    <ScrollReveal key={i} delay={i * 100}>
+                                        <div className={`${styles.summaryCard} ${styles.hoverLift}`}>
+                                            <span className={styles.unitLabel}>{s.unit}</span>
+                                            <h3 className={styles.summaryTitle}>{s.title}</h3>
+                                            <div className={styles.summaryPoints}>
+                                                {s.points.map((p, j) => (
+                                                    <div key={j} className={styles.summaryPoint}>{p}</div>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    </ScrollReveal>
+                                ))}
+                            </div>
                         </div>
 
-                        <ScrollReveal>
-                            <h2 className={styles.sectionTitle} style={{ marginTop: '48px' }}><IconStar size={28} /> High-Probability Questions</h2>
-                        </ScrollReveal>
-                        <div className={styles.questionsGrid}>
-                            {plan.questions.map((q, i) => (
-                                <ScrollReveal key={i} delay={i * 80}>
-                                    <div className={`${styles.questionCard} ${styles.hoverLift}`}>
-                                        <div className={styles.questionNum}>{i + 1}</div>
-                                        <div className={styles.questionContent}>
-                                            <div className={styles.questionText}>{q.q}</div>
-                                            <div className={styles.questionMarks}>{q.marks}</div>
+                        <div className={styles.sectionContainer}>
+                            <ScrollReveal>
+                                <h2 className={styles.sectionTitle}><IconStar size={28} /> High-Probability PYQ Questions</h2>
+                            </ScrollReveal>
+                            <div className={styles.questionsGrid}>
+                                {plan.questions.map((q, i) => (
+                                    <ScrollReveal key={i} delay={i * 80}>
+                                        <div className={`${styles.questionCard} ${styles.hoverLift}`}>
+                                            <div className={styles.questionNum}>{i + 1}</div>
+                                            <div className={styles.questionContent}>
+                                                <div className={styles.questionText}>{q.q}</div>
+                                                <div className={styles.questionMarks}>{q.marks}</div>
+                                            </div>
                                         </div>
-                                    </div>
-                                </ScrollReveal>
-                            ))}
+                                    </ScrollReveal>
+                                ))}
+                            </div>
                         </div>
                     </>
                 )}

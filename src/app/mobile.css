@@ -1,0 +1,102 @@
+/* ═══════════════════════════════════════════════════════════════════════════ */
+/*  MOBILE.CSS — Global mobile overrides (imported after globals.css)        */
+/*  Desktop styles are NEVER touched. This file only activates on ≤768px.    */
+/* ═══════════════════════════════════════════════════════════════════════════ */
+
+/* ── TABLET & PHONE (≤768px) ─────────────────────────────────────────────── */
+@media (max-width: 768px) {
+
+  /* === Navbar is hidden — reset navbar-height to 0 === */
+  :root {
+    --navbar-height: 0px;
+  }
+  .light {
+    --navbar-height: 0px;
+  }
+
+  /* === Kill ALL decorative elements === */
+  [class*="orb"],
+  [class*="Orb"],
+  [class*="heroOrb"],
+  [class*="bgOrb"] {
+    display: none !important;
+  }
+
+  /* === Kill ALL animations on mobile === */
+  *:not(html):not(body):not(main),
+  *::before,
+  *::after {
+    animation: none !important;
+    animation-delay: 0s !important;
+    animation-duration: 0s !important;
+    transition-duration: 0.1s !important;
+    transition-delay: 0s !important;
+  }
+
+  /* === Kill all hover transforms (useless on touch) === */
+  *:hover {
+    transform: none !important;
+  }
+
+  /* === Kill all non-essential decorations === */
+  [class*="shimmer"],
+  [class*="Shimmer"],
+  [class*="cardGlow"],
+  [class*="Glow"]:not(button):not(a),
+  [class*="gradient"]::before,
+  [class*="gradient"]::after {
+    animation: none !important;
+    opacity: 0 !important;
+  }
+
+  /* === ScrollReveal — show immediately, no animation === */
+  .sr-init,
+  .sr-up,
+  .sr-down,
+  .sr-left,
+  .sr-right,
+  .sr-scale {
+    opacity: 1 !important;
+    transform: none !important;
+    min-width: 0 !important;
+    max-width: 100% !important;
+  }
+  .sr-visible {
+    opacity: 1 !important;
+    transform: none !important;
+  }
+
+  /* === Base typography & spacing === */
+  html {
+    -webkit-text-size-adjust: 100%;
+    font-size: 16px;
+  }
+
+  body {
+    padding-bottom: 80px;
+    overflow-x: hidden;
+    background-image: none !important;
+    animation: none !important;
+  }
+
+  /* === Container === */
+  .container {
+    padding: 0 16px;
+    max-width: 100%;
+    overflow-x: hidden;
+  }
+}
+
+/* ── SMALL PHONE (≤480px) ────────────────────────────────────────────────── */
+@media (max-width: 480px) {
+  .container {
+    padding: 0 12px;
+  }
+}
+
+/* ── VERY SMALL PHONE (≤360px) ───────────────────────────────────────────── */
+@media (max-width: 360px) {
+  .container {
+    padding: 0 10px;
+  }
+}

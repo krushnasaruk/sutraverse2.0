@@ -3,13 +3,15 @@
 import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { collection, getDocs, query, where, orderBy, limit, addDoc, onSnapshot, doc, updateDoc } from 'firebase/firestore';
-import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
-import { db, storage } from '@/lib/firebase';
+import { db } from '@/lib/firebase';
 import { useAuth } from '@/context/AuthContext';
 import { IconUpload, IconDownload, IconStar, IconFolder, IconNotes, IconPyq, IconAssignment, IconLock, IconCalendar } from '@/components/Icons';
 import Webcam from 'react-webcam';
 import jsQR from 'jsqr';
 import { BRANCHES, YEARS, SEMESTERS, COLLEGES, getSubjects } from '@/lib/subjectMap';
+import { getSPPUGrade, calculateSGPA } from '@/lib/sppuGrading';
+import { getUserLevelAndBadges } from '@/lib/points';
+import { getBannerGradient, BANNER_PRESETS } from '@/lib/bannerPresets';
 import styles from './page.module.css';
 
 const MODEL_URL = 'https://cdn.jsdelivr.net/gh/cgarciagl/face-api.js@0.22.2/weights/';
@@ -54,9 +56,11 @@ export default function DashboardPage() {
     const [editYear, setEditYear] = useState('');
     const [editSemester, setEditSemester] = useState('');
     const [editBio, setEditBio] = useState('');
-    const [editTheme, setEditTheme] = useState('purple');
     const [editStudentPhone, setEditStudentPhone] = useState('');
     const [editParentPhone, setEditParentPhone] = useState('');
+    const [editBanner, setEditBanner] = useState('neon');
+    const [editTagline, setEditTagline] = useState('');
+    const [editShowcase, setEditShowcase] = useState([]);
     const [saving, setSaving] = useState(false);
 
     // Avatar Upload State
@@ -93,9 +97,12 @@ export default function DashboardPage() {
     // Deadlines Tracking State
     const [deadlines, setDeadlines] = useState([]);
     const [mySubmissions, setMySubmissions] = useState([]);
+    const [mcqTests, setMcqTests] = useState([]);
+    const [myMcqSubmissions, setMyMcqSubmissions] = useState([]);
     const [submittingAssignment, setSubmittingAssignment] = useState(null);
     const [submissionFile, setSubmissionFile] = useState(null);
     const [submissionProgress, setSubmissionProgress] = useState(0);
+    const [sppuGrades, setSppuGrades] = useState([]);
     const [now, setNow] = useState(new Date());
 
     useEffect(() => {
@@ -145,13 +152,16 @@ export default function DashboardPage() {
             setLoadingUploads(true);
             try {
                 if (!db) throw new Error('Firestore not initialized');
-                const timeout = new Promise((_, reject) => setTimeout(() => reject(new Error('Timeout')), 8000));
-                const fetchPromise = getDocs(collection(db, 'files'));
-                const snapshot = await Promise.race([fetchPromise, timeout]);
+                const timeout = new Promise((_, reject) => setTimeout(() => reject(new Error('Timeout')), 6000));
+                // Only fetch this user's uploads — not the entire collection
+                const userUploadsQ = query(
+                    collection(db, 'files'),
+                    where('uploaderUID', '==', user.uid)
+                );
+                const snapshot = await Promise.race([getDocs(userUploadsQ), timeout]);
                 if (cancelled) return;
-                const data = snapshot.docs
-                    .map(d => ({ id: d.id, ...d.data() }))
-                    .filter(f => f.uploaderUID === user.uid);
+                const data = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
+                // Sort manually to avoid requiring a composite index
                 data.sort((a, b) => (b.createdAt || '').localeCompare(a.createdAt || ''));
                 setUploads(data);
             } catch (error) {
@@ -215,6 +225,18 @@ export default function DashboardPage() {
                 const subList = subSnap.docs.map(d => ({ id: d.id, ...d.data() }));
                 if (!cancelled) setMySubmissions(subList);
 
+                // 1.6.5 Fetch My MCQ Submissions
+                const mcqSubQuery = query(collection(db, 'mcqSubmissions'), where('studentEmail', '==', user.email));
+                const mcqSubSnap = await getDocs(mcqSubQuery);
+                const mcqSubList = mcqSubSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+                if (!cancelled) setMyMcqSubmissions(mcqSubList);
+
+                // 1.7 Fetch SPPU Grades
+                const sppuGradesQ = query(collection(db, 'sppuGrades'), where('studentEmail', '==', user.email));
+                const sppuGradesSnap = await getDocs(sppuGradesQ);
+                const sppuList = sppuGradesSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+                if (!cancelled) setSppuGrades(sppuList);
+
                 // 2. Fetch Announcements
                 const annQuery = query(collection(db, 'announcements'), where('classId', '==', user.classId));
                 const annSnap = await getDocs(annQuery);
@@ -264,9 +286,18 @@ export default function DashboardPage() {
             setDeadlines(upcoming);
         });
 
+        // 1.6 Listen for Live MCQ Tests
+        const unsubMcq = onSnapshot(query(collection(db, 'mcqTests'), where('classId', '==', user.classId)), (snapshot) => {
+            const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+            const upcoming = data.filter(d => new Date(d.dueDate) > new Date());
+            upcoming.sort((a,b) => new Date(a.dueDate) - new Date(b.dueDate));
+            setMcqTests(upcoming);
+        });
+
         return () => {
             unsub();
             unsubDeadlines();
+            unsubMcq();
         };
     }, [user]);
 
@@ -495,9 +526,11 @@ export default function DashboardPage() {
         setEditYear(user.year || '');
         setEditSemester(user.semester || '');
         setEditBio(user.bio || '');
-        setEditTheme(user.themeAccent || 'purple');
         setEditStudentPhone(user.studentPhone || '');
         setEditParentPhone(user.parentPhone || '');
+        setEditBanner(user.profileBanner || 'neon');
+        setEditTagline(user.profileTagline || '');
+        setEditShowcase(user.showcaseBadges || []);
         setAvatarPreview(null);
         setAvatarFile(null);
         setEditing(true);
@@ -530,12 +563,23 @@ export default function DashboardPage() {
         if (!avatarFile || !user) return null;
         setUploadingAvatar(true);
         try {
-            const ext = avatarFile.name.split('.').pop();
-            const storageRef = ref(storage, `avatars/${user.uid}.${ext}`);
-            await uploadBytes(storageRef, avatarFile);
-            const downloadURL = await getDownloadURL(storageRef);
+            const formData = new FormData();
+            formData.append('file', avatarFile);
+            formData.append('context', 'avatar');
+
+            const res = await fetch('/api/upload', {
+                method: 'POST',
+                body: formData,
+            });
+
+            const data = await res.json();
+
+            if (!res.ok || !data.success) {
+                throw new Error(data.error || 'Avatar upload failed');
+            }
+
             setUploadingAvatar(false);
-            return downloadURL;
+            return data.fileURL;
         } catch (err) {
             console.error('Avatar upload failed:', err);
             setUploadingAvatar(false);
@@ -586,8 +630,10 @@ export default function DashboardPage() {
                 name: editName,
                 college: editCollege, branch: editBranch, year: editYear,
                 semester: editSemester, subjects: subjects,
-                bio: editBio, themeAccent: editTheme,
+                bio: editBio,
                 studentPhone: editStudentPhone, parentPhone: editParentPhone,
+                profileBanner: editBanner, profileTagline: editTagline,
+                showcaseBadges: editShowcase,
                 profileComplete: true,
             };
 
@@ -638,42 +684,49 @@ export default function DashboardPage() {
         setSubmittingAssignment(deadline.id);
         
         try {
-            const ext = submissionFile.name.split('.').pop();
-            const filename = `submissions/${deadline.id}/${user.uid}_${Date.now()}.${ext}`;
-            const storageRef = ref(storage, filename);
-            const uploadTask = uploadBytesResumable(storageRef, submissionFile);
+            const formData = new FormData();
+            formData.append('file', submissionFile);
+            formData.append('context', 'submission');
+
+            // Simulate progress while uploading
+            let simulatedProgress = 0;
+            const progressInterval = setInterval(() => {
+                simulatedProgress = Math.min(simulatedProgress + Math.random() * 15, 85);
+                setSubmissionProgress(Math.round(simulatedProgress));
+            }, 400);
+
+            const res = await fetch('/api/upload', {
+                method: 'POST',
+                body: formData,
+            });
+
+            clearInterval(progressInterval);
+            setSubmissionProgress(95);
+
+            const data = await res.json();
+
+            if (!res.ok || !data.success) {
+                throw new Error(data.error || 'Submission upload failed');
+            }
+
+            setSubmissionProgress(100);
+
+            const newSub = {
+                deadlineId: deadline.id,
+                studentEmail: user.email,
+                studentName: user.name || 'Anonymous',
+                studentPhone: user.studentPhone || '',
+                parentPhone: user.parentPhone || '',
+                fileUrl: data.fileURL,
+                submittedAt: new Date().toISOString()
+            };
             
-            uploadTask.on('state_changed', 
-                (snapshot) => {
-                    const prog = Math.round((snapshot.bytesTransferred / snapshot.totalBytes) * 100);
-                    setSubmissionProgress(prog);
-                }, 
-                (err) => {
-                    console.error('Submission upload error', err);
-                    setSubmittingAssignment(null);
-                    setSubmissionFile(null);
-                }, 
-                async () => {
-                    const downloadURL = await getDownloadURL(uploadTask.snapshot.ref);
-                    
-                    const newSub = {
-                        deadlineId: deadline.id,
-                        studentEmail: user.email,
-                        studentName: user.name || 'Anonymous',
-                        studentPhone: user.studentPhone || '',
-                        parentPhone: user.parentPhone || '',
-                        fileUrl: downloadURL,
-                        submittedAt: new Date().toISOString()
-                    };
-                    
-                    const docRef = await addDoc(collection(db, 'submissions'), newSub);
-                    setMySubmissions(prev => [...prev, { id: docRef.id, ...newSub }]);
-                    
-                    setSubmittingAssignment(null);
-                    setSubmissionFile(null);
-                    setSubmissionProgress(0);
-                }
-            );
+            const docRef = await addDoc(collection(db, 'submissions'), newSub);
+            setMySubmissions(prev => [...prev, { id: docRef.id, ...newSub }]);
+            
+            setSubmittingAssignment(null);
+            setSubmissionFile(null);
+            setSubmissionProgress(0);
         } catch(e) {
             console.error(e);
             setSubmittingAssignment(null);
@@ -698,85 +751,168 @@ export default function DashboardPage() {
     const totalDownloads = uploads.reduce((sum, u) => sum + (u.downloads || 0), 0);
     const availableSemesters = editYear ? (SEMESTERS[editYear] || []) : [];
 
-    const THEME_GRADIENTS = {
-        purple: 'linear-gradient(135deg, rgba(30, 30, 40, 0.4) 0%, rgba(138, 43, 226, 0.2) 100%)',
-        gold: 'linear-gradient(135deg, rgba(30, 30, 40, 0.4) 0%, rgba(245, 158, 11, 0.2) 100%)',
-        neo: 'linear-gradient(135deg, rgba(30, 30, 40, 0.4) 0%, rgba(0, 229, 255, 0.2) 100%)',
-        crimson: 'linear-gradient(135deg, rgba(30, 30, 40, 0.4) 0%, rgba(255, 0, 127, 0.2) 100%)'
-    };
-
-    const headerStyle = {
-        background: THEME_GRADIENTS[user.themeAccent] || THEME_GRADIENTS.purple,
-    };
-
-    // --- Gamification Logic ---
+    // --- Gamification Logic (Unified) ---
     const userPoints = user.points || 0;
-    let userLevel = 1;
-    let nextLevelPoints = 50;
-    
-    if (userPoints >= 500) { userLevel = 5; nextLevelPoints = 1000; }
-    else if (userPoints >= 250) { userLevel = 4; nextLevelPoints = 500; }
-    else if (userPoints >= 100) { userLevel = 3; nextLevelPoints = 250; }
-    else if (userPoints >= 50) { userLevel = 2; nextLevelPoints = 100; }
-
-    const prevLevelPoints = userLevel === 1 ? 0 : (userLevel === 2 ? 50 : (userLevel === 3 ? 100 : (userLevel === 4 ? 250 : 500)));
-    const levelProgress = Math.min(100, Math.max(0, ((userPoints - prevLevelPoints) / (nextLevelPoints - prevLevelPoints)) * 100));
-
-    const earnedBadges = [];
-    if (uploads.length >= 1) earnedBadges.push({ icon: '🎓', name: 'First Upload', color: '#3b82f6' });
-    if (uploads.length >= 5) earnedBadges.push({ icon: '🔥', name: 'Contributor', color: '#f59e0b' });
-    if (totalDownloads >= 100) earnedBadges.push({ icon: '⭐', name: 'Influencer', color: '#8a2be2' });
-    if (userLevel >= 3) earnedBadges.push({ icon: '🏆', name: 'Veteran', color: '#ff007f' });
+    const gamification = getUserLevelAndBadges(userPoints);
+    const userLevel = gamification.level;
+    const nextLevelPoints = gamification.nextLevelPoints;
+    const levelProgress = gamification.progressToNextLevel;
+    const earnedBadges = gamification.earnedBadges;
+    const currentBadge = gamification.currentBadge;
 
     // Determine ring color
     let ringColor = 'var(--success)';
     if (attendanceStats.percentage < 75) ringColor = 'var(--error)';
     else if (attendanceStats.percentage < 85) ringColor = 'var(--warning)';
 
+    // Aggregate SPPU Grades
+    const subjectGrades = {};
+    sppuGrades.forEach(g => {
+        if (!subjectGrades[g.subject]) {
+            subjectGrades[g.subject] = { totalObtained: 0, totalMax: 0, components: [] };
+        }
+        subjectGrades[g.subject].components.push({ type: g.examType, obtained: g.marksObtained, max: g.maxMarks, date: g.dateRecorded });
+        subjectGrades[g.subject].totalObtained += g.marksObtained;
+        subjectGrades[g.subject].totalMax += g.maxMarks;
+    });
+
+    const sppuSummary = Object.keys(subjectGrades).map(sub => {
+        const data = subjectGrades[sub];
+        const gradeInfo = getSPPUGrade(data.totalObtained, data.totalMax);
+        return { subject: sub, ...data, gradeInfo };
+    });
+
+    const currentSGPA = calculateSGPA(sppuSummary.map(s => s.gradeInfo));
+
     return (
         <div className={styles.pageWrapper}>
             <div className={styles.pageInner}>
                 
-                {/* Header UI - Premium Apple Card Style */}
-                <div className={`${styles.profileHeader} glass-panel`} style={headerStyle}>
-                    <div className={styles.profileAvatar}>
-                        {user.photoURL ? (
-                            <img src={user.photoURL} alt={user.name} referrerPolicy="no-referrer" />
-                        ) : (
-                            <div className={styles.profileAvatarFallback}>
-                                {user.name ? user.name.charAt(0).toUpperCase() : '?'}
-                            </div>
-                        )}
-                        <div className={styles.levelBadge}>LVL {userLevel}</div>
-                        {/* Camera overlay for avatar change */}
-                        <button 
-                            className={styles.avatarEditOverlay}
-                            onClick={() => { startEditing(); setTimeout(() => fileInputRef.current?.click(), 100); }}
-                            title="Change profile photo"
-                        >
-                            📷
-                        </button>
+                {/* ═══ FLOATING ORBS ═══ */}
+                <div className={styles.heroOrb1}></div>
+                <div className={styles.heroOrb2}></div>
+                <div className={styles.heroOrb3}></div>
+
+                {/* ═══ HERO PROFILE SECTION ═══ */}
+                <section className={styles.heroSection} style={{ background: getBannerGradient(user.profileBanner) }}>
+                    <div className={styles.bannerOverlay}></div>
+                    <div className={styles.bannerParticles}>
+                        {[...Array(6)].map((_, i) => (
+                            <div key={i} className={styles.bannerParticle}
+                                style={{ left: `${10 + i * 15}%`, animationDelay: `${i * 0.6}s`, width: `${3 + (i % 3) * 2}px`, height: `${3 + (i % 3) * 2}px` }}
+                            />
+                        ))}
                     </div>
-                    <div className={styles.profileInfo}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
-                            <h1>{user.name}</h1>
-                            <div className={styles.pointsBadge}>⭐ {userPoints} LP</div>
-                            {user.classId && <div className={styles.pointsBadge} style={{ background: 'var(--primary)', color:'white' }}>📘 {user.classId}</div>}
-                        </div>
-                        <p>{user.email}</p>
-                        {user.bio && <p style={{ marginTop: '8px', color: 'var(--text-secondary)', fontStyle: 'italic', maxWidth: '500px' }}>"{user.bio}"</p>}
-                        
-                        <div className={styles.progressContainer}>
-                            <div className={styles.progressHeader}>
-                                <span>Level {userLevel} Progress</span>
-                                <span>{userPoints} / {nextLevelPoints} Points</span>
+                    <div className={styles.heroProfile}>
+                        <div className={styles.heroAvatarRing}>
+                            <svg className={styles.xpRingSvg} viewBox="0 0 120 120">
+                                <circle cx="60" cy="60" r="54" className={styles.xpRingBg} />
+                                <circle cx="60" cy="60" r="54" className={styles.xpRingFill}
+                                    style={{ strokeDasharray: `${(levelProgress / 100) * 339.3} 339.3` }}
+                                />
+                            </svg>
+                            <div className={styles.heroAvatarInner}>
+                                {user.photoURL ? (
+                                    <img src={user.photoURL} alt={user.name} referrerPolicy="no-referrer" className={styles.heroAvatarImg} />
+                                ) : (
+                                    <div className={styles.heroAvatarFallback}>
+                                        {user.name ? user.name.charAt(0).toUpperCase() : '?'}
+                                    </div>
+                                )}
                             </div>
-                            <div className={styles.progressBar}>
-                                <div className={styles.progressFill} style={{ width: `${levelProgress}%` }}></div>
+                            <div className={styles.heroLevelPill}>{currentBadge?.icon} {userLevel}</div>
+                            <button 
+                                className={styles.heroEditBtn}
+                                onClick={() => { startEditing(); setTimeout(() => fileInputRef.current?.click(), 100); }}
+                                title="Change photo"
+                            >📷</button>
+                        </div>
+                        <div className={styles.heroMeta}>
+                            <h1 className={styles.heroName}>{user.name}</h1>
+                            <p className={styles.heroEmail}>{user.email}</p>
+                            {user.bio && <p className={styles.heroBio}>"{user.bio}"</p>}
+                            <div className={styles.heroPills}>
+                                <span className={styles.heroPill}>{currentBadge?.icon} {currentBadge?.name}</span>
+                                <span className={styles.heroPill}>⭐ {userPoints} XP</span>
+                                {user.classId && <span className={styles.heroPillAccent}>📘 {user.classId}</span>}
                             </div>
                         </div>
                     </div>
-                </div>
+
+                    {/* ── XP Progress Bar ── */}
+                    <div className={styles.heroProgressWrap}>
+                        <div className={styles.heroProgressMeta}>
+                            <span>Level {userLevel} → Level {userLevel + 1}</span>
+                            <span>{userPoints} / {nextLevelPoints} XP</span>
+                        </div>
+                        <div className={styles.heroProgressTrack}>
+                            <div className={styles.heroProgressFill} style={{ width: `${levelProgress}%` }}></div>
+                        </div>
+                    </div>
+
+                    {/* ── Stats Strip ── */}
+                    <div className={styles.heroStats}>
+                        <div className={styles.heroStatItem}>
+                            <span className={styles.heroStatNum}>{uploads.length}</span>
+                            <span className={styles.heroStatLabel}>Uploads</span>
+                        </div>
+                        <div className={styles.heroStatDivider}></div>
+                        <div className={styles.heroStatItem}>
+                            <span className={styles.heroStatNum}>{totalDownloads}</span>
+                            <span className={styles.heroStatLabel}>Downloads</span>
+                        </div>
+                        <div className={styles.heroStatDivider}></div>
+                        <div className={styles.heroStatItem}>
+                            <span className={styles.heroStatNum}>{userPoints}</span>
+                            <span className={styles.heroStatLabel}>Total XP</span>
+                        </div>
+                        <div className={styles.heroStatDivider}></div>
+                        <div className={styles.heroStatItem}>
+                            <span className={styles.heroStatNum}>{earnedBadges.length}</span>
+                            <span className={styles.heroStatLabel}>Badges</span>
+                        </div>
+                    </div>
+                </section>
+
+                {/* ═══ QUICK ACCESS DOCK ═══ */}
+                <section className={styles.dockSection}>
+                    <div className={styles.dockGrid}>
+                        {[
+                            { href: '/community', emoji: '💬', label: 'Community', color: '#b91c1c' },
+                            { href: '/leaderboard', emoji: '🏆', label: 'Leaderboard', color: '#FFD700' },
+                            { href: '/subjects', emoji: '📚', label: 'Subjects', color: '#dc2626' },
+                            { href: '/pyqs', emoji: '📄', label: 'PYQs', color: '#16a34a' },
+                            { href: '/assistant', emoji: '🤖', label: 'AI Tutor', color: '#166534' },
+                            { href: `/profile/${user.uid}`, emoji: '👤', label: 'Public Profile', color: '#22c55e' },
+                        ].map(item => (
+                            <Link key={item.href} href={item.href} className={styles.dockItem}>
+                                <div className={styles.dockIcon} style={{ background: `${item.color}15`, color: item.color }}>
+                                    <span>{item.emoji}</span>
+                                </div>
+                                <span className={styles.dockLabel}>{item.label}</span>
+                            </Link>
+                        ))}
+                    </div>
+                </section>
+
+                {/* ═══ TROPHY CASE ═══ */}
+                {earnedBadges.length > 0 && (
+                    <section className={styles.trophySection}>
+                        <div className={styles.trophyHeader}>
+                            <h3 className={styles.trophyTitle}>🏅 Trophy Case</h3>
+                            <span className={styles.trophyCount}>{earnedBadges.length} earned</span>
+                        </div>
+                        <div className={styles.trophyGrid}>
+                            {earnedBadges.map(b => (
+                                <div key={b.id} className={styles.trophyCard}>
+                                    <span className={styles.trophyCardIcon}>{b.icon}</span>
+                                    <span className={styles.trophyCardName}>{b.name}</span>
+                                </div>
+                            ))}
+                        </div>
+                    </section>
+                )}
+
 
                 <div className={styles.bentoGrid}>
 
@@ -809,6 +945,55 @@ export default function DashboardPage() {
                                                 <button onClick={triggerVerification} className={styles.btnVerifyGeo}>Bio-Verify</button>
                                             </div>
                                         )}
+                                    </div>
+                                )}
+
+                                {/* SPPU GRADES MARKSHEET */}
+                                {sppuSummary.length > 0 && (
+                                    <div style={{gridColumn: '1 / -1', marginTop: '16px'}}>
+                                        <div style={{display:'flex', justifyContent:'space-between', alignItems:'flex-end', marginBottom:'12px'}}>
+                                            <h3 className={styles.sectionTitle} style={{fontSize:'1.1rem', color:'var(--primary-light)', margin:0}}>🎓 SPPU Grade Card</h3>
+                                            <div style={{background:'rgba(59, 130, 246, 0.1)', border:'1px solid var(--primary)', padding:'6px 12px', borderRadius:'8px', color:'var(--primary-light)', fontWeight:'bold'}}>
+                                                Estimated SGPA: {currentSGPA.toFixed(2)}
+                                            </div>
+                                        </div>
+                                        <div style={{overflowX: 'auto'}}>
+                                            <table style={{width:'100%', minWidth:'600px', borderCollapse:'collapse', background:'rgba(30, 30, 40, 0.4)', borderRadius:'8px', overflow:'hidden', border:'1px solid var(--border)'}}>
+                                                <thead>
+                                                    <tr style={{background:'rgba(0,0,0,0.3)', borderBottom:'1px solid var(--border)', textAlign:'left'}}>
+                                                        <th style={{padding:'12px 16px', color:'var(--text-secondary)', fontWeight:600}}>Subject</th>
+                                                        <th style={{padding:'12px 16px', color:'var(--text-secondary)', fontWeight:600}}>Breakdown</th>
+                                                        <th style={{padding:'12px 16px', color:'var(--text-secondary)', fontWeight:600}}>Total</th>
+                                                        <th style={{padding:'12px 16px', color:'var(--text-secondary)', fontWeight:600}}>Grade</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                    {sppuSummary.map((sub, idx) => (
+                                                        <tr key={idx} style={{borderBottom:'1px solid rgba(255,255,255,0.05)'}}>
+                                                            <td style={{padding:'16px', fontWeight:'bold', color:'#fff'}}>{sub.subject}</td>
+                                                            <td style={{padding:'16px'}}>
+                                                                <div style={{display:'flex', gap:'8px', flexWrap:'wrap'}}>
+                                                                    {sub.components.map((comp, cIdx) => (
+                                                                        <span key={cIdx} style={{background:'rgba(0,0,0,0.3)', padding:'4px 8px', borderRadius:'4px', fontSize:'0.8rem', border:'1px solid rgba(255,255,255,0.1)'}}>
+                                                                            <span style={{color:'var(--text-secondary)'}}>{comp.type}:</span> {comp.obtained}/{comp.max}
+                                                                        </span>
+                                                                    ))}
+                                                                </div>
+                                                            </td>
+                                                            <td style={{padding:'16px'}}>
+                                                                {sub.totalObtained} / {sub.totalMax}
+                                                            </td>
+                                                            <td style={{padding:'16px'}}>
+                                                                <div style={{display:'inline-flex', alignItems:'center', justifyContent:'center', width:'36px', height:'36px', borderRadius:'8px', background:`${sub.gradeInfo.color}22`, color:sub.gradeInfo.color, fontWeight:'bold', border:`1px solid ${sub.gradeInfo.color}55`}}>
+                                                                    {sub.gradeInfo.grade}
+                                                                </div>
+                                                                <span style={{marginLeft:'8px', fontSize:'0.85rem', color:'var(--text-secondary)'}}>{sub.gradeInfo.points} pts</span>
+                                                            </td>
+                                                        </tr>
+                                                    ))}
+                                                </tbody>
+                                            </table>
+                                        </div>
                                     </div>
                                 )}
 
@@ -895,6 +1080,63 @@ export default function DashboardPage() {
                                                                 })()}
                                                             </div>
                                                         )}
+                                                    </div>
+                                                );
+                                            })}
+                                        </div>
+                                    </div>
+                                )}
+
+                                {/* MCQ TESTS WIDGET */}
+                                {mcqTests.length > 0 && (
+                                    <div style={{gridColumn: '1 / -1', marginTop: '16px'}}>
+                                        <h3 className={styles.sectionTitle} style={{fontSize:'1rem', color:'var(--text-secondary)', marginBottom: '12px'}}>📝 MCQ Tests</h3>
+                                        <div style={{display:'flex', gap:'16px', overflowX:'auto', paddingBottom:'8px'}}>
+                                            {mcqTests.map(test => {
+                                                const mySub = myMcqSubmissions.find(s => s.testId === test.id);
+                                                const diff = new Date(test.dueDate) - now;
+                                                const isCritical = diff < (1000 * 60 * 60 * 24);
+
+                                                return (
+                                                    <div key={test.id} className="glass-panel" style={{
+                                                        minWidth: '280px',
+                                                        padding: '16px',
+                                                        borderLeft: mySub ? '4px solid #22c55e' : isCritical ? '4px solid #ef4444' : '4px solid #3b82f6'
+                                                    }}>
+                                                        <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start'}}>
+                                                            <h4 style={{margin:0, color:'#f8fafc', fontSize: '1.1rem'}}>{test.title}</h4>
+                                                            <div style={{
+                                                                background: isCritical ? 'rgba(239,68,68,0.15)' : 'rgba(59,130,246,0.15)',
+                                                                color: isCritical ? '#ef4444' : '#3b82f6',
+                                                                padding: '4px 8px', borderRadius: '4px', fontSize: '0.85rem', fontWeight: 'bold'
+                                                            }}>
+                                                                {formatCountdown(test.dueDate)}
+                                                            </div>
+                                                        </div>
+                                                        <p style={{margin:'8px 0', fontSize:'0.9rem', color:'#94a3b8'}}>{test.questions?.length} Questions</p>
+                                                        <div style={{fontSize:'0.8rem', color:'#64748b', borderTop: '1px solid var(--border)', paddingTop: '8px', marginTop: '8px'}}>
+                                                            Due: {new Date(test.dueDate).toLocaleString()}
+                                                        </div>
+                                                        <div style={{marginTop: '12px'}}>
+                                                            {mySub ? (
+                                                                <div style={{color: '#22c55e', fontWeight:'bold', fontSize: '1rem'}}>
+                                                                    ✅ Score: {mySub.score} / {mySub.totalQuestions}
+                                                                </div>
+                                                            ) : diff < 0 ? (
+                                                                <div style={{color: '#ef4444'}}>Test Expired</div>
+                                                            ) : (
+                                                                <a href={`/dashboard/mcq/${test.id}`} style={{
+                                                                    display: 'inline-block',
+                                                                    background: '#3b82f6',
+                                                                    color: '#fff',
+                                                                    padding: '8px 16px',
+                                                                    borderRadius: '6px',
+                                                                    textDecoration: 'none',
+                                                                    fontSize: '0.9rem',
+                                                                    fontWeight: 600
+                                                                }}>Start Test →</a>
+                                                            )}
+                                                        </div>
                                                     </div>
                                                 );
                                             })}
@@ -1083,15 +1325,7 @@ export default function DashboardPage() {
                                         <label>Parent Phone</label>
                                         <input type="tel" value={editParentPhone} onChange={(e) => setEditParentPhone(e.target.value)} placeholder="+1987654321" />
                                     </div>
-                                    <div className={styles.editField}>
-                                        <label>ID Card Theme</label>
-                                        <select value={editTheme} onChange={(e) => setEditTheme(e.target.value)}>
-                                            <option value="purple">Midnight Purple</option>
-                                            <option value="neo">Neo Cyan</option>
-                                            <option value="crimson">Crimson Red</option>
-                                            <option value="gold">Royal Gold</option>
-                                        </select>
-                                    </div>
+
                                     <div className={styles.editField}>
                                         <label>College</label>
                                         <select value={editCollege} onChange={(e) => setEditCollege(e.target.value)}>
@@ -1121,6 +1355,65 @@ export default function DashboardPage() {
                                         </select>
                                     </div>
                                 </div>
+
+                                {/* ── Customize Profile ── */}
+                                <div style={{ marginTop: '24px', borderTop: '1px solid rgba(255,255,255,0.1)', paddingTop: '20px' }}>
+                                    <h3 style={{ fontFamily: 'var(--font-heading)', fontWeight: 800, marginBottom: '16px', color: 'var(--text-primary)' }}>🎨 Customize Profile</h3>
+                                    
+                                    <div className={styles.editField} style={{ marginBottom: '16px' }}>
+                                        <label>Profile Tagline</label>
+                                        <input type="text" maxLength={80} value={editTagline} onChange={(e) => setEditTagline(e.target.value)} placeholder="e.g. Aspiring Full Stack Dev 🚀" />
+                                    </div>
+
+
+
+                                    <div style={{ marginBottom: '16px' }}>
+                                        <label style={{ display: 'block', fontWeight: 600, color: 'var(--text-primary)', marginBottom: '8px', fontSize: '0.9rem' }}>Banner Gradient</label>
+                                        <div className={styles.bannerPickerGrid}>
+                                            {BANNER_PRESETS.map(preset => (
+                                                <button
+                                                    key={preset.id}
+                                                    type="button"
+                                                    className={`${styles.bannerSwatch} ${editBanner === preset.id ? styles.bannerSwatchActive : ''}`}
+                                                    style={{ background: preset.gradient }}
+                                                    onClick={() => setEditBanner(preset.id)}
+                                                    title={preset.label}
+                                                >
+                                                    {editBanner === preset.id && <span>✓</span>}
+                                                </button>
+                                            ))}
+                                        </div>
+                                    </div>
+
+                                    {earnedBadges.length > 0 && (
+                                        <div>
+                                            <label style={{ display: 'block', fontWeight: 600, color: 'var(--text-primary)', marginBottom: '8px', fontSize: '0.9rem' }}>Showcase Badges (pick up to 3)</label>
+                                            <div className={styles.badgePickerGrid}>
+                                                {earnedBadges.map(b => {
+                                                    const isSelected = editShowcase.includes(b.id);
+                                                    return (
+                                                        <button
+                                                            key={b.id}
+                                                            type="button"
+                                                            className={`${styles.badgePickerItem} ${isSelected ? styles.badgePickerActive : ''}`}
+                                                            onClick={() => {
+                                                                if (isSelected) {
+                                                                    setEditShowcase(prev => prev.filter(id => id !== b.id));
+                                                                } else if (editShowcase.length < 3) {
+                                                                    setEditShowcase(prev => [...prev, b.id]);
+                                                                }
+                                                            }}
+                                                        >
+                                                            <span style={{ fontSize: '1.5rem' }}>{b.icon}</span>
+                                                            <span style={{ fontSize: '0.72rem', fontWeight: 700 }}>{b.name}</span>
+                                                            {isSelected && <span className={styles.badgePickerCheck}>✓</span>}
+                                                        </button>
+                                                    );
+                                                })}
+                                            </div>
+                                        </div>
+                                    )}
+                                </div>
                             
                             <div className={styles.formGroup} style={{ marginTop: '24px', borderTop: '1px solid rgba(255,255,255,0.1)', paddingTop: '20px' }}>
                                 <h3>Secure Biometrics</h3>
@@ -1134,7 +1427,7 @@ export default function DashboardPage() {
                                         <button type="button" onClick={() => setEnrollmentStatus('restart')} className={styles.btnSecondary} style={{padding:'4px 8px', fontSize:'0.8rem'}}>Re-Enroll</button>
                                     </div>
                                 ) : (
-                                    <div style={{display:'flex', flexDirection:'column', gap:'12px', background:'rgba(0,0,0,0.3)', padding:'16px', borderRadius:'12px', border:'1px solid rgba(0, 229, 255, 0.3)'}}>
+                                    <div style={{display:'flex', flexDirection:'column', gap:'12px', background:'rgba(0,0,0,0.3)', padding:'16px', borderRadius:'12px', border:'1px solid rgba(22, 163, 74, 0.3)'}}>
                                         {(enrollmentStatus === 'loading' || enrollmentStatus === 'acquiring' || enrollmentStatus === 'restart') && (
                                             <div style={{width:'100%', height:'200px', borderRadius:'8px', overflow:'hidden', position:'relative'}}>
                                                 <Webcam audio={false} ref={enrollWebcamRef} screenshotFormat="image/jpeg" videoConstraints={{ facingMode: "user" }} style={{width:'100%', height:'100%', objectFit:'cover'}} />
@@ -1166,7 +1459,7 @@ export default function DashboardPage() {
                         )}
                     </div>
 
-                    {/* Tile 2: Stats & Badges */}
+                    {/* Tile 2: Stats */}
                     <div className={`${styles.bentoTile} glass-panel`} style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
                         <h2 className={styles.sectionTitle} style={{ margin: 0 }}>Metrics</h2>
                         <div className={styles.bentoStats}>
@@ -1184,21 +1477,21 @@ export default function DashboardPage() {
                                     <div className={styles.bentoStatLabel}>Downloads</div>
                                 </div>
                             </div>
-                        </div>
-
-                        {earnedBadges.length > 0 && (
-                            <div style={{ marginTop: 'auto' }}>
-                                <h3 className={styles.bentoStatLabel} style={{ marginBottom: '12px' }}>Earned Trophies</h3>
-                                <div className={styles.badgesWrapper}>
-                                    {earnedBadges.map(badge => (
-                                        <div key={badge.name} className={styles.badgeItem} style={{ borderLeftColor: badge.color }}>
-                                            <span className={styles.badgeIcon}>{badge.icon}</span>
-                                            <span className={styles.badgeName}>{badge.name}</span>
-                                        </div>
-                                    ))}
+                            <div className={styles.bentoStatCard}>
+                                <div className={styles.statIcon}><span style={{ fontSize: '1.2rem' }}>⭐</span></div>
+                                <div>
+                                    <div className={styles.bentoStatNum}>{userPoints}</div>
+                                    <div className={styles.bentoStatLabel}>Total XP</div>
                                 </div>
                             </div>
-                        )}
+                            <div className={styles.bentoStatCard}>
+                                <div className={styles.statIcon}><span style={{ fontSize: '1.2rem' }}>{currentBadge?.icon || '🌱'}</span></div>
+                                <div>
+                                    <div className={styles.bentoStatNum}>Lvl {userLevel}</div>
+                                    <div className={styles.bentoStatLabel}>{currentBadge?.name}</div>
+                                </div>
+                            </div>
+                        </div>
                     </div>
 
                     {/* NEW: Teacher Added Material Tile (if in Roster) */}
@@ -1237,7 +1530,7 @@ export default function DashboardPage() {
                                 <div className={styles.emptySub} style={{ margin: '12px 0 24px', opacity: 0.8 }}>
                                     Your personal repository is currently empty. Upload your first PDF to unlock the <strong style={{ color: 'var(--primary-light)' }}>🎓 Foundation</strong> badge and earn <strong style={{ color: 'var(--accent)' }}>50 Points</strong>!
                                 </div>
-                                <Link href="/upload" className={styles.btnBounty}>
+                                <Link href="/subjects" className={styles.btnBounty}>
                                     Claim Bounty →
                                 </Link>
                             </div>

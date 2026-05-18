@@ -26,7 +26,7 @@ export default function NotFound() {
           <Link href="/" className={styles.primaryBtn}>
             ← Back to Home
           </Link>
-          <Link href="/notes" className={styles.secondaryBtn}>
+          <Link href="/subjects" className={styles.secondaryBtn}>
             Browse Notes
           </Link>
         </div>
@@ -34,7 +34,7 @@ export default function NotFound() {
         <div className={styles.suggestions}>
           <p className={styles.suggestTitle}>Popular destinations:</p>
           <div className={styles.suggestLinks}>
-            <Link href="/notes" className={styles.suggestLink}>📄 Notes</Link>
+            <Link href="/subjects" className={styles.suggestLink}>📄 Subjects</Link>
             <Link href="/pyqs" className={styles.suggestLink}>📖 PYQs</Link>
             <Link href="/community" className={styles.suggestLink}>💬 Community</Link>
             <Link href="/clubs" className={styles.suggestLink}>🏢 Clubs</Link>

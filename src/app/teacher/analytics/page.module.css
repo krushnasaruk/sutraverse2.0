@@ -1,0 +1,51 @@
+@keyframes fadeInUp { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
+
+.analyticsPage { animation: fadeInUp 0.4s ease both; }
+.pageHeader { margin-bottom: 24px; }
+.pageTitle { font-family: var(--font-heading); font-size: 1.5rem; font-weight: 800; color: var(--text-primary); letter-spacing: -0.02em; }
+.pageSubtitle { color: var(--text-muted); font-size: 0.85rem; margin-top: 4px; }
+
+/* KPI Grid */
+.kpiGrid { display: grid; grid-template-columns: repeat(6, 1fr); gap: 14px; margin-bottom: 24px; }
+.kpiCard { background: var(--bg-surface); border: 1px solid var(--border); border-radius: var(--radius-md); padding: 18px; display: flex; flex-direction: column; align-items: center; gap: 4px; transition: all 0.2s; }
+.kpiCard:hover { border-color: var(--border-glow); transform: translateY(-2px); }
+.kpiDanger { border-color: rgba(239,68,68,0.3) !important; background: rgba(239,68,68,0.03); }
+.kpiIcon { font-size: 1.2rem; }
+.kpiVal { font-family: var(--font-heading); font-size: 1.6rem; font-weight: 800; color: var(--text-primary); line-height: 1; }
+.kpiLabel { font-size: 0.65rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-muted); text-align: center; }
+
+/* Chart Card */
+.chartCard { background: var(--bg-surface); border: 1px solid var(--border); border-radius: var(--radius-md); padding: 24px; margin-bottom: 24px; }
+.cardTitle { font-family: var(--font-heading); font-size: 0.95rem; font-weight: 700; margin-bottom: 16px; }
+.chart { width: 100%; height: 240px; display: block; }
+
+/* Distribution */
+.distributionCard { background: var(--bg-surface); border: 1px solid var(--border); border-radius: var(--radius-md); padding: 24px; margin-bottom: 24px; }
+.distBar { display: flex; height: 36px; border-radius: var(--radius-sm); overflow: hidden; border: 1px solid var(--border); }
+.distAbove { background: rgba(16,185,129,0.15); display: flex; align-items: center; justify-content: center; transition: width 0.4s ease; }
+.distAbove span { font-size: 0.72rem; font-weight: 700; color: var(--success); white-space: nowrap; }
+.distBelow { background: rgba(239,68,68,0.1); display: flex; align-items: center; justify-content: center; transition: width 0.4s ease; }
+.distBelow span { font-size: 0.72rem; font-weight: 700; color: var(--error); white-space: nowrap; }
+
+/* Table */
+.tableCard { background: var(--bg-surface); border: 1px solid var(--border); border-radius: var(--radius-md); overflow: hidden; }
+.tableHeader { display: flex; justify-content: space-between; align-items: center; padding: 18px 20px 14px; }
+.sortSelect { padding: 6px 10px; font-size: 0.78rem; border: 1px solid var(--border); border-radius: var(--radius-sm); background: var(--bg-input); color: var(--text-primary); cursor: pointer; }
+.tableWrapper { overflow-x: auto; }
+.table { width: 100%; border-collapse: collapse; }
+.table th { font-size: 0.7rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-muted); padding: 10px 14px; text-align: left; border-bottom: 1px solid var(--border); background: var(--bg-card); }
+.table td { padding: 10px 14px; font-size: 0.85rem; border-bottom: 1px solid var(--border); color: var(--text-primary); vertical-align: middle; }
+.table tbody tr:hover { background: var(--bg-card); }
+.rowDanger { background: rgba(239,68,68,0.03) !important; }
+.rank { font-weight: 700; color: var(--text-muted); font-size: 0.78rem; width: 36px; }
+.nameCell { display: block; font-weight: 600; font-size: 0.85rem; }
+.emailCell { display: block; font-size: 0.72rem; color: var(--text-muted); }
+.pctBar { width: 80px; height: 6px; background: var(--bg-card); border-radius: 3px; overflow: hidden; display: inline-block; vertical-align: middle; margin-right: 8px; }
+.pctFill { height: 100%; border-radius: 3px; transition: width 0.4s ease; }
+.pctText { font-family: var(--font-heading); font-weight: 800; font-size: 0.82rem; }
+
+.emptyState { display: flex; align-items: center; justify-content: center; min-height: 200px; color: var(--text-muted); }
+.loader { display: flex; align-items: center; justify-content: center; padding: 60px; color: var(--text-muted); font-size: 0.9rem; }
+
+@media(max-width:768px){.pageWrapper{padding:12px}.grid,.statsGrid,.kpiGrid{grid-template-columns:1fr}.filterBar{flex-direction:column;align-items:stretch}}
+@media(max-width:480px){.pageWrapper{padding:8px}}

@@ -8,32 +8,8 @@
 }
 
 /* ─── AMBIENT BACKGROUND ORBS ─────────────────────────────────────── */
-.bgOrb1 {
-    position: fixed;
-    top: -180px;
-    right: -200px;
-    width: 550px;
-    height: 550px;
-    border-radius: 50%;
-    background: radial-gradient(circle, rgba(239,68,68,0.12) 0%, transparent 70%);
-    pointer-events: none;
-    z-index: 0;
-    animation: orbFloat1 14s ease-in-out infinite alternate;
-}
-.bgOrb2 {
-    position: fixed;
-    bottom: 10%;
-    left: -150px;
-    width: 500px;
-    height: 500px;
-    border-radius: 50%;
-    background: radial-gradient(circle, rgba(59,130,246,0.10) 0%, transparent 70%);
-    pointer-events: none;
-    z-index: 0;
-    animation: orbFloat2 18s ease-in-out infinite alternate;
-}
-@keyframes orbFloat1 { from { transform: translate(0,0) scale(1); } to { transform: translate(-50px,70px) scale(1.12); } }
-@keyframes orbFloat2 { from { transform: translate(0,0) scale(1); } to { transform: translate(40px,-50px) scale(1.15); } }
+.bgOrb1 { display: none; }
+.bgOrb2 { display: none; }
 
 /* ─── CONTAINER ────────────────────────────────────────────────────── */
 .container {
@@ -43,13 +19,11 @@
     position: relative;
     z-index: 1;
 }
-
 /* ─── HERO SECTION ─────────────────────────────────────────────────── */
 .heroSection {
     text-align: center;
     padding: 20px 0 60px;
 }
-
 .heroBadge {
     display: inline-flex;
     align-items: center;
@@ -75,9 +49,7 @@
 }
 @keyframes pulse {
     0%, 100% { transform: scale(1); opacity: 1; }
-    50% { transform: scale(1.4); opacity: 0.7; }
 }
-
 .heroTitle {
     font-family: var(--font-heading);
     font-size: clamp(2.8rem, 6vw, 5rem);
@@ -85,15 +57,10 @@
     line-height: 1.05;
     letter-spacing: -0.04em;
     margin-bottom: var(--space-lg);
-    background: var(--gradient-text);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
+    color: var(--text-primary);
 }
 .heroAccent {
-    background: linear-gradient(135deg, #ef4444, #f97316, #eab308);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-}
+    color: var(--primary);}
 
 .heroSubtitle {
     font-size: 1.15rem;
@@ -125,10 +92,7 @@
     font-family: var(--font-heading);
     font-size: 1.5rem;
     font-weight: 800;
-    background: linear-gradient(135deg, #ef4444, #f97316);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    line-height: 1;
+    color: var(--primary);line-height: 1;
 }
 .statLbl {
     font-size: 0.72rem;
@@ -154,16 +118,32 @@
     box-shadow: var(--shadow-glass);
     display: flex;
     justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 1rem;
+    align-items: center;
+}
+
+.adminControlsLeft {
+    display: flex;
+    gap: 1rem;
+    align-items: center;
+}
+
+.adminControlsRight {
+    display: flex;
+    gap: 1rem;
+    flex-wrap: wrap;
     align-items: center;
 }
 
 .postNewsBtn {
     display: inline-flex;
     align-items: center;
+    justify-content: center;
     gap: 6px;
     background: linear-gradient(135deg, #ef4444, #f97316);
     color: white;
-    padding: 12px 28px;
+    padding: 12px 24px;
     border-radius: var(--radius-full);
     border: none;
     font-family: var(--font-heading);
@@ -175,6 +155,7 @@
     white-space: nowrap;
     position: relative;
     overflow: hidden;
+    box-sizing: border-box;
 }
 .postNewsBtn::after {
     content: '';
@@ -233,7 +214,7 @@
 /* ─── NEWS GRID ───────────────────────────────────────────────────── */
 .newsList {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(360px, 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(min(100%, 340px), 1fr));
     gap: var(--space-xl);
     align-items: start;
 }
@@ -325,7 +306,7 @@
 
 .tagEvent {
     background: rgba(34, 211, 238, 0.12);
-    color: #06b6d4;
+    color: #15803d;
     padding: 5px 14px;
     border-radius: var(--radius-full);
     font-size: 0.72rem;
@@ -344,7 +325,7 @@
 
 .tagGeneral {
     background: rgba(59, 130, 246, 0.12);
-    color: #3b82f6;
+    color: #dc2626;
     padding: 5px 14px;
     border-radius: var(--radius-full);
     font-size: 0.72rem;
@@ -460,17 +441,38 @@
 .emptyDesc { color: var(--text-muted); font-size: 1rem; }
 
 /* ─── RESPONSIVE ──────────────────────────────────────────────────── */
-@media (max-width: 768px) {
-    .heroTitle { font-size: 2.5rem; }
-    .statsStrip { padding: 12px 20px; gap: var(--space-lg); }
+@media(max-width:768px) {
+    .pageWrapper { padding-top: 20px; }
+    .container { padding: 0 16px; }
+    .heroTitle { font-size: 2.2rem; }
+    .heroSubtitle { font-size: 1rem; }
+    .statsStrip { padding: 12px 20px; gap: 16px; }
     .statNum { font-size: 1.2rem; }
-    .newsList { grid-template-columns: 1fr; }
+    .filterBar { overflow-x: auto; -webkit-overflow-scrolling: touch; flex-wrap: nowrap; padding-bottom: 4px; }
+    .filterBar::-webkit-scrollbar { display: none; }
+    .newsList { grid-template-columns: 1fr; gap: 16px; }
     .featuredCard { grid-column: 1; }
-    .adminControls { flex-direction: column; gap: var(--space-md); text-align: center; }
-    .postNewsBtn { width: 100%; justify-content: center; }
+    .newsContent { padding: 16px 20px; }
+    .newsTitle { font-size: 1.25rem; }
+    .newsBody { font-size: 0.92rem; line-height: 1.6; }
+    .adminControls { flex-direction: column; gap: 16px; text-align: center; padding: 16px; box-sizing: border-box; }
+    .adminControlsLeft { width: 100%; justify-content: center; text-align: center; }
+    .adminControlsRight { width: 100%; justify-content: center; flex-direction: column; }
+    .postNewsBtn { width: 100%; justify-content: center; white-space: normal; text-align: center; padding: 12px 16px; font-size: 0.9rem; }
 }
-@media (max-width: 480px) {
-    .heroTitle { font-size: 2rem; }
-    .statsStrip { flex-direction: column; gap: var(--space-md); padding: 14px 20px; }
+@media(max-width:480px) {
+    .pageWrapper { padding-top: 12px; }
+    .container { padding: 0 12px; }
+    .heroTitle { font-size: 1.8rem; }
+    .heroSection { padding: 10px 0 24px; }
+    .statsStrip { flex-direction: column; gap: 12px; }
     .statDivider { width: 60px; height: 1px; }
+    .filterChip { padding: 8px 18px; font-size: 0.82rem; }
+    .newsTitle { font-size: 1.15rem; }
+    .newsBody { font-size: 0.88rem; }
 }
+@media(max-width:360px) {
+    .heroTitle { font-size: 1.5rem; }
+    .newsTitle { font-size: 1.05rem; }
+}
+

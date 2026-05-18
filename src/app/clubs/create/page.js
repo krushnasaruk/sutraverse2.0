@@ -105,6 +105,7 @@ export default function CreateClubPage() {
                 supervisorName: supervisorName.trim(),
                 lastActive: 'Just now',
                 featured: false,
+                status: 'pending', // Requires admin approval
                 createdAt: serverTimestamp(),
             };
 
@@ -126,7 +127,8 @@ export default function CreateClubPage() {
                 });
             }
 
-            router.push(`/clubs/${docRef.id}`);
+            alert('Club creation request submitted successfully! An admin will review it shortly.');
+            router.push(`/clubs/manage`);
         } catch (error) {
             console.error('Error creating club:', error);
             alert('Failed to create the club. Please try again.');

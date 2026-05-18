@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useMemo } from 'react';
 import Link from 'next/link';
-import { collection, getDocs } from 'firebase/firestore';
+import { collection, getDocs, query, where, orderBy } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { useAuth } from '@/context/AuthContext';
 import { awardDownloadPoints } from '@/lib/points';
@@ -15,13 +15,13 @@ import styles from './page.module.css';
 const SUBJECTS = [
   { key: 'BEE',                       label: 'Basic Electrical Engineering', short: 'BEE',      emoji: '⚡', color: '#f59e0b', grad: 'linear-gradient(135deg,#f59e0b22,#fbbf2411)' },
   { key: 'Engineering Chemistry',     label: 'Engineering Chemistry',        short: 'Chem',     emoji: '🧪', color: '#10b981', grad: 'linear-gradient(135deg,#10b98122,#34d39911)' },
-  { key: 'Electronics',               label: 'Basic Electronics',            short: 'Elec',     emoji: '📡', color: '#3b82f6', grad: 'linear-gradient(135deg,#3b82f622,#60a5fa11)' },
-  { key: 'Engineering Graphics',      label: 'Engineering Graphics',         short: 'EG',       emoji: '✏️', color: '#8b5cf6', grad: 'linear-gradient(135deg,#8b5cf622,#a78bfa11)' },
+  { key: 'Electronics',               label: 'Basic Electronics',            short: 'Elec',     emoji: '📡', color: '#dc2626', grad: 'linear-gradient(135deg,#dc262622,#ef444411)' },
+  { key: 'Engineering Graphics',      label: 'Engineering Graphics',         short: 'EG',       emoji: '✏️', color: '#b91c1c', grad: 'linear-gradient(135deg,#b91c1c22,#a78bfa11)' },
   { key: 'Engineering Mathematics 1', label: 'Engineering Mathematics I',    short: 'Maths I',  emoji: '📐', color: '#ef4444', grad: 'linear-gradient(135deg,#ef444422,#f8717111)' },
-  { key: 'Engineering Mathematics 2', label: 'Engineering Mathematics II',   short: 'Maths II', emoji: '📏', color: '#ec4899', grad: 'linear-gradient(135deg,#ec489922,#f4728411)' },
-  { key: 'Engineering Mechanics',     label: 'Engineering Mechanics',        short: 'EM',       emoji: '⚙️', color: '#06b6d4', grad: 'linear-gradient(135deg,#06b6d422,#22d3ee11)' },
+  { key: 'Engineering Mathematics 2', label: 'Engineering Mathematics II',   short: 'Maths II', emoji: '📏', color: '#22c55e', grad: 'linear-gradient(135deg,#22c55e22,#f4728411)' },
+  { key: 'Engineering Mechanics',     label: 'Engineering Mechanics',        short: 'EM',       emoji: '⚙️', color: '#15803d', grad: 'linear-gradient(135deg,#15803d22,#16a34a11)' },
   { key: 'Engineering Physics',       label: 'Engineering Physics',          short: 'Physics',  emoji: '🔭', color: '#f97316', grad: 'linear-gradient(135deg,#f9731622,#fb923c11)' },
-  { key: 'PPS',                        label: 'Programming & Problem Solving',short: 'PPS',     emoji: '💻', color: '#22d3ee', grad: 'linear-gradient(135deg,#22d3ee22,#67e8f911)' },
+  { key: 'PPS',                        label: 'Programming & Problem Solving',short: 'PPS',     emoji: '💻', color: '#16a34a', grad: 'linear-gradient(135deg,#16a34a22,#86efac11)' },
 ];
 
 // Extract readable period from filename
@@ -56,9 +56,16 @@ export default function PyqsPage() {
       setLoading(true);
       try {
         if (!db) throw new Error('Firestore not initialized');
+        // Use indexed query — only fetch approved PYQs
+        const pyqQ = query(
+          collection(db, 'files'),
+          where('type', '==', 'PYQ'),
+          where('status', '==', 'approved'),
+          orderBy('createdAt', 'desc')
+        );
         const snap = await Promise.race([
-          getDocs(collection(db, 'files')),
-          new Promise((_, r) => setTimeout(() => r(new Error('Timeout')), 8000)),
+          getDocs(pyqQ),
+          new Promise((_, r) => setTimeout(() => r(new Error('Timeout')), 6000)),
         ]);
         if (cancelled) return;
         const data = snap.docs
@@ -66,12 +73,10 @@ export default function PyqsPage() {
             const f = d.data();
             if (f.subject === 'BE') f.subject = 'BEE';
             return { id: d.id, ...f };
-          })
-          .filter(f => f.type === 'PYQ' && f.status === 'approved');
-        data.sort((a, b) => (b.createdAt || '').localeCompare(a.createdAt || ''));
+          });
         if (!cancelled) setPyqs(data);
-      } catch (e) {
-        console.error(e);
+      } catch (error) {
+        console.warn('Error fetching pyqs:', error);
         if (!cancelled) setPyqs([]);
       }
       if (!cancelled) setLoading(false);
@@ -124,12 +129,24 @@ export default function PyqsPage() {
 
   // ── Actions ────────────────────────────────────────────────────────────────
   const handleDownload = async (item) => {
-    if (!item.fileURL) return;
+    let url = item.fileURL || item.fileUrl;
+    if (!url) return;
+    
+    if (!url.includes('firebasestorage')) {
+      let relativePath = '';
+      if (url.includes('/api/downloads/')) relativePath = url.split('/api/downloads/')[1];
+      else if (url.includes('/uploads/')) relativePath = url.split('/uploads/')[1];
+      else relativePath = url.split('/').pop();
+      
+      relativePath = relativePath.split('?')[0];
+      url = '/api/downloads/' + relativePath;
+    }
+
     try {
       await awardDownloadPoints(item.id, item.uploaderUID, user?.uid);
       setPyqs(prev => prev.map(p => p.id === item.id ? { ...p, downloads: (p.downloads || 0) + 1 } : p));
     } catch (e) { console.warn(e.message); }
-    window.open(item.fileURL, '_blank');
+    window.open(url, '_blank');
   };
 
   // ── Auth gate ──────────────────────────────────────────────────────────────
@@ -235,7 +252,7 @@ export default function PyqsPage() {
                         onClick={() => setActiveSubject(s.key)}
                       >
                         {/* Glow stripe */}
-                        <div className={styles.cardGlow} style={{ background: `linear-gradient(135deg, ${s.color}30, transparent)` }}></div>
+                        <div className={styles.cardGlow} style={{ background: `${s.color}18` }}></div>
                         
                         {/* Top row */}
                         <div className={styles.cardTop}>
@@ -337,7 +354,7 @@ export default function PyqsPage() {
                     <ScrollReveal key={item.id} delay={i * 35}>
                       <div className={styles.paperCard} style={{ '--accent-color': activeMeta?.color }}>
                         {/* Shimmer stripe */}
-                        <div className={styles.paperShimmer} style={{ background: `linear-gradient(135deg, ${activeMeta?.color}12, transparent 60%)` }}></div>
+                        <div className={styles.paperShimmer} style={{ background: `${activeMeta?.color}10` }}></div>
                         
                         <div className={styles.paperHeader}>
                           <div className={styles.paperIcon} style={{ background: `${activeMeta?.color}15`, color: activeMeta?.color }}>

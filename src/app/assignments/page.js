@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useMemo } from 'react';
 import Link from 'next/link';
-import { collection, getDocs, doc, updateDoc, increment } from 'firebase/firestore';
+import { collection, getDocs, doc, updateDoc, increment, query, where, orderBy } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { useAuth } from '@/context/AuthContext';
 import { awardDownloadPoints } from '@/lib/points';
@@ -13,15 +13,15 @@ import styles from './page.module.css';
 
 // Subjects with warm/playful colors
 const SUBJECT_TABS = [
-  { key: 'All',  label: 'All Files',   emoji: '📚', color: '#8b5cf6' },
+  { key: 'All',  label: 'All Files',   emoji: '📚', color: '#b91c1c' },
   { key: 'BEE',  label: 'BEE',         emoji: '⚡', color: '#f59e0b' },
   { key: 'IKS',  label: 'IKS',         emoji: '🕉️', color: '#ef4444' },
-  { key: 'PPS',  label: 'PPS',         emoji: '💻', color: '#06b6d4' },
+  { key: 'PPS',  label: 'PPS',         emoji: '💻', color: '#15803d' },
   { key: 'FPL',  label: 'FPL',         emoji: '🔧', color: '#10b981' },
-  { key: 'Chemistry',               label: 'Chemistry',  emoji: '🧪', color: '#22d3ee' },
+  { key: 'Chemistry',               label: 'Chemistry',  emoji: '🧪', color: '#16a34a' },
   { key: 'Physics',                 label: 'Physics',    emoji: '🔭', color: '#f97316' },
-  { key: 'Engineering Mathematics', label: 'Maths',      emoji: '📐', color: '#ec4899' },
-  { key: 'Engineering Mechanics',   label: 'Mechanics',  emoji: '⚙️', color: '#3b82f6' },
+  { key: 'Engineering Mathematics', label: 'Maths',      emoji: '📐', color: '#22c55e' },
+  { key: 'Engineering Mechanics',   label: 'Mechanics',  emoji: '⚙️', color: '#dc2626' },
 ];
 
 export default function AssignmentsPage() {
@@ -37,17 +37,25 @@ export default function AssignmentsPage() {
       setLoading(true);
       try {
         if (!db) throw new Error('Firestore not init');
+        // Use indexed query — only fetch approved Assignments
+        const assignQ = query(
+          collection(db, 'files'),
+          where('type', '==', 'Assignment'),
+          where('status', '==', 'approved'),
+          orderBy('createdAt', 'desc')
+        );
         const snap = await Promise.race([
-          getDocs(collection(db, 'files')),
-          new Promise((_, r) => setTimeout(() => r(new Error('Timeout')), 8000)),
+          getDocs(assignQ),
+          new Promise((_, r) => setTimeout(() => r(new Error('Timeout')), 6000)),
         ]);
         if (cancelled) return;
         const data = snap.docs
-          .map(d => { const f = d.data(); if (f.subject === 'BE') f.subject = 'BEE'; return { id: d.id, ...f }; })
-          .filter(f => f.type === 'Assignment' && f.status === 'approved');
-        data.sort((a, b) => (b.createdAt || '').localeCompare(a.createdAt || ''));
+          .map(d => { const f = d.data(); if (f.subject === 'BE') f.subject = 'BEE'; return { id: d.id, ...f }; });
         if (!cancelled) setAssignments(data);
-      } catch (e) { console.error(e); if (!cancelled) setAssignments([]); }
+      } catch (error) {
+        console.warn('Error fetching assignments:', error);
+        if (!cancelled) setAssignments([]);
+      }
       if (!cancelled) setLoading(false);
     })();
     return () => { cancelled = true; };
@@ -74,9 +82,21 @@ export default function AssignmentsPage() {
   const totalDownloads = useMemo(() => assignments.reduce((s, a) => s + (a.downloads || 0), 0), [assignments]);
 
   const handleDownload = async (item) => {
-    if (!item.fileURL) return;
+    let url = item.fileURL || item.fileUrl;
+    if (!url) return;
+    
+    if (!url.includes('firebasestorage')) {
+      let relativePath = '';
+      if (url.includes('/api/downloads/')) relativePath = url.split('/api/downloads/')[1];
+      else if (url.includes('/uploads/')) relativePath = url.split('/uploads/')[1];
+      else relativePath = url.split('/').pop();
+      
+      relativePath = relativePath.split('?')[0];
+      url = '/api/downloads/' + relativePath;
+    }
+
     try { await awardDownloadPoints(item.id, item.uploaderUID, user?.uid); setAssignments(prev => prev.map(a => a.id === item.id ? { ...a, downloads: (a.downloads || 0) + 1 } : a)); } catch (e) {}
-    window.open(item.fileURL, '_blank');
+    window.open(url, '_blank');
   };
 
   const handleReport = async (item) => {
@@ -185,18 +205,18 @@ export default function AssignmentsPage() {
               <div className={styles.emptyEmoji}>📂</div>
               <h3>No assignments found</h3>
               <p>Try another subject or search term.</p>
-              <Link href="/upload" className={styles.uploadLink}>Upload one →</Link>
+              <span className={styles.emptyDesc}>Check back later!</span>
             </div>
           ) : (
             <div className={styles.cardGrid}>
               {filtered.map((item, i) => {
                 const subMeta = SUBJECT_TABS.find(t => t.key !== 'All' && (item.subject === t.key || item.subject?.toLowerCase().includes(t.key.toLowerCase())));
-                const accent = subMeta?.color || '#8b5cf6';
+                const accent = subMeta?.color || '#b91c1c';
                 return (
                   <ScrollReveal key={item.id} delay={i * 30}>
                     <div className={styles.card} style={{ '--card-accent': accent }}>
                       {/* Top stripe */}
-                      <div className={styles.cardStripe} style={{ background: `linear-gradient(135deg, ${accent}, ${accent}88)` }}></div>
+                      <div className={styles.cardStripe} style={{ background: accent }}></div>
                       
                       <div className={styles.cardBody}>
                         <div className={styles.cardRow1}>

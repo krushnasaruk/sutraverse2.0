@@ -1,45 +1,53 @@
 'use client';
 
-import { useEffect, useRef, useCallback } from 'react';
+import { useEffect, useRef } from 'react';
 
 /**
- * ScrollReveal - Animates children when they enter the viewport
- * Usage: <ScrollReveal><div>Content</div></ScrollReveal>
+ * ScrollReveal — Device-aware: nice fade+slide on desktop, instant on mobile.
  */
-export function ScrollReveal({ children, delay = 0, direction = 'up', className = '' }) {
+export function ScrollReveal({ children, delay = 0, className = '', style = {} }) {
     const ref = useRef(null);
 
     useEffect(() => {
         const el = ref.current;
         if (!el) return;
 
+        // Skip animation on mobile or reduced-motion
+        const isMobile = window.innerWidth <= 768;
+        const prefersReduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+        if (isMobile || prefersReduced) {
+            el.style.opacity = '1';
+            el.style.transform = 'none';
+            return;
+        }
+
         const observer = new IntersectionObserver(
             ([entry]) => {
                 if (entry.isIntersecting) {
-                    el.classList.add('sr-visible');
+                    el.style.opacity = '1';
+                    el.style.transform = 'translateY(0)';
                     observer.unobserve(el);
                 }
             },
-            { threshold: 0.15, rootMargin: '0px 0px -40px 0px' }
+            { threshold: 0.1 }
         );
 
         observer.observe(el);
         return () => observer.disconnect();
     }, []);
 
-    const directionMap = {
-        up: 'sr-up',
-        down: 'sr-down',
-        left: 'sr-left',
-        right: 'sr-right',
-        scale: 'sr-scale',
-    };
-
     return (
         <div
             ref={ref}
-            className={`sr-init ${directionMap[direction] || 'sr-up'} ${className}`}
-            style={{ transitionDelay: `${delay}ms` }}
+            className={className}
+            style={{
+                opacity: 0,
+                transform: 'translateY(12px)',
+                transition: `opacity 0.4s ease ${delay}ms, transform 0.4s ease ${delay}ms`,
+                willChange: 'auto',
+                ...style
+            }}
         >
             {children}
         </div>
@@ -47,50 +55,16 @@ export function ScrollReveal({ children, delay = 0, direction = 'up', className 
 }
 
 /**
- * TextReveal - Stagger-reveals each word
+ * TextReveal — Renders text directly (no stagger animation).
  */
-export function TextReveal({ text, className = '', tag: Tag = 'span', delay = 0 }) {
-    const ref = useRef(null);
-
-    useEffect(() => {
-        const el = ref.current;
-        if (!el) return;
-
-        const observer = new IntersectionObserver(
-            ([entry]) => {
-                if (entry.isIntersecting) {
-                    el.classList.add('tr-visible');
-                    observer.unobserve(el);
-                }
-            },
-            { threshold: 0.15 }
-        );
-
-        observer.observe(el);
-        return () => observer.disconnect();
-    }, []);
-
-    const words = text.split(' ');
-
-    return (
-        <Tag ref={ref} className={`tr-init ${className}`}>
-            {words.map((word, i) => (
-                <span
-                    key={i}
-                    className="tr-word"
-                    style={{ transitionDelay: `${delay + i * 80}ms` }}
-                >
-                    {word}&nbsp;
-                </span>
-            ))}
-        </Tag>
-    );
+export function TextReveal({ text, className = '', tag: Tag = 'span' }) {
+    return <Tag className={className}>{text}</Tag>;
 }
 
 /**
- * CountUp - Animates a number counting up
+ * CountUp — Shows number directly on mobile, animates on desktop.
  */
-export function CountUp({ end, duration = 2000, suffix = '', className = '' }) {
+export function CountUp({ end, duration = 1200, suffix = '', className = '' }) {
     const ref = useRef(null);
     const counted = useRef(false);
 
@@ -98,8 +72,12 @@ export function CountUp({ end, duration = 2000, suffix = '', className = '' }) {
         const el = ref.current;
         if (!el) return;
 
-        // Reset the counter lock whenever the target 'end' value changes 
-        // This ensures it re-animates when dynamic data finally loads
+        const isMobile = window.innerWidth <= 768;
+        if (isMobile) {
+            el.textContent = end + suffix;
+            return;
+        }
+
         counted.current = false;
 
         const observer = new IntersectionObserver(
@@ -120,7 +98,6 @@ export function CountUp({ end, duration = 2000, suffix = '', className = '' }) {
             const tick = (now) => {
                 const elapsed = now - startTime;
                 const progress = Math.min(elapsed / duration, 1);
-                // ease-out cubic
                 const eased = 1 - Math.pow(1 - progress, 3);
                 const current = Math.round(numericEnd * eased);
 

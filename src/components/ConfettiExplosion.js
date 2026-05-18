@@ -16,7 +16,7 @@ export default function ConfettiExplosion({ active = false }) {
         canvas.height = window.innerHeight;
 
         const colors = [
-            '#8a2be2', '#00e5ff', '#ff007f', '#00fa9a',
+            '#8a2be2', '#16a34a', '#22c55e', '#00fa9a',
             '#ffb142', '#b175ff', '#ff5252', '#ffd700',
         ];
 

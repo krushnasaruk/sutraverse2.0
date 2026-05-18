@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { db } from '@/lib/firebase';
 import { doc, getDoc, collection, addDoc, query, where, orderBy, onSnapshot, serverTimestamp, updateDoc, arrayUnion, arrayRemove, increment } from 'firebase/firestore';
 import { useAuth } from '@/context/AuthContext';
+import { awardCommunityReplyPoints } from '@/lib/points';
 import styles from './page.module.css';
 
 export default function PostPage({ params: paramsPromise }) {
@@ -65,6 +66,7 @@ export default function PostPage({ params: paramsPromise }) {
                 commentsCount: increment(1)
             });
 
+            await awardCommunityReplyPoints(user.uid);
             setNewComment('');
         } catch (error) {
             console.error("Error adding comment:", error);

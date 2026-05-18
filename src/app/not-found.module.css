@@ -68,10 +68,7 @@
   font-size: 8rem;
   font-weight: 900;
   letter-spacing: -0.04em;
-  background: var(--gradient-premium);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
+  color: var(--primary);
   line-height: 1;
   animation: fadeUp 0.7s ease-out both;
 }
@@ -164,13 +161,13 @@
   font-size: 0.95rem;
   border-radius: var(--radius-full);
   text-decoration: none;
-  box-shadow: 0 4px 20px var(--primary-glow);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.15);
   transition: all 0.3s ease;
 }
 
 .primaryBtn:hover {
   transform: translateY(-3px) scale(1.04);
-  box-shadow: 0 8px 30px var(--primary-glow);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.2);
 }
 
 .secondaryBtn {
@@ -241,21 +238,6 @@
 }
 
 /* ── Responsive ── */
-@media (max-width: 768px) {
-  .four { font-size: 5rem; }
-  .zero { width: 80px; height: 80px; }
-  .bookEmoji { font-size: 2.2rem; }
-  .title { font-size: 1.5rem; }
-  .desc { font-size: 0.92rem; }
-  .actions { flex-direction: column; }
-  .primaryBtn, .secondaryBtn { width: 100%; justify-content: center; }
-}
 
-@media (max-width: 480px) {
-  .four { font-size: 4rem; }
-  .zero { width: 65px; height: 65px; }
-  .bookEmoji { font-size: 1.8rem; }
-  .title { font-size: 1.3rem; }
-  .desc { font-size: 0.85rem; }
-  .primaryBtn, .secondaryBtn { padding: 12px 24px; font-size: 0.88rem; }
-}
+@media(max-width:768px){.pageWrapper{padding:calc(var(--navbar-height) + 12px) 16px 100px}}
+@media(max-width:480px){.pageWrapper{padding:calc(var(--navbar-height) + 8px) 12px 100px}}

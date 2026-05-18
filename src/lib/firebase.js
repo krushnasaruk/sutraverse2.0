@@ -30,11 +30,11 @@ try {
   googleProvider = new GoogleAuthProvider();
   googleProvider.setCustomParameters({ prompt: 'select_account' });
 
-  // Initialize Firestore with experimentalForceLongPolling to fix "client offline" issues
-  // This bypasses WebSocket and uses HTTP long-polling instead, which works on all networks
+  // Initialize Firestore with offline persistence for fast cached reads
   db = initializeFirestore(app, {
-    experimentalForceLongPolling: true,
-    useFetchStreams: false,
+    localCache: persistentLocalCache({
+      tabManager: persistentMultipleTabManager()
+    })
   });
 
   storage = getStorage(app);

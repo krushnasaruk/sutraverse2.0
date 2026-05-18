@@ -14,6 +14,7 @@ import {
     increment, getDocs,
 } from 'firebase/firestore';
 import { useAuth } from '@/context/AuthContext';
+import { BANNER_PRESETS } from '@/lib/bannerPresets';
 import styles from './page.module.css';
 
 
@@ -42,6 +43,7 @@ export default function ClubDetailPage({ params: paramsPromise }) {
     const [editJoiningLink, setEditJoiningLink] = useState('');
     const [editWhatsapp, setEditWhatsapp] = useState('');
     const [editEvent, setEditEvent] = useState('');
+    const [editBannerGradient, setEditBannerGradient] = useState('');
     const [saving, setSaving] = useState(false);
 
     const clubId = params.clubId;
@@ -102,6 +104,7 @@ export default function ClubDetailPage({ params: paramsPromise }) {
         setEditJoiningLink(c.joiningLink || '');
         setEditWhatsapp(c.whatsapp || '');
         setEditEvent(c.upcomingEvent || '');
+        setEditBannerGradient(c.bannerGradient || '');
     };
 
     const fetchRealMembers = async (memberIds) => {
@@ -215,12 +218,16 @@ export default function ClubDetailPage({ params: paramsPromise }) {
                 joiningLink: editJoiningLink.trim(),
                 whatsapp: editWhatsapp.trim(),
                 upcomingEvent: editEvent.trim(),
+                bannerGradient: editBannerGradient,
+                gradient: editBannerGradient ? BANNER_PRESETS.find(p => p.id === editBannerGradient)?.gradient || '' : '',
             });
             setClub(prev => ({
                 ...prev,
                 name: editName, description: editDesc, meetSchedule: editMeet,
                 discord: editDiscord, joiningLink: editJoiningLink, whatsapp: editWhatsapp,
                 upcomingEvent: editEvent,
+                bannerGradient: editBannerGradient,
+                gradient: editBannerGradient ? BANNER_PRESETS.find(p => p.id === editBannerGradient)?.gradient || '' : prev.gradient,
             }));
             alert('✅ Club details saved!');
         } catch (err) {
@@ -493,7 +500,7 @@ export default function ClubDetailPage({ params: paramsPromise }) {
                                 };
                                 return getWeight(b) - getWeight(a);
                             }).map((m, i) => {
-                                const colors = ['#3b82f6','#8b5cf6','#ec4899','#10b981','#f59e0b','#06b6d4'];
+                                const colors = ['#dc2626','#b91c1c','#22c55e','#10b981','#f59e0b','#15803d'];
                                 const bg = colors[i % colors.length];
                                 
                                 let role = 'Member';
@@ -534,7 +541,7 @@ export default function ClubDetailPage({ params: paramsPromise }) {
                         <div className={styles.aboutGrid}>
                             {/* Description */}
                             <div className={styles.aboutCard} style={{ gridColumn: '1 / -1' }}>
-                                <div className={styles.aboutCardIcon} style={{ background: 'linear-gradient(135deg, #3b82f6, #06b6d4)' }}>📖</div>
+                                <div className={styles.aboutCardIcon} style={{ background: 'linear-gradient(135deg, #dc2626, #15803d)' }}>📖</div>
                                 <div className={styles.aboutCardTitle}>About the Club</div>
                                 <div className={styles.aboutCardText}>{club.description}</div>
                             </div>
@@ -542,7 +549,7 @@ export default function ClubDetailPage({ params: paramsPromise }) {
                             {/* Tags */}
                             {club.tags?.length > 0 && (
                                 <div className={styles.aboutCard}>
-                                    <div className={styles.aboutCardIcon} style={{ background: 'linear-gradient(135deg, #8b5cf6, #ec4899)' }}>🏷️</div>
+                                    <div className={styles.aboutCardIcon} style={{ background: 'linear-gradient(135deg, #b91c1c, #22c55e)' }}>🏷️</div>
                                     <div className={styles.aboutCardTitle}>Tags & Interests</div>
                                     <div className={styles.aboutTagsRow}>
                                         {club.tags.map(tag => (
@@ -564,7 +571,7 @@ export default function ClubDetailPage({ params: paramsPromise }) {
                             {/* Upcoming event */}
                             {club.upcomingEvent && (
                                 <div className={styles.aboutCard}>
-                                    <div className={styles.aboutCardIcon} style={{ background: 'linear-gradient(135deg, #10b981, #3b82f6)' }}>📅</div>
+                                    <div className={styles.aboutCardIcon} style={{ background: 'linear-gradient(135deg, #10b981, #dc2626)' }}>📅</div>
                                     <div className={styles.aboutCardTitle}>Upcoming Event</div>
                                     <div className={styles.aboutCardText}>{club.upcomingEvent}</div>
                                 </div>
@@ -573,12 +580,12 @@ export default function ClubDetailPage({ params: paramsPromise }) {
                             {/* Join / Links */}
                             {(club.joiningLink || club.discord || club.whatsapp) && (
                                 <div className={styles.aboutCard}>
-                                    <div className={styles.aboutCardIcon} style={{ background: 'linear-gradient(135deg, #5865f2, #06b6d4)' }}>🔗</div>
+                                    <div className={styles.aboutCardIcon} style={{ background: 'linear-gradient(135deg, #5865f2, #15803d)' }}>🔗</div>
                                     <div className={styles.aboutCardTitle}>Join & Connect</div>
                                     <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginTop: 8 }}>
                                         {club.joiningLink && (
                                             <a href={club.joiningLink.startsWith('http') ? club.joiningLink : `https://${club.joiningLink}`}
-                                                target="_blank" rel="noopener noreferrer" className={styles.aboutLinkBtn} style={{ background: 'rgba(59,130,246,0.1)', color: '#3b82f6', borderColor: 'rgba(59,130,246,0.3)' }}>
+                                                target="_blank" rel="noopener noreferrer" className={styles.aboutLinkBtn} style={{ background: 'rgba(220,38,38,0.1)', color: '#dc2626', borderColor: 'rgba(220,38,38,0.3)' }}>
                                                 📋 Registration Form ↗
                                             </a>
                                         )}
@@ -601,7 +608,7 @@ export default function ClubDetailPage({ params: paramsPromise }) {
                             {/* Supervisor */}
                             {club.supervisorName && (
                                 <div className={styles.aboutCard}>
-                                    <div className={styles.aboutCardIcon} style={{ background: 'linear-gradient(135deg, #ec4899, #8b5cf6)' }}>🎓</div>
+                                    <div className={styles.aboutCardIcon} style={{ background: 'linear-gradient(135deg, #22c55e, #b91c1c)' }}>🎓</div>
                                     <div className={styles.aboutCardTitle}>Faculty Supervisor</div>
                                     <div className={styles.aboutCardText}>
                                         <strong>{club.supervisorName}</strong>
@@ -659,6 +666,34 @@ export default function ClubDetailPage({ params: paramsPromise }) {
                             </div>
                             <button className={styles.saveBtn} onClick={handleSave} disabled={saving}>
                                 {saving ? 'Saving...' : '💾 Save Changes'}
+                            </button>
+                        </div>
+
+                        {/* ── APPEARANCE ── */}
+                        <div className={styles.settingsSection}>
+                            <div className={styles.settingsTitle}>🎨 Appearance</div>
+                            <div style={{ marginBottom: '16px' }}>
+                                <label className={styles.label}>Banner Gradient</label>
+                                <div className={styles.bannerPickerGrid}>
+                                    {BANNER_PRESETS.map(preset => (
+                                        <button
+                                            key={preset.id}
+                                            type="button"
+                                            className={`${styles.bannerSwatch} ${editBannerGradient === preset.id ? styles.bannerSwatchActive : ''}`}
+                                            style={{ background: preset.gradient }}
+                                            onClick={() => setEditBannerGradient(preset.id)}
+                                            title={preset.label}
+                                        >
+                                            {editBannerGradient === preset.id && <span>✓</span>}
+                                        </button>
+                                    ))}
+                                </div>
+                                <p style={{ fontSize: '0.78rem', color: 'var(--text-muted)', marginTop: '8px' }}>
+                                    This gradient will be used as the club&apos;s hero banner.
+                                </p>
+                            </div>
+                            <button className={styles.saveBtn} onClick={handleSave} disabled={saving}>
+                                {saving ? 'Saving...' : '💾 Apply Theme'}
                             </button>
                         </div>
 

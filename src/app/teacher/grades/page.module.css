@@ -1,0 +1,205 @@
+.gradesPage {
+    padding: 24px;
+    max-width: 1000px;
+    margin: 0 auto;
+}
+
+.pageHeader {
+    margin-bottom: 24px;
+}
+
+.pageTitle {
+    font-size: 1.8rem;
+    margin: 0 0 8px 0;
+    color: #fff;
+}
+
+.pageSubtitle {
+    color: var(--text-secondary, #9ca3af);
+    margin: 0;
+    font-size: 1rem;
+}
+
+.emptyState {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 60vh;
+    color: var(--text-muted, #6b7280);
+    font-size: 1.2rem;
+}
+
+.controlsCard {
+    background: rgba(30, 30, 40, 0.4);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 12px;
+    padding: 20px;
+    margin-bottom: 24px;
+    backdrop-filter: blur(10px);
+}
+
+.controlsRow {
+    display: flex;
+    gap: 16px;
+    align-items: flex-end;
+    flex-wrap: wrap;
+}
+
+.controlGroup {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    flex: 1;
+    min-width: 200px;
+}
+
+.controlGroup label {
+    font-size: 0.85rem;
+    color: var(--text-secondary, #9ca3af);
+    font-weight: 500;
+}
+
+.select, .input {
+    background: rgba(0, 0, 0, 0.3);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: #fff;
+    padding: 10px 14px;
+    border-radius: 8px;
+    font-size: 0.95rem;
+    outline: none;
+    transition: all 0.2s;
+}
+
+.select:focus, .input:focus {
+    border-color: var(--primary, #dc2626);
+}
+
+.btnPrimary {
+    background: var(--primary, #dc2626);
+    color: #fff;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 8px;
+    font-size: 0.95rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.btnPrimary:hover {
+    background: #b91c1c;
+}
+
+.btnPrimary:disabled {
+    background: #374151;
+    color: #6b7280;
+    cursor: not-allowed;
+}
+
+.tableCard {
+    background: rgba(30, 30, 40, 0.4);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 12px;
+    overflow: hidden;
+    backdrop-filter: blur(10px);
+}
+
+.tableHeader {
+    padding: 16px 20px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.tableTitle {
+    margin: 0;
+    font-size: 1.1rem;
+    color: #fff;
+}
+
+.tableWrapper {
+    width: 100%;
+    overflow-x: auto;
+}
+
+.table {
+    width: 100%;
+    border-collapse: collapse;
+    text-align: left;
+}
+
+.table th {
+    background: rgba(0, 0, 0, 0.2);
+    color: var(--text-secondary, #9ca3af);
+    font-weight: 500;
+    padding: 12px 20px;
+    font-size: 0.85rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.table td {
+    padding: 16px 20px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    color: #e5e7eb;
+}
+
+.table tr:last-child td {
+    border-bottom: none;
+}
+
+.studentInfo {
+    display: flex;
+    flex-direction: column;
+}
+
+.studentName {
+    font-weight: 600;
+    color: #fff;
+}
+
+.studentEmail {
+    font-size: 0.8rem;
+    color: var(--text-secondary, #9ca3af);
+}
+
+.markInputWrapper {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.markInput {
+    width: 80px;
+    background: rgba(0, 0, 0, 0.4);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    color: #fff;
+    padding: 8px 12px;
+    border-radius: 6px;
+    font-size: 0.95rem;
+    text-align: center;
+}
+
+.markInput:focus {
+    outline: none;
+    border-color: var(--primary, #dc2626);
+}
+
+.markMax {
+    color: var(--text-secondary, #9ca3af);
+    font-size: 0.9rem;
+}
+
+.statusMsg {
+    margin: 0;
+    font-size: 0.9rem;
+}
+
+.statusSuccess {
+    color: var(--success, #10b981);
+}
+
+.statusError {
+    color: var(--error, #ef4444);
+}

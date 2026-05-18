@@ -266,7 +266,7 @@
 .tabActive {
     background: var(--primary) !important;
     color: white !important;
-    box-shadow: 0 4px 15px var(--primary-glow);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.15);
 }
 .tabBadge {
     font-size: 0.7rem; font-weight: 700;
@@ -298,7 +298,7 @@
     background: var(--primary); color: white; border: none;
     padding: 10px 24px; border-radius: var(--radius-full);
     font-weight: 700; cursor: pointer; white-space: nowrap;
-    transition: all 0.3s ease; box-shadow: 0 4px 15px var(--primary-glow);
+    transition: all 0.3s ease; box-shadow: 0 2px 8px rgba(0,0,0,0.15);
 }
 .joinPromptBtn:hover:not(:disabled) { transform: translateY(-2px); }
 
@@ -333,10 +333,10 @@
     background: var(--gradient-brand); color: white; border: none;
     padding: 10px 22px; border-radius: var(--radius-full);
     font-family: var(--font-heading); font-weight: 700; font-size: 0.9rem;
-    cursor: pointer; box-shadow: 0 4px 15px var(--primary-glow);
+    cursor: pointer; box-shadow: 0 2px 8px rgba(0,0,0,0.15);
     transition: all 0.3s ease;
 }
-.postBtn:hover:not(:disabled) { transform: translateY(-2px); box-shadow: 0 8px 25px var(--primary-glow); }
+.postBtn:hover:not(:disabled) { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,0.2); }
 .postBtn:disabled { opacity: 0.5; cursor: not-allowed; }
 
 /* ─── ANNOUNCEMENTS ──────────────────────────────────────────────────── */
@@ -351,13 +351,13 @@
 @keyframes cardIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
 .announcementCard:hover { transform: translateX(4px); border-color: var(--primary); }
 
-.pinnedCard { border-color: var(--primary); background: rgba(59,130,246,0.04); }
+.pinnedCard { border-color: var(--primary); background: rgba(220,38,38,0.04); }
 .pinnedBanner {
     display: inline-flex; align-items: center; gap: 6px;
-    background: rgba(59,130,246,0.1); color: var(--primary);
+    background: rgba(220,38,38,0.1); color: var(--primary);
     font-size: 0.72rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.06em;
     padding: 4px 12px; border-radius: var(--radius-full); margin-bottom: var(--space-md);
-    border: 1px solid rgba(59,130,246,0.25);
+    border: 1px solid rgba(220,38,38,0.25);
 }
 .announceHeader { margin-bottom: var(--space-md); }
 .announceAuthorRow { display: flex; align-items: center; gap: var(--space-md); }
@@ -433,8 +433,8 @@
 
 .aboutTagsRow { display: flex; flex-wrap: wrap; gap: 8px; margin-top: var(--space-md); }
 .aboutTag {
-    background: rgba(59,130,246,0.1); color: var(--primary);
-    border: 1px solid rgba(59,130,246,0.25);
+    background: rgba(220,38,38,0.1); color: var(--primary);
+    border: 1px solid rgba(220,38,38,0.25);
     font-size: 0.82rem; font-weight: 600; padding: 6px 16px;
     border-radius: var(--radius-full); transition: all 0.3s ease;
 }
@@ -472,9 +472,9 @@
     background: var(--primary); color: white; border: none;
     padding: 11px 28px; border-radius: var(--radius-full);
     font-weight: 700; cursor: pointer; transition: all 0.3s ease;
-    box-shadow: 0 4px 15px var(--primary-glow);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.15);
 }
-.saveBtn:hover:not(:disabled) { transform: translateY(-2px); box-shadow: 0 8px 25px var(--primary-glow); }
+.saveBtn:hover:not(:disabled) { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,0.2); }
 .saveBtn:disabled { opacity: 0.5; cursor: not-allowed; }
 .dangerZone { border-color: rgba(239,68,68,0.3); }
 .deleteBtn {
@@ -486,6 +486,19 @@
 .deleteBtn:hover:not(:disabled) { background: var(--error); color: white; }
 .deleteBtn:disabled { opacity: 0.4; cursor: not-allowed; }
 
+/* ── Banner Gradient Picker ── */
+.bannerPickerGrid {
+    display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px;
+}
+.bannerSwatch {
+    height: 48px; border-radius: var(--radius-md); border: 2px solid transparent;
+    cursor: pointer; transition: all 0.25s ease; position: relative;
+    display: flex; align-items: center; justify-content: center;
+    color: white; font-weight: 800; font-size: 1rem;
+}
+.bannerSwatch:hover { transform: scale(1.08); box-shadow: 0 6px 20px rgba(0,0,0,0.25); }
+.bannerSwatchActive { border-color: white; box-shadow: 0 0 0 2px var(--primary), 0 6px 20px rgba(0,0,0,0.3); transform: scale(1.05); }
+
 .mockNotice {
     background: rgba(245,158,11,0.1); border: 1px solid rgba(245,158,11,0.3);
     color: #d97706; border-radius: var(--radius-lg);
@@ -493,19 +506,5 @@
     margin-bottom: var(--space-xl);
 }
 
-/* ─── RESPONSIVE ─────────────────────────────────────────────────────── */
-@media (max-width: 768px) {
-    .heroContent { flex-direction: column; }
-    .heroActions { flex-direction: row; flex-wrap: wrap; margin-top: 0; width: 100%; }
-    .heroMetaRow { flex-direction: column; gap: 6px; }
-    .tabs { gap: 2px; }
-    .tab { font-size: 0.8rem; padding: 9px 10px; min-width: 80px; }
-    .memberGrid { grid-template-columns: 1fr; }
-    .aboutGrid { grid-template-columns: 1fr; }
-    .joinPrompt { flex-direction: column; align-items: flex-start; }
-}
-@media (max-width: 480px) {
-    .clubName { font-size: 1.8rem; }
-    .heroActions { flex-direction: column; }
-    .joinBtnLarge, .leaveBtnLarge, .discordBtn, .linkBtn { width: 100%; justify-content: center; }
-}
+@media(max-width:768px){.clubHeader{flex-direction:column;text-align:center}.postsGrid{grid-template-columns:1fr}}
+@media(max-width:480px){.clubName{font-size:1.5rem}}

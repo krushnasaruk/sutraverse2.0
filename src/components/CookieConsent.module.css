@@ -115,7 +115,7 @@
 
 .btnAccept {
   padding: 10px 28px;
-  background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%);
+  background: var(--primary);
   border: none;
   border-radius: 12px;
   color: #fff;
@@ -124,7 +124,7 @@
   font-size: 0.875rem;
   cursor: pointer;
   transition: all 0.3s ease;
-  box-shadow: 0 4px 20px rgba(138, 43, 226, 0.3);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.15);
   position: relative;
   overflow: hidden;
 }
@@ -147,7 +147,7 @@
 
 .btnAccept:hover {
   transform: translateY(-2px);
-  box-shadow: 0 8px 30px rgba(138, 43, 226, 0.5);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.2);
 }
 
 /* ===== RESPONSIVE ===== */

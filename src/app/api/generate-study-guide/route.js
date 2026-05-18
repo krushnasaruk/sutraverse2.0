@@ -18,20 +18,22 @@ export async function POST(req) {
             return NextResponse.json({ error: 'Missing required fields: year, branch, or subject.' }, { status: 400 });
         }
 
-        const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+        const model = genAI.getGenerativeModel({
+            model: "gemini-2.5-flash", });
 
         const prompt = `
         You are an elite academic professor building a study guide for computer science and engineering students.
         The target demographic is a ${year} student studying ${branch} engineering.
         The subject they need to prepare for is: ${subject}.
 
-        Generate a strict JSON structure containing "summaries" and "questions".
+        Generate a strict JSON structure containing "summaries", "questions", and "flashcards".
         
         Requirements:
         1. "summaries" must be an array of exactly 5 items (Unit 1 through Unit 5).
         2. Each unit must have a "unit" string (e.g., "Unit 1"), a concise "title" string, and an array of 4 to 6 "points" (bullet points mapping out the most critical sub-topics).
-        3. "questions" must be an array of 8 to 10 highly frequent, important exam questions across the units.
+        3. "questions" must be an array of 8 to 10 highly frequent, important exam questions across the units. You MUST consider common Previous Year Question (PYQ) patterns for this subject to predict what will be asked.
         4. Each question must have a "q" string (the actual question) and a "marks" string (e.g., "5 marks" or "10 marks").
+        5. "flashcards" must be an array of 10 key terms and definitions for rapid review. Each must have a "term" string and a "definition" string.
 
         Return ONLY raw JSON. Do not include markdown blocks like \`\`\`json.
         Example Format:
@@ -41,6 +43,9 @@ export async function POST(req) {
             ],
             "questions": [
                 { "q": "Explain Concept A?", "marks": "10 marks" }
+            ],
+            "flashcards": [
+                { "term": "Concept A", "definition": "A foundational theory..." }
             ]
         }
         `;

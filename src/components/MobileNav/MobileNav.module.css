@@ -10,9 +10,9 @@
     bottom: 0;
     left: 0;
     right: 0;
-    z-index: 999;
-    padding: 0 var(--space-sm) var(--space-sm);
-    pointer-events: none;
+    z-index: 9999;
+    padding: 0 8px 8px;
+    padding-bottom: max(8px, env(safe-area-inset-bottom));
   }
 
   .mobileNavInner {
@@ -25,16 +25,12 @@
     border: 1px solid var(--border);
     border-radius: 22px;
     padding: 4px 4px 6px;
-    box-shadow:
-      0 -2px 16px rgba(0,0,0,0.06),
-      0 -8px 32px rgba(0,0,0,0.04),
-      0 0 0 1px rgba(59,130,246,0.05);
-    pointer-events: all;
+    box-shadow: var(--shadow-glass);
     position: relative;
     overflow: visible;
   }
 
-  /* Top gradient accent */
+  /* Top solid accent */
   .mobileNavInner::before {
     content: '';
     position: absolute;
@@ -42,7 +38,7 @@
     left: 20%;
     right: 20%;
     height: 2px;
-    background: linear-gradient(90deg, transparent, var(--primary), var(--secondary), transparent);
+    background: var(--primary);
     border-radius: var(--radius-full);
     opacity: 0.5;
     pointer-events: none;
@@ -103,7 +99,7 @@
     height: 4px;
     border-radius: 50%;
     background: var(--primary);
-    box-shadow: 0 0 8px var(--primary-glow);
+    
     animation: dotPop 0.35s cubic-bezier(0.175, 0.885, 0.32, 1.275);
   }
 
@@ -121,13 +117,11 @@
     width: 50px;
     height: 50px;
     border-radius: 50%;
-    background: var(--gradient-brand);
+    background: var(--primary);
     display: flex;
     align-items: center;
     justify-content: center;
-    box-shadow:
-      0 4px 16px var(--primary-glow),
-      0 0 24px rgba(59,130,246,0.15);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.2);
     transition: all 0.35s cubic-bezier(0.175, 0.885, 0.32, 1.275);
     margin-top: -22px;
     margin-bottom: 2px;
@@ -135,24 +129,14 @@
     position: relative;
   }
 
-  /* Animated ring around upload */
+  /* Solid ring around upload */
   .uploadBubble::before {
     content: '';
     position: absolute;
     inset: -4px;
     border-radius: 50%;
-    border: 2px solid transparent;
-    background: linear-gradient(135deg, var(--primary), var(--secondary)) border-box;
-    -webkit-mask: linear-gradient(#fff 0 0) padding-box, linear-gradient(#fff 0 0);
-    -webkit-mask-composite: xor;
-    mask-composite: exclude;
-    opacity: 0.4;
-    animation: ringPulse 3s ease-in-out infinite;
-  }
-
-  @keyframes ringPulse {
-    0%, 100% { opacity: 0.3; transform: scale(1); }
-    50% { opacity: 0.6; transform: scale(1.05); }
+    border: 2px solid var(--primary);
+    opacity: 0.3;
   }
 
   .uploadBubble .navIcon {

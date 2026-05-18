@@ -30,10 +30,7 @@
 }
 
 .examTitleAccent {
-    background: var(--gradient-brand);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    text-shadow: 0 0 30px var(--primary-glow);
+    background: var(--gradient-brand);text-shadow: none;
 }
 
 .examDesc {
@@ -76,7 +73,7 @@
     background: var(--gradient-brand);
     color: #fff;
     border-color: transparent;
-    box-shadow: 0 4px 20px var(--primary-glow);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.15);
 }
 
 /* Tip Card */
@@ -121,7 +118,7 @@
 /* Summaries Grid */
 .summaryGrid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 320px), 1fr));
     gap: var(--space-xl);
     margin-bottom: var(--space-3xl);
 }
@@ -259,125 +256,218 @@
     text-transform: uppercase;
 }
 
-@media (max-width: 768px) {
-    .pageWrapper {
-        padding: calc(var(--navbar-height) + var(--space-xl)) var(--space-md) 100px;
-    }
-
-    .examTitle {
-        font-size: 2.5rem;
-    }
-
-    .summaryGrid {
-        grid-template-columns: 1fr;
-    }
-
-    .questionCard {
-        padding: var(--space-lg);
-        flex-direction: column;
-        align-items: flex-start;
-        gap: var(--space-sm);
-    }
-
-    .questionNum {
-        text-align: left;
-        font-size: 2rem;
-    }
-
-    .subjectChip {
-        padding: 10px 20px;
-        font-size: 0.88rem;
-    }
+/* Form Layout */
+.aiConfigCard {
+    background: var(--bg-card);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    padding: var(--space-2xl);
+    border-radius: var(--radius-xl);
+    border: 1px solid var(--border);
+    margin-bottom: var(--space-2xl);
+    box-shadow: var(--shadow-lg);
 }
 
-@media (max-width: 480px) {
-    .pageWrapper {
-        padding: calc(var(--navbar-height) + var(--space-lg)) var(--space-sm) 100px;
-    }
-
-    .examIcon {
-        font-size: 2.2rem;
-    }
-
-    .examTitle {
-        font-size: 1.8rem;
-    }
-
-    .examDesc {
-        font-size: 0.95rem;
-    }
-
-    .subjectSelector {
-        gap: var(--space-sm);
-        margin-bottom: var(--space-2xl);
-    }
-
-    .subjectChip {
-        padding: 8px 16px;
-        font-size: 0.82rem;
-    }
-
-    .tipCard {
-        padding: var(--space-lg);
-    }
-
-    .tipTitle {
-        font-size: 1rem;
-    }
-
-    .tipText {
-        font-size: 0.88rem;
-    }
-
-    .sectionTitle {
-        font-size: 1.4rem;
-    }
-
-    .summaryCard {
-        padding: var(--space-lg);
-    }
-
-    .summaryTitle {
-        font-size: 1.15rem;
-    }
-
-    .summaryPoint {
-        font-size: 0.88rem;
-        padding-left: 20px;
-    }
-
-    .questionCard {
-        padding: var(--space-md);
-    }
-
-    .questionNum {
-        font-size: 1.6rem;
-    }
-
-    .questionText {
-        font-size: 1rem;
-    }
-
-    .questionMarks {
-        font-size: 0.7rem;
-    }
+.configGrid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: var(--space-xl);
+    margin-bottom: var(--space-xl);
 }
 
-@media (max-width: 360px) {
-    .examTitle {
-        font-size: 1.5rem;
-    }
+.inputGroup {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-sm);
+}
 
-    .subjectChip {
-        padding: 6px 12px;
-        font-size: 0.75rem;
-    }
+.inputLabel {
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: var(--text-secondary);
+}
 
-    .summaryTitle {
-        font-size: 1rem;
-    }
+.selectField, .inputField {
+    padding: 14px 16px;
+    border-radius: var(--radius-md);
+    border: 1px solid var(--border);
+    background: var(--bg-input);
+    color: var(--text-primary);
+    font-family: inherit;
+    font-size: 1rem;
+    transition: all 0.2s ease;
+}
 
-    .questionNum {
-        font-size: 1.3rem;
-    }
+.selectField:focus, .inputField:focus {
+    outline: none;
+    border-color: var(--primary);
+    box-shadow: 0 0 0 2px rgba(var(--primary-rgb), 0.2);
+}
+
+.errorMessage {
+    color: var(--danger);
+    margin-bottom: var(--space-md);
+    font-size: 0.875rem;
+    font-weight: 600;
+}
+
+.generateBtn {
+    width: 100%;
+    padding: 16px;
+    border-radius: var(--radius-full);
+    background: var(--gradient-brand);
+    color: white;
+    font-weight: 700;
+    font-size: 1.1rem;
+    border: none;
+    cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: var(--space-sm);
+}
+
+.generateBtn:hover:not(:disabled) {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px var(--primary-glow);
+}
+
+.generateBtn:disabled {
+    cursor: not-allowed;
+    opacity: 0.8;
+}
+
+.spinIcon {
+    animation: spin 2s linear infinite;
+}
+
+@keyframes spin {
+    100% { transform: rotate(360deg); }
+}
+
+/* Sections */
+.sectionContainer {
+    margin-top: var(--space-3xl);
+    margin-bottom: var(--space-3xl);
+}
+
+/* Flashcards */
+.flashcardGrid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: var(--space-xl);
+}
+
+.flashcardContainer {
+    perspective: 1000px;
+    width: 100%;
+    height: 220px;
+    cursor: pointer;
+}
+
+.flashcardInner {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    text-align: center;
+    transition: transform 0.6s cubic-bezier(0.4, 0.0, 0.2, 1);
+    transform-style: preserve-3d;
+}
+
+.flashcardInner.flipped {
+    transform: rotateY(180deg);
+}
+
+.flashcardFront, .flashcardBack {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    -webkit-backface-visibility: hidden;
+    backface-visibility: hidden;
+    border-radius: var(--radius-xl);
+    padding: var(--space-xl);
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    box-shadow: var(--shadow-md);
+    border: 1px solid var(--border);
+}
+
+.flashcardFront {
+    background: var(--bg-card);
+}
+
+.flashcardBack {
+    background: var(--gradient-brand);
+    color: white;
+    transform: rotateY(180deg);
+    border: none;
+}
+
+.flashcardLabel {
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    font-weight: 700;
+    opacity: 0.6;
+    margin-bottom: auto;
+}
+
+.flashcardTerm {
+    font-family: var(--font-heading);
+    font-size: 1.5rem;
+    font-weight: 800;
+    color: var(--text-primary);
+}
+
+.flashcardDef {
+    font-size: 1rem;
+    line-height: 1.5;
+    font-weight: 500;
+}
+
+.flipHint {
+    margin-top: auto;
+    font-size: 0.8rem;
+    color: var(--primary);
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    font-weight: 600;
+}
+
+.flashcardBack .flashcardLabel {
+    color: rgba(255,255,255,0.7);
+}
+
+/* RESPONSIVE */
+@media(max-width:768px) {
+    .pageWrapper { padding: 20px 16px 100px; }
+    .examHeader { margin-bottom: 24px; }
+    .examTitle { font-size: 2.2rem; }
+    .examDesc { font-size: 1rem; }
+    .subjectSelector { gap: 8px; margin-bottom: 24px; }
+    .subjectChip { padding: 10px 20px; font-size: 0.9rem; }
+    .tipCard { padding: 16px; }
+    .sectionTitle { font-size: 1.4rem; }
+    .summaryGrid { gap: 16px; }
+    .summaryCard { padding: 16px; }
+    .summaryTitle { font-size: 1.15rem; }
+    .questionCard { padding: 14px 16px; gap: 12px; }
+    .questionNum { font-size: 1.8rem; min-width: 36px; }
+    .questionText { font-size: 1rem; }
+    .flashcardContainer { height: 200px; }
+}
+@media(max-width:480px) {
+    .pageWrapper { padding: 16px 12px 100px; }
+    .examTitle { font-size: 1.8rem; }
+    .subjectChip { padding: 8px 16px; font-size: 0.82rem; }
+    .summaryCard { padding: 14px; }
+    .aiConfigCard { padding: 16px; }
+}
+@media(max-width:360px) {
+    .examTitle { font-size: 1.5rem; }
+    .questionNum { font-size: 1.4rem; min-width: 30px; }
 }

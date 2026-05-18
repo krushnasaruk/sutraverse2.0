@@ -63,7 +63,7 @@
     position: absolute;
     top: 0; left: 0; right: 0;
     height: 4px;
-    background: linear-gradient(90deg, #8b5cf6, #3b82f6, #ec4899);
+    background: linear-gradient(90deg, #b91c1c, #dc2626, #22c55e);
     border-radius: var(--radius-xl) var(--radius-xl) 0 0;
 }
 
@@ -88,7 +88,7 @@
     width: 52px;
     height: 52px;
     border-radius: 50%;
-    background: linear-gradient(135deg, #8b5cf6, #ec4899);
+    background: linear-gradient(135deg, #b91c1c, #22c55e);
     color: white;
     display: flex;
     align-items: center;
@@ -108,7 +108,7 @@
 }
 
 .authorName:hover {
-    color: #8b5cf6;
+    color: #b91c1c;
 }
 
 .postTime {
@@ -152,13 +152,13 @@
 
 .actionBtn:hover {
     background: rgba(139, 92, 246, 0.08);
-    color: #8b5cf6;
+    color: #b91c1c;
     border-color: rgba(139, 92, 246, 0.2);
     transform: translateY(-2px);
 }
 
 .actionBtnLiked {
-    color: #ec4899;
+    color: #22c55e;
     background: rgba(236, 72, 153, 0.08);
     border-color: rgba(236, 72, 153, 0.2);
 }
@@ -203,7 +203,7 @@
     position: absolute;
     top: 0; left: 0; right: 0;
     height: 2px;
-    background: linear-gradient(90deg, #8b5cf6, #3b82f6);
+    background: linear-gradient(90deg, #b91c1c, #dc2626);
     opacity: 0;
     transition: opacity 0.3s ease;
 }
@@ -231,13 +231,13 @@
 
 .commentInput:focus {
     outline: none;
-    border-color: #8b5cf6;
+    border-color: #b91c1c;
     box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.12);
 }
 
 .replyBtn {
     align-self: flex-end;
-    background: linear-gradient(135deg, #8b5cf6, #3b82f6);
+    background: linear-gradient(135deg, #b91c1c, #dc2626);
     color: white;
     border: none;
     padding: 10px 28px;
@@ -285,7 +285,7 @@
     top: 0;
     bottom: 0;
     width: 3px;
-    background: linear-gradient(to bottom, #8b5cf6, #3b82f6);
+    background: linear-gradient(to bottom, #b91c1c, #dc2626);
     border-radius: 3px 0 0 3px;
     opacity: 0;
     transition: opacity 0.3s ease;
@@ -313,7 +313,7 @@
     transition: color 0.2s ease;
 }
 .commentAuthor:hover {
-    color: #8b5cf6;
+    color: #b91c1c;
 }
 
 .commentTime {
@@ -328,3 +328,7 @@
     white-space: pre-wrap;
     word-break: break-word;
 }
+
+@media(max-width:768px){.postCard{padding:20px}.commentsList{gap:12px}}
+@media(max-width:480px){.postCard{padding:16px}.postTitle{font-size:1.3rem}.commentInput{min-height:60px}}
+@media(max-width:360px){.postTitle{font-size:1.1rem}}

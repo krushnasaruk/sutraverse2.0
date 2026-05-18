@@ -34,8 +34,8 @@ function getTypeClass(type) {
 }
 
 const TYPE_CHIPS = [
-  { key: 'All',        label: 'All Types',   emoji: '📚', color: '#8b5cf6' },
-  { key: 'Notes',      label: 'Notes',       emoji: '📝', color: '#3b82f6' },
+  { key: 'All',        label: 'All Types',   emoji: '📚', color: '#b91c1c' },
+  { key: 'Notes',      label: 'Notes',       emoji: '📝', color: '#dc2626' },
   { key: 'PYQ',        label: 'PYQ',         emoji: '📄', color: '#f59e0b' },
   { key: 'Assignment', label: 'Assignments', emoji: '✏️', color: '#10b981' },
 ];
@@ -80,7 +80,7 @@ export default function SubjectsPage() {
         if (cancelled) return;
         const data = snap.docs
           .map(d => { const f = d.data(); if (f.subject === 'BE') f.subject = 'BEE'; return { id: d.id, ...f }; })
-          .filter(f => f.status === 'approved');
+          .filter(f => f.status === 'approved' && f.type === 'Notes');
         data.sort((a, b) => (b.createdAt || '').localeCompare(a.createdAt || ''));
         if (!cancelled) setAllFiles(data);
       } catch (e) { console.error(e); if (!cancelled) setAllFiles([]); }
@@ -99,10 +99,18 @@ export default function SubjectsPage() {
       let raw = (file.subject || 'Other').trim();
       if (raw.toUpperCase() === 'BE') raw = 'BEE';
       const lowerRaw = raw.toLowerCase();
-      const found = subjects.find(vs => {
-        const vsL = vs.toLowerCase();
-        return vsL === lowerRaw || vsL.includes(lowerRaw) || lowerRaw.includes(vsL);
-      });
+      
+      // First try exact match
+      let found = subjects.find(vs => vs.toLowerCase() === lowerRaw);
+      
+      // If no exact match, try substring matching, checking longest subjects first
+      if (!found) {
+        const sortedSubjects = [...subjects].sort((a, b) => b.length - a.length);
+        found = sortedSubjects.find(vs => {
+          const vsL = vs.toLowerCase();
+          return vsL.includes(lowerRaw) || lowerRaw.includes(vsL);
+        });
+      }
       const bucket = found || raw;
       if (!grouped[bucket]) grouped[bucket] = [];
       grouped[bucket].push(file);
@@ -129,12 +137,24 @@ export default function SubjectsPage() {
 
   /* ── Actions ─────────────────────────────────────────────────────────── */
   const handleDownload = async (item) => {
-    if (!item.fileURL) return;
+    let url = item.fileURL || item.fileUrl;
+    if (!url) return;
+    
+    if (!url.includes('firebasestorage')) {
+      let relativePath = '';
+      if (url.includes('/api/downloads/')) relativePath = url.split('/api/downloads/')[1];
+      else if (url.includes('/uploads/')) relativePath = url.split('/uploads/')[1];
+      else relativePath = url.split('/').pop();
+      
+      relativePath = relativePath.split('?')[0];
+      url = '/api/downloads/' + relativePath;
+    }
+
     try {
       await awardDownloadPoints(item.id, item.uploaderUID, user?.uid);
       setAllFiles(prev => prev.map(f => f.id === item.id ? { ...f, downloads: (f.downloads || 0) + 1 } : f));
     } catch (e) { console.warn(e.message); }
-    window.open(item.fileURL, '_blank');
+    window.open(url, '_blank');
   };
 
   const handleReport = async (item) => {
@@ -163,13 +183,13 @@ export default function SubjectsPage() {
 
   /* ── Color accent for active subject ─────────────────────────────────── */
   const SUBJECT_COLORS = [
-    '#8b5cf6', '#f59e0b', '#ef4444', '#06b6d4', '#10b981',
-    '#ec4899', '#3b82f6', '#f97316', '#22d3ee', '#a855f7',
-    '#14b8a6', '#e11d48', '#6366f1', '#84cc16', '#0ea5e9',
+    '#b91c1c', '#f59e0b', '#ef4444', '#15803d', '#10b981',
+    '#22c55e', '#dc2626', '#f97316', '#16a34a', '#166534',
+    '#14b8a6', '#e11d48', '#991b1b', '#84cc16', '#0ea5e9',
   ];
   const activeColor = activeSubject
     ? SUBJECT_COLORS[subjects.indexOf(activeSubject) % SUBJECT_COLORS.length]
-    : '#8b5cf6';
+    : '#b91c1c';
 
   return (
     <div className={styles.pageWrapper}>
@@ -269,14 +289,14 @@ export default function SubjectsPage() {
                   const assignCount = content.filter(f => f.type === 'Assignment').length;
 
                   return (
-                    <ScrollReveal key={subj} delay={i * 60}>
+                    <ScrollReveal key={subj} delay={i * 60} style={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
                       <button
                         className={styles.subjectCard}
                         style={{ '--accent-color': accent }}
                         onClick={() => setActiveSubject(subj)}
                       >
                         {/* Glow stripe */}
-                        <div className={styles.cardGlow} style={{ background: `linear-gradient(135deg, ${accent}30, transparent)` }}></div>
+                        <div className={styles.cardGlow} style={{ background: `${accent}18` }}></div>
 
                         {/* Header */}
                         <div className={styles.subjectCardHeader}>
@@ -304,14 +324,14 @@ export default function SubjectsPage() {
                         ) : (
                           <div className={styles.noContent}>
                             <p>No materials yet</p>
-                            <Link href="/upload" className={styles.uploadLink} onClick={e => e.stopPropagation()}>Be the first to upload →</Link>
+                            <span className={styles.emptyDesc}>Be the first to add notes!</span>
                           </div>
                         )}
 
                         {/* Bottom bar */}
                         <div className={styles.cardBottom}>
                           <div className={styles.typeCounts}>
-                            {noteCount > 0 && <span className={styles.typeCount} style={{ color: '#3b82f6' }}>📝 {noteCount}</span>}
+                            {noteCount > 0 && <span className={styles.typeCount} style={{ color: '#dc2626' }}>📝 {noteCount}</span>}
                             {pyqCount > 0 && <span className={styles.typeCount} style={{ color: '#f59e0b' }}>📄 {pyqCount}</span>}
                             {assignCount > 0 && <span className={styles.typeCount} style={{ color: '#10b981' }}>✏️ {assignCount}</span>}
                             {content.length === 0 && <span className={styles.typeCount}>No files</span>}
@@ -343,24 +363,12 @@ export default function SubjectsPage() {
             {/* Filter Bar */}
             <ScrollReveal delay={100}>
               <div className={styles.drillFilterBar}>
-                <div className={styles.typeChips}>
-                  {TYPE_CHIPS.map(t => (
-                    <button
-                      key={t.key}
-                      className={`${styles.typeChip} ${typeFilter === t.key ? styles.typeChipActive : ''}`}
-                      style={typeFilter === t.key ? { background: activeColor, borderColor: activeColor } : {}}
-                      onClick={() => setTypeFilter(t.key)}
-                    >
-                      {t.emoji} {t.label}
-                    </button>
-                  ))}
-                </div>
                 <div className={styles.searchBox}>
                   <IconSearch size={16} />
                   <input
                     type="text"
                     className={styles.searchInput}
-                    placeholder="Search materials..."
+                    placeholder="Search notes..."
                     value={search}
                     onChange={e => setSearch(e.target.value)}
                   />
@@ -382,17 +390,17 @@ export default function SubjectsPage() {
                 <div style={{ fontSize: '3rem', marginBottom: '16px' }}>🔍</div>
                 <h3>No materials found</h3>
                 <p>Try adjusting the type filter or search term.</p>
-                <Link href="/upload" className={styles.uploadCta}>Upload Material →</Link>
+                <Link href="/subjects" className={styles.uploadCta}>View Subjects →</Link>
               </div>
             ) : (
               <div className={styles.materialGrid}>
                 {drillFiles.map((item, i) => {
                   const chipMeta = TYPE_CHIPS.find(t => t.key === item.type) || TYPE_CHIPS[0];
                   return (
-                    <ScrollReveal key={item.id} delay={i * 35}>
+                    <ScrollReveal key={item.id} delay={i * 35} style={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
                       <div className={styles.materialCard} style={{ '--accent-color': activeColor }}>
                         {/* Shimmer stripe */}
-                        <div className={styles.materialShimmer} style={{ background: `linear-gradient(135deg, ${activeColor}12, transparent 60%)` }}></div>
+                        <div className={styles.materialShimmer} style={{ background: `${activeColor}10` }}></div>
 
                         <div className={styles.materialHeader}>
                           <div className={styles.materialIcon} style={{ background: `${chipMeta.color}15`, color: chipMeta.color }}>

@@ -105,7 +105,7 @@ const Icons = {
 /* ── Spotlight Quick Links ────────────────────── */
 const spotlightLinks = [
     { href: '/', label: 'Home', icon: '🏠', section: 'Pages' },
-    { href: '/notes', label: 'Notes', icon: '📝', section: 'Pages' },
+    { href: '/youtube', label: 'Lectures', icon: '▶️', section: 'Pages' },
     { href: '/subjects', label: 'Subjects', icon: '📚', section: 'Pages' },
     { href: '/pyqs', label: 'Past Year Questions', icon: '📄', section: 'Pages' },
     { href: '/assignments', label: 'Assignments', icon: '📋', section: 'Pages' },
@@ -113,8 +113,9 @@ const spotlightLinks = [
     { href: '/community', label: 'Community', icon: '💬', section: 'Social' },
     { href: '/clubs', label: 'Clubs', icon: '🏢', section: 'Social' },
     { href: '/news', label: 'College News', icon: '📰', section: 'Social' },
+    { href: '/leaderboard', label: 'Leaderboard', icon: '🏆', section: 'Social' },
+    { href: '/upload', label: 'Upload Material', icon: '📤', section: 'Tools' },
     { href: '/assistant', label: 'AI Tutor', icon: '🤖', section: 'Tools' },
-    { href: '/upload', label: 'Upload Resources', icon: '📤', section: 'Tools' },
     { href: '/dashboard', label: 'Dashboard', icon: '📊', section: 'Tools' },
 ];
 
@@ -188,9 +189,12 @@ export default function Navbar() {
     }, [spotlightOpen]);
 
     /* ── Spotlight filtering ── */
-    const filteredLinks = spotlightLinks.filter(link =>
-        link.label.toLowerCase().includes(spotlightQuery.toLowerCase())
-    );
+    const isAdmin = user && (user.isAdmin || ['sutraverse11@gmail.com'].includes(user.email));
+
+    const filteredLinks = spotlightLinks.filter(link => {
+        if (link.adminOnly && !isAdmin) return false;
+        return link.label.toLowerCase().includes(spotlightQuery.toLowerCase());
+    });
 
     /* Group by section */
     const groupedLinks = filteredLinks.reduce((acc, link) => {
@@ -220,7 +224,7 @@ export default function Navbar() {
     const handleSpotlightSearch = (e) => {
         e.preventDefault();
         if (spotlightQuery.trim()) {
-            router.push(`/notes?q=${encodeURIComponent(spotlightQuery.trim())}`);
+            router.push(`/subjects?q=${encodeURIComponent(spotlightQuery.trim())}`);
             setSpotlightOpen(false);
             setSpotlightQuery('');
         }
@@ -228,7 +232,7 @@ export default function Navbar() {
 
     const links = [
         { href: '/', label: 'Home' },
-        { href: '/notes', label: 'Notes' },
+        { href: '/youtube', label: 'Lectures' },
         { href: '/subjects', label: 'Subjects' },
         { href: '/pyqs', label: 'PYQs' },
         { href: '/assignments', label: 'Assignments' },
@@ -248,14 +252,10 @@ export default function Navbar() {
             title: 'Social',
             items: [
                 { href: '/community', label: 'Community', icon: <Icons.MessageCircle /> },
+                { href: '/leaderboard', label: 'Leaderboard', icon: <span>🏆</span> },
                 { href: '/clubs', label: 'Clubs', icon: <Icons.Building /> },
                 { href: '/clubs/manage', label: 'Club Management', icon: <Icons.Settings /> },
                 { href: '/news', label: 'College News', icon: <Icons.Newspaper /> },
-            ]
-        },
-        {
-            items: [
-                { href: '/upload', label: 'Upload Resources', icon: <Icons.UploadCloud /> },
             ]
         }
     ];
@@ -273,32 +273,44 @@ export default function Navbar() {
                     </Link>
 
                     {/* Search Trigger — opens Spotlight */}
-                    <button
-                        className={styles.searchTrigger}
-                        onClick={() => { setSpotlightOpen(true); setSpotlightQuery(''); setSpotlightIndex(0); }}
-                    >
-                        <Icons.Search size={13} />
-                        <span className={styles.searchPlaceholder}>Search anything...</span>
-                        <kbd className={styles.searchKbd}>
-                            <Icons.Command />K
-                        </kbd>
-                    </button>
+                    {pathname !== '/onboarding' && (
+                        <button
+                            className={styles.searchTrigger}
+                            onClick={() => { setSpotlightOpen(true); setSpotlightQuery(''); setSpotlightIndex(0); }}
+                        >
+                            <Icons.Search size={13} />
+                            <span className={styles.searchPlaceholder}>Search anything...</span>
+                            <kbd className={styles.searchKbd}>
+                                <Icons.Command />K
+                            </kbd>
+                        </button>
+                    )}
 
                     {/* Nav Links */}
-                    <div className={styles.navLinks}>
-                        {links.map((link) => (
-                            <Link
-                                key={link.href}
-                                href={link.href}
-                                className={`${styles.navLink} ${pathname === link.href ? styles.navLinkActive : ''}`}
-                            >
-                                {link.label}
-                            </Link>
-                        ))}
-                    </div>
+                    {pathname !== '/onboarding' && (
+                        <div className={styles.navLinks}>
+                            {links.map((link) => (
+                                <Link
+                                    key={link.href}
+                                    href={link.href}
+                                    className={`${styles.navLink} ${pathname === link.href ? styles.navLinkActive : ''}`}
+                                >
+                                    {link.label}
+                                </Link>
+                            ))}
+                        </div>
+                    )}
 
                     {/* Actions */}
                     <div className={styles.navActions}>
+                        {/* Upload Button — visible when logged in */}
+                        {user && pathname !== '/onboarding' && (
+                            <Link href="/upload" className={styles.uploadBtn}>
+                                <Icons.Upload /> Upload
+                            </Link>
+                        )}
+
+                        {/* Theme Toggle — left of profile icon */}
                         <button
                             className={styles.themeToggle}
                             onClick={toggleTheme}
@@ -308,11 +320,6 @@ export default function Navbar() {
                                 {theme === 'light' ? <Icons.Moon /> : <Icons.Sun />}
                             </span>
                         </button>
-
-                        <Link href="/upload" className={styles.uploadBtn}>
-                            <Icons.Upload />
-                            <span>Upload</span>
-                        </Link>
 
                         {user ? (
                             <div className={styles.profileWrapper} ref={menuRef}>
@@ -408,6 +415,17 @@ export default function Navbar() {
                     </div>
                 </div>
             </nav>
+
+            {/* Mobile-only Theme Toggle — visible when navbar is hidden */}
+            <button
+                className={styles.themeToggleMobile}
+                onClick={toggleTheme}
+                title={`Switch to ${theme === 'light' ? 'Dark' : 'Light'} Mode`}
+            >
+                <span className={styles.themeIconWrap}>
+                    {theme === 'light' ? <Icons.Moon /> : <Icons.Sun />}
+                </span>
+            </button>
 
             {/* ── Spotlight / Command Palette ── */}
             {spotlightOpen && (

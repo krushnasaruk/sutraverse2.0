@@ -2,8 +2,9 @@
 
 import { createContext, useContext, useEffect, useState } from 'react';
 import { onAuthStateChanged, signInWithPopup, signOut, createUserWithEmailAndPassword, signInWithEmailAndPassword } from 'firebase/auth';
-import { doc, setDoc, getDoc } from 'firebase/firestore';
+import { doc, setDoc, getDoc, onSnapshot } from 'firebase/firestore';
 import { auth, googleProvider, db } from '@/lib/firebase';
+
 
 const AuthContext = createContext({});
 
@@ -32,50 +33,40 @@ export function AuthProvider({ children }) {
                     setUser(quickUser);
                     setLoading(false);
 
-                    // Then enrich from Firestore in BACKGROUND (non-blocking)
-                    getDoc(doc(db, 'users', firebaseUser.uid))
-                        .then(async (userDoc) => {
-                            let userData = {};
-                            if (userDoc.exists()) {
-                                userData = userDoc.data();
-                            } else {
-                                userData = {
-                                    name: firebaseUser.displayName || '',
-                                    email: firebaseUser.email || '',
-                                    photoURL: firebaseUser.photoURL || '',
-                                    uploads: 0,
-                                    points: 0,
-                                    savedNotes: [],
-                                    createdAt: new Date().toISOString(),
-                                };
-                            }
+                    // Then enrich from Firestore in BACKGROUND with a live listener
+                    const unsubUserDoc = onSnapshot(doc(db, 'users', firebaseUser.uid), async (userDoc) => {
+                        let userData = {};
+                        if (userDoc.exists()) {
+                            userData = userDoc.data();
+                        } else {
+                            userData = {
+                                name: firebaseUser.displayName || '',
+                                email: firebaseUser.email || '',
+                                photoURL: firebaseUser.photoURL || '',
+                                uploads: 0,
+                                points: 0,
+                                savedNotes: [],
+                                profileComplete: false, // Force onboarding
+                                createdAt: new Date().toISOString(),
+                            };
+                            await setDoc(doc(db, 'users', firebaseUser.uid), userData, { merge: true });
+                        }
 
-                            // --- ROSTER AUTO-ASSIGNMENT FEATURE ---
-                            try {
-                                if (firebaseUser.email) {
-                                    const rosterDoc = await getDoc(doc(db, 'roster', firebaseUser.email.toLowerCase()));
-                                    if (rosterDoc.exists()) {
-                                        const rosterData = rosterDoc.data();
-                                        // Merge roster data into userData
-                                        userData.role = rosterData.role || 'student';
-                                        if (rosterData.classId) userData.classId = rosterData.classId;
-                                        if (rosterData.assignments) userData.assignments = rosterData.assignments;
-                                    }
-                                }
-                                
-                                // Save the updated data back to the user's profile
-                                await setDoc(doc(db, 'users', firebaseUser.uid), userData, { merge: true });
-                            } catch (rosterErr) {
-                                console.warn('Failed to fetch from roster:', rosterErr.message);
-                            }
-                            // -------------------------------------
+                        // Set the enriched + live-updated user
+                        setUser(prev => ({ ...prev, uid: firebaseUser.uid, ...userData }));
+                        
+                        // Handle onboarding redirect
+                        if (userData && userData.profileComplete === false && window.location.pathname !== '/onboarding' && window.location.pathname !== '/login' && window.location.pathname !== '/signup') {
+                            window.location.href = '/onboarding';
+                        }
+                    }, (e) => {
+                        console.warn('Firestore live listener failed:', e.message);
+                    });
 
-                            setUser({ uid: firebaseUser.uid, ...userData });
-                        })
-                        .catch((e) => {
-                            console.warn('Firestore enrichment failed (using cached auth):', e.message);
-                            // quickUser already set, so user stays logged in
-                        });
+                    // Cleanup the snapshot listener when Auth state changes or unmounts
+                    return () => {
+                        unsubUserDoc();
+                    };
                 } else {
                     setUser(null);
                     setLoading(false);
@@ -88,6 +79,7 @@ export function AuthProvider({ children }) {
             setLoading(false);
         }
     }, []);
+
 
     const loginWithGoogle = async () => {
         if (!auth) throw new Error("Firebase not configured");
@@ -170,6 +162,7 @@ export function AuthProvider({ children }) {
         if (!auth) return;
         try {
             await signOut(auth);
+
         } catch (error) {
             console.error('Logout failed:', error.message);
         }

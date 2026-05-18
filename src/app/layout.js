@@ -1,11 +1,14 @@
 import './globals.css';
+import './mobile.css';
+import './performance.css';
 import Script from 'next/script';
 import { AuthProvider } from '@/context/AuthContext';
 import { ThemeProvider } from '@/context/ThemeContext';
+import { CollegeProvider } from '@/context/CollegeContext';
 import Navbar from '@/components/Navbar/Navbar';
 import MobileNav from '@/components/MobileNav/MobileNav';
-import CustomCursor from '@/components/CustomCursor';
 import CookieConsent from '@/components/CookieConsent';
+import GlobalBot from '@/components/GlobalBot/GlobalBot';
 
 export const metadata = {
   title: 'Sutras — The Student OS',
@@ -15,8 +18,28 @@ export const metadata = {
 
 export default function RootLayout({ children }) {
   return (
-    <html lang="en">
+    <html lang="en" suppressHydrationWarning>
       <head>
+        {/* Anti-Flash Theme Injector */}
+        <script dangerouslySetInnerHTML={{
+          __html: `
+            (function() {
+              try {
+                var branding = localStorage.getItem('sutra_college_branding');
+                var root = document.documentElement;
+                
+                if (branding) {
+                  var colors = JSON.parse(branding);
+                  root.style.setProperty('--primary', colors.primary);
+                  root.style.setProperty('--secondary', colors.secondary);
+                  root.style.setProperty('--primary-glow', colors.glow);
+                  if (colors.light) root.style.setProperty('--primary-light', colors.light);
+                  if (colors.dark) root.style.setProperty('--primary-dark', colors.dark);
+                }
+              } catch (e) {}
+            })();
+          `
+        }} />
         {/* Google AdSense — Replace ca-pub-XXXXXXXXXXXXXXXX with your real publisher ID */}
         <Script
           async
@@ -27,13 +50,15 @@ export default function RootLayout({ children }) {
       </head>
       <body>
         <ThemeProvider>
-          <AuthProvider>
-            <CustomCursor />
-            <Navbar />
-            <main>{children}</main>
-            <MobileNav />
-            <CookieConsent />
-          </AuthProvider>
+          <CollegeProvider>
+            <AuthProvider>
+              <Navbar />
+              <main>{children}</main>
+              <MobileNav />
+              <CookieConsent />
+              <GlobalBot />
+            </AuthProvider>
+          </CollegeProvider>
         </ThemeProvider>
       </body>
     </html>

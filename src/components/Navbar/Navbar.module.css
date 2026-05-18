@@ -28,7 +28,7 @@
     animation: navSlideIn 0.7s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
-/* Animated gradient highlight on top edge */
+/* Solid accent line on top edge */
 .navbar::before {
     content: '';
     position: absolute;
@@ -36,23 +36,11 @@
     left: 15%;
     right: 15%;
     height: 2px;
-    background: linear-gradient(90deg, transparent 0%, var(--primary) 30%, var(--secondary) 70%, transparent 100%);
+    background: var(--primary);
     border-radius: var(--radius-full);
     pointer-events: none;
     opacity: 0;
     transition: opacity 0.5s ease;
-    animation: gradientShift 4s ease-in-out infinite;
-    background-size: 200% 100%;
-}
-
-.navbarScrolled .navbar::before,
-.navbarScrolled::before {
-    opacity: 1;
-}
-
-@keyframes gradientShift {
-    0%, 100% { background-position: 0% 50%; }
-    50% { background-position: 100% 50%; }
 }
 
 @keyframes navSlideIn {
@@ -72,11 +60,11 @@
     box-shadow:
         0 4px 16px rgba(0,0,0,0.08),
         0 12px 40px rgba(0,0,0,0.06),
-        0 0 0 1px rgba(59,130,246,0.08);
+        0 0 0 1px var(--border-glow);
     height: 52px;
 }
 
-/* Show gradient border on scroll */
+/* Show solid border on scroll */
 .navbarScrolled::before {
     opacity: 0.8;
 }
@@ -87,7 +75,7 @@
     align-items: center;
     justify-content: space-between;
     width: 100%;
-    padding: 0 20px;
+    padding: 0 16px;
     gap: 6px;
 }
 
@@ -109,7 +97,7 @@
 
 .logo:hover .logoIcon {
     transform: rotate(-8deg) scale(1.1);
-    box-shadow: 0 4px 16px var(--primary-glow);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.15);
 }
 
 .logoIcon {
@@ -122,20 +110,19 @@
     justify-content: center;
     color: white;
     transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-    box-shadow: 0 2px 10px var(--primary-glow);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.15);
     position: relative;
 }
 
-/* Subtle glow pulse behind logo */
+/* Subtle highlight behind logo */
 .logoIcon::after {
     content: '';
     position: absolute;
     inset: -4px;
     border-radius: 14px;
-    background: var(--gradient-brand);
-    opacity: 0.15;
+    background: var(--primary);
+    opacity: 0.1;
     z-index: -1;
-    filter: blur(8px);
     transition: opacity 0.3s ease;
 }
 
@@ -211,6 +198,15 @@
     border-radius: var(--radius-full);
     padding: 3px;
     border: 1px solid var(--border);
+    min-width: 0;
+    flex-shrink: 1;
+    overflow-x: auto;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+}
+
+.navLinks::-webkit-scrollbar {
+    display: none;
 }
 
 .navLink {
@@ -235,7 +231,7 @@
     color: #fff;
     background: var(--primary);
     font-weight: 650;
-    box-shadow: 0 2px 8px var(--primary-glow), inset 0 1px 0 rgba(255,255,255,0.15);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.15), inset 0 1px 0 rgba(255,255,255,0.15);
 }
 
 .navLinkActive:hover {
@@ -254,7 +250,7 @@
     flex-shrink: 0;
 }
 
-/* ── Theme Toggle ── */
+/* ── Theme Toggle (inside navbar) ── */
 .themeToggle {
     display: flex;
     align-items: center;
@@ -269,7 +265,11 @@
     cursor: pointer;
     flex-shrink: 0;
     overflow: hidden;
-    position: relative;
+}
+
+/* Mobile-only theme toggle (fixed position, hidden on desktop) */
+.themeToggleMobile {
+    display: none;
 }
 
 .themeIconWrap {
@@ -283,7 +283,7 @@
     background: var(--primary);
     color: #fff;
     border-color: var(--primary);
-    box-shadow: 0 2px 14px var(--primary-glow);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.15);
 }
 
 .themeToggle:hover .themeIconWrap {
@@ -306,7 +306,7 @@
     text-decoration: none;
     position: relative;
     overflow: hidden;
-    box-shadow: 0 2px 12px var(--primary-glow);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.15);
     letter-spacing: 0.01em;
 }
 
@@ -329,7 +329,7 @@
 
 .uploadBtn:hover {
     transform: translateY(-1px) scale(1.04);
-    box-shadow: 0 4px 20px var(--primary-glow), 0 0 10px var(--secondary-glow);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.2);
 }
 
 /* ── Sign In Button ── */
@@ -346,11 +346,11 @@
     transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
     border: none;
     text-decoration: none;
-    box-shadow: 0 2px 12px var(--primary-glow);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.15);
 }
 
 .loginBtn:hover {
-    box-shadow: 0 4px 20px var(--primary-glow);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.15);
     transform: translateY(-1px) scale(1.04);
 }
 
@@ -397,11 +397,7 @@
     position: absolute;
     inset: -3px;
     border-radius: var(--radius-full);
-    border: 2px solid transparent;
-    background: linear-gradient(135deg, var(--primary), var(--secondary)) border-box;
-    -webkit-mask: linear-gradient(#fff 0 0) padding-box, linear-gradient(#fff 0 0);
-    -webkit-mask-composite: xor;
-    mask-composite: exclude;
+    border: 2px solid var(--primary);
     opacity: 0;
     transform: scale(1.1);
     transition: all 0.35s cubic-bezier(0.16, 1, 0.3, 1);
@@ -431,6 +427,8 @@
    ═══════════════════════════════════════════════════ */
 .profileWrapper {
     position: relative;
+    display: flex;
+    align-items: center;
 }
 
 .profileMenu {
@@ -601,7 +599,7 @@
 
 .profileMenuItem:hover .menuItemIcon {
     background: var(--primary-glow);
-    border-color: rgba(59,130,246,0.2);
+    border-color: var(--border-glow);
     color: var(--primary);
 }
 
@@ -805,7 +803,7 @@
 
 .spotlightItemActive .spotlightItemIcon {
     background: var(--primary-glow);
-    border-color: rgba(59,130,246,0.2);
+    border-color: var(--border-glow);
 }
 
 .spotlightItemLabel {
@@ -978,110 +976,53 @@
     font-weight: 700;
     cursor: pointer;
     transition: all 0.3s ease;
-    box-shadow: 0 2px 10px var(--primary-glow);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.15);
 }
 
 .avatarTooltipBtn:hover {
     transform: translateY(-1px) scale(1.04);
-    box-shadow: 0 4px 16px var(--primary-glow);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.15);
 }
 
 /* ═══════════════════════════════════════════════════
-   RESPONSIVE
+   RESPONSIVE — LAPTOP / TABLET
    ═══════════════════════════════════════════════════ */
-@media (max-width: 900px) {
-    .navLinks {
-        display: none;
-    }
-    .searchTrigger {
-        display: none;
-    }
-    .navbar {
-        width: 94%;
-        top: 10px;
-        height: 52px;
-    }
-    .navbarScrolled {
-        height: 48px;
-    }
-    .navInner {
-        padding: 0 14px;
-    }
-    .uploadBtn span {
-        display: none;
-    }
-    .uploadBtn {
-        padding: 7px 11px;
-    }
-    .logoText {
-        font-size: 1.05rem;
-    }
-    .logoIcon {
-        width: 32px;
-        height: 32px;
-    }
-    .avatarTooltip {
-        right: -4px;
-    }
-    .avatarTooltipContent {
-        min-width: 240px;
-        max-width: 280px;
-    }
+@media (max-width: 1250px) and (min-width: 769px) {
+    .navInner { padding: 0 10px; gap: 4px; }
+    .searchPlaceholder, .searchKbd { display: none; }
+    .searchTrigger { max-width: 40px; padding: 8px; justify-content: center; }
+    .navLink { padding: 5px 8px; font-size: 0.72rem; }
+    .logoText { display: none; }
+    .logo { gap: 0; }
+    .themeToggle { width: 30px; height: 30px; }
 }
 
-@media (max-width: 480px) {
+/* ═══════════════════════════════════════════════════
+   RESPONSIVE — MOBILE: HIDE NAVBAR, KEEP THEME TOGGLE
+   ═══════════════════════════════════════════════════ */
+@media (max-width: 768px) {
     .navbar {
-        width: 96%;
-        height: 48px;
-    }
-    .navActions {
-        gap: 6px;
-    }
-    .logoText {
-        font-size: 0.95rem;
-    }
-    .logoIcon {
-        width: 28px;
-        height: 28px;
-        border-radius: 8px;
-    }
-    .logoIcon svg {
-        width: 14px;
-        height: 14px;
-    }
-    .logo {
-        gap: 7px;
+        display: none;
     }
     .themeToggle {
-        width: 30px;
-        height: 30px;
+        display: none;
     }
-    .avatar,
-    .avatar img,
-    .avatarFallback {
-        width: 30px;
-        height: 30px;
-    }
-    .profileMenu {
-        right: -6px;
-        min-width: 230px;
-    }
-    .spotlightModal {
-        width: 95%;
-        border-radius: 16px;
-    }
-    .avatarTooltip {
-        right: -2px;
-    }
-    .avatarTooltipContent {
-        min-width: 220px;
-        max-width: 260px;
-        padding: 14px 16px;
-    }
-    .avatarTooltipText {
-        font-size: 0.78rem;
-    }
-    .avatarTooltipArrow {
-        right: 14px;
+    .themeToggleMobile {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        position: fixed;
+        top: 12px;
+        right: 12px;
+        z-index: 9998;
+        width: 40px;
+        height: 40px;
+        background: var(--bg-surface);
+        border: 1px solid var(--border);
+        border-radius: 50%;
+        box-shadow: var(--shadow-md);
+        color: var(--text-primary);
+        cursor: pointer;
+        overflow: hidden;
     }
 }

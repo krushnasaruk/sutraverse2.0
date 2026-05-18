@@ -6,6 +6,7 @@ import { db } from '@/lib/firebase';
 import { collection, addDoc, query, orderBy, onSnapshot, serverTimestamp, doc, updateDoc, arrayUnion, arrayRemove } from 'firebase/firestore';
 import { useAuth } from '@/context/AuthContext';
 import { ScrollReveal } from '@/components/Animations';
+import { awardCommunityPostPoints } from '@/lib/points';
 import styles from './page.module.css';
 
 export default function CommunityPage() {
@@ -45,6 +46,7 @@ export default function CommunityPage() {
                 likes: [],
                 commentsCount: 0
             });
+            await awardCommunityPostPoints(user.uid);
             setNewPost('');
         } catch (error) {
             console.error("Error adding post:", error);

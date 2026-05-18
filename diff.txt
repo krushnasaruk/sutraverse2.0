@@ -1,0 +1,320 @@
+diff --git a/src/app/teacher/page.js b/src/app/teacher/page.js
+index d60c2c4..83222f2 100644
+--- a/src/app/teacher/page.js
++++ b/src/app/teacher/page.js
+@@ -59,12 +59,35 @@ export default function TeacherDashboard() {
+     const [geoVerifiedStudents, setGeoVerifiedStudents] = useState([]);
+     const [qrToken, setQrToken] = useState('');
+ 
++    // ERP: Defaulters State
++    const [defaulters, setDefaulters] = useState([]);
++
++    // ERP: Workspace State
++    const [equipmentType, setEquipmentType] = useState('Whiteboard Markers');
++    const [equipmentNote, setEquipmentNote] = useState('');
++    
++    // ERP: Scheduler State
++    const [roomBookings, setRoomBookings] = useState([]);
++    const [selectedRoom, setSelectedRoom] = useState('Room 101');
++    const [selectedSession, setSelectedSession] = useState('');
++
+     useEffect(() => {
+         if (!loading) {
+             if (!user) {
+                 router.push('/login');
+             } else if (user.role !== 'teacher') {
+                 router.push('/dashboard');
++            } else {
++                loadClasses();
++                const fetchBookings = async () => {
++                    try {
++                        const snap = await getDocs(query(collection(db, 'roomBookings')));
++                        const list = [];
++                        snap.forEach(d => list.push({id: d.id, ...d.data()}));
++                        setRoomBookings(list);
++                    } catch(e) {}
++                };
++                fetchBookings();
+             }
+         }
+     }, [user, loading, router]);
+@@ -394,6 +417,34 @@ export default function TeacherDashboard() {
+             setDeadlines(data);
+         });
+         
++        // 6. Scan all-time defaulters for ERP Red List
++        const scanDefaulters = async () => {
++            const attQ = query(collection(db, 'attendance'), where('classId', '==', selectedAssignment.classId));
++            const snap = await getDocs(attQ);
++            const totalClasses = snap.size;
++            if (totalClasses < 3) return setDefaulters([]);
++            
++            const stats = {};
++            snap.forEach(d => {
++                const data = d.data();
++                [...(data.presentStudents||[]), ...(data.excusedStudents||[]), ...(data.lateStudents||[])].forEach(email => {
++                    stats[email] = (stats[email] || 0) + 1;
++                });
++            });
++            
++            const studentQ = query(collection(db, 'roster'), where('classId', '==', selectedAssignment.classId), where('role', '==', 'student'));
++            const stuSnap = await getDocs(studentQ);
++            const dList = [];
++            stuSnap.forEach(sDoc => {
++                const s = sDoc.data();
++                const presentDays = stats[s.email] || 0;
++                const percentage = Math.round((presentDays / totalClasses) * 100);
++                if (percentage < 75) dList.push({ ...s, percentage });
++            });
++            setDefaulters(dList.sort((a,b) => a.percentage - b.percentage));
++        };
++        scanDefaulters();
++
+         return () => {
+             unsubSession();
+             unsubscribe();
+@@ -669,6 +720,90 @@ export default function TeacherDashboard() {
+         return { className: styles.statusToggleBtn, text: '—' };
+     };
+ 
++    // -----------------------------------------------------
++    // ERP HANDLERS
++    // -----------------------------------------------------
++    const handleEquipmentRequest = async (e) => {
++        e.preventDefault();
++        setIsSaving(true);
++        try {
++            await addDoc(collection(db, 'equipmentRequests'), {
++                teacherEmail: user.email,
++                teacherName: user.name || user.email,
++                item: equipmentType,
++                note: equipmentNote,
++                status: 'pending',
++                timestamp: new Date().toISOString()
++            });
++            setStatus({ text: `Ticket submitted for ${equipmentType}`, type: 'success' });
++            setEquipmentNote('');
++        } catch (err) {
++            setStatus({ text: 'Error submitting ticket: ' + err.message, type: 'error' });
++        }
++        setIsSaving(false);
++    };
++
++    const handleRoomBooking = async () => {
++        if (!selectedRoom || !selectedSession) return;
++        setIsSaving(true);
++        try {
++            const q = query(collection(db, 'roomBookings'), where('room', '==', selectedRoom), where('session', '==', selectedSession));
++            const snap = await getDocs(q);
++            if (!snap.empty) {
++                setStatus({ text: 'Room is already booked for this session!', type: 'error' });
++                setIsSaving(false);
++                return;
++            }
++            await addDoc(collection(db, 'roomBookings'), {
++                room: selectedRoom,
++                session: selectedSession,
++                teacherEmail: user.email,
++                teacherName: user.name || user.email,
++                classId: selectedAssignment?.classId || 'Office Hours',
++                timestamp: new Date().toISOString()
++            });
++            setStatus({ text: `Room claimed successfully!`, type: 'success' });
++            
++            const bQ = query(collection(db, 'roomBookings'));
++            const bSnap = await getDocs(bQ);
++            const bList = [];
++            bSnap.forEach(d => bList.push({ id: d.id, ...d.data() }));
++            setRoomBookings(bList);
++        } catch (err) {
++            setStatus({ text: 'Error claiming room: ' + err.message, type: 'error' });
++        }
++        setIsSaving(false);
++    };
++
++    const sendRedListWarning = async () => {
++        if (defaulters.length === 0) return;
++        setIsSaving(true);
++        setStatus({ text: 'Blasting Warnings...', type: '' });
++        let sentCount = 0;
++        try {
++            for (const student of defaulters) {
++                try {
++                    await fetch('/api/whatsapp', {
++                        method: 'POST',
++                        headers: { 'Content-Type': 'application/json' },
++                        body: JSON.stringify({
++                            studentPhone: student.studentPhone || null,
++                            parentPhone: student.parentPhone || null,
++                            studentName: student.name || student.email,
++                            assignmentTitle: "ATTENDANCE WARNING: CRITICAL",
++                            marks: { obtained: student.percentage, max: 100 }
++                        })
++                    });
++                    sentCount++;
++                } catch(e) {}
++            }
++            setStatus({ text: `Blasted ${sentCount} Formal Warnings!`, type: 'success' });
++        } catch(e) {
++            setStatus({ text: 'Error blasting warnings', type: 'error' });
++        }
++        setIsSaving(false);
++    };
++
+     if (loading || !user || user.role !== 'teacher') {
+         return (
+             <div className={styles.container}>
+@@ -743,6 +878,8 @@ export default function TeacherDashboard() {
+                                 <button className={getTabClass('materials')} onClick={() => {setActiveTab('materials'); setStatus({text:'', type:''});}}>Materials</button>
+                                 <button className={getTabClass('announcements')} onClick={() => {setActiveTab('announcements'); setStatus({text:'', type:''});}}>Announcements</button>
+                                 <button className={getTabClass('deadlines')} onClick={() => {setActiveTab('deadlines'); setStatus({text:'', type:''});}}>Deadlines</button>
++                                <button className={getTabClass('scheduler')} onClick={() => {setActiveTab('scheduler'); setStatus({text:'', type:''});}}>Scheduler</button>
++                                <button className={getTabClass('workspace')} onClick={() => {setActiveTab('workspace'); setStatus({text:'', type:''});}}>Workspace</button>
+                             </div>
+ 
+                             <div className={styles.tabContent}>
+@@ -782,6 +919,31 @@ export default function TeacherDashboard() {
+                                             </div>
+                                         </div>
+ 
++                                        {/* ERP: RED LIST WIDGET */}
++                                        {defaulters.length > 0 && (
++                                            <div className={styles.analyticsBox} style={{borderColor: 'rgba(239, 68, 68, 0.4)', background: 'rgba(239, 68, 68, 0.03)'}}>
++                                                <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px'}}>
++                                                    <div>
++                                                        <h4 style={{color: 'var(--error)', margin:0, display:'flex', alignItems:'center', gap:'6px'}}>
++                                                            <span style={{width: 8, height: 8, borderRadius: '50%', background: 'var(--error)'}}></span> Requires Attention
++                                                        </h4>
++                                                        <p style={{fontSize: '0.78rem', color: 'var(--text-muted)', marginTop: '4px'}}>Students below 75% total attendance.</p>
++                                                    </div>
++                                                    <button onClick={sendRedListWarning} disabled={isSaving} className={styles.rejectBtn} style={{padding: '6px 14px', border: '1px solid var(--error)', background: 'var(--error)', color: '#fff', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold'}}>
++                                                        Send Formal Warnings
++                                                    </button>
++                                                </div>
++                                                <div style={{display:'flex', gap:'12px', overflowX:'auto', paddingBottom: '8px'}}>
++                                                    {defaulters.map(d => (
++                                                        <div key={d.email} style={{background: 'var(--bg-surface)', border: '1px solid rgba(239, 68, 68, 0.2)', borderRadius: 'var(--radius-sm)', padding: '10px 14px', minWidth: '160px', flexShrink: 0}}>
++                                                            <div style={{fontWeight: 700, fontSize: '0.85rem'}}>{d.name || d.email.split('@')[0]}</div>
++                                                            <div style={{color: 'var(--error)', fontSize: '1.25rem', fontWeight: 800, marginTop: '2px'}}>{d.percentage}%</div>
++                                                        </div>
++                                                    ))}
++                                                </div>
++                                            </div>
++                                        )}
++
+                                         {liveSessionActive && (
+                                             <div className={styles.radarZone}>
+                                                 <div style={{display: 'flex', gap: '24px', flexWrap: 'wrap'}}>
+@@ -1122,6 +1284,112 @@ export default function TeacherDashboard() {
+                                     </div>
+                                 )}
+ 
++                                {/* TAB 6: SCHEDULER */}
++                                {activeTab === 'scheduler' && (
++                                    <div className={styles.formsTab} style={{animation: 'fadeInUp 0.3s ease'}}>
++                                        <div className={styles.contentHeader}>
++                                            <div className={styles.headerLeft}>
++                                                <h3>Room Conflict Checker</h3>
++                                                <p style={{color: 'var(--text-muted)', fontSize: '0.8rem', marginTop: '2px'}}>Reserve empty rooms or labs for extra lectures.</p>
++                                            </div>
++                                        </div>
++                                        
++                                        <div className={styles.uploadSection}>
++                                            <h4 style={{marginBottom: '16px', fontSize: '0.95rem', fontWeight: 600}}>Claim a Time Slot</h4>
++                                            
++                                            <div style={{display: 'flex', gap: '16px', flexWrap: 'wrap', marginBottom: '20px'}}>
++                                                <div style={{flex: 1}}>
++                                                    <label style={{fontSize: '0.8rem', color: 'var(--text-muted)'}}>Select Room/Lab</label>
++                                                    <select className={styles.inputField} value={selectedRoom} onChange={e => setSelectedRoom(e.target.value)}>
++                                                        <option value="Room 101">Room 101 (Capacity 60)</option>
++                                                        <option value="Room 102">Room 102 (Capacity 60)</option>
++                                                        <option value="Lab A">Computer Lab A</option>
++                                                        <option value="Seminar Hall">Main Seminar Hall</option>
++                                                    </select>
++                                                </div>
++                                                <div style={{flex: 1}}>
++                                                    <label style={{fontSize: '0.8rem', color: 'var(--text-muted)'}}>Select Session Block</label>
++                                                    <select className={styles.inputField} value={selectedSession} onChange={e => setSelectedSession(e.target.value)}>
++                                                        <option value="">-- Choose Slot --</option>
++                                                        <option value="Morning P1 (9:00 - 10:00)">Morning P1 (9:00 - 10:00)</option>
++                                                        <option value="Morning P2 (10:00 - 11:00)">Morning P2 (10:00 - 11:00)</option>
++                                                        <option value="Morning P3 (11:15 - 12:15)">Morning P3 (11:15 - 12:15)</option>
++                                                        <option value="Afternoon P4 (1:00 - 2:00)">Afternoon P4 (1:00 - 2:00)</option>
++                                                    </select>
++                                                </div>
++                                            </div>
++                                            
++                                            <div className={styles.actionFooter}>
++                                                <p className={`${styles.statusMsg} ${status.type === 'error' ? styles.error : status.type === 'success' ? styles.success : ''}`}>
++                                                    {status.text}
++                                                </p>
++                                                <button onClick={handleRoomBooking} disabled={isSaving || !selectedRoom || !selectedSession} className={styles.saveBtn}>
++                                                    {isSaving ? 'Checking...' : 'Claim Room'}
++                                                </button>
++                                            </div>
++                                        </div>
++                                        
++                                        <h4 style={{marginTop: '24px', marginBottom: '12px', fontSize: '0.95rem', fontWeight: 600}}>Active Bookings</h4>
++                                        <div style={{display:'grid', gridTemplateColumns:'repeat(auto-fill, minmax(280px, 1fr))', gap:'12px'}}>
++                                            {roomBookings.length > 0 ? roomBookings.map(b => (
++                                                <div key={b.id} style={{padding: '16px', background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: 'var(--radius-sm)'}}>
++                                                    <strong style={{color:'var(--text-primary)'}}>{b.room}</strong>
++                                                    <div style={{color:'var(--text-secondary)', fontSize:'0.85rem', marginTop:'6px'}}>{b.session}</div>
++                                                    <div style={{color:'var(--primary)', fontSize:'0.75rem', marginTop:'8px', fontWeight:600}}>Booked by {b.teacherName}</div>
++                                                    {b.classId !== 'Office Hours' && <div style={{color:'var(--text-muted)', fontSize:'0.7rem', marginTop:'4px'}}>For: {b.classId}</div>}
++                                                </div>
++                                            )) : <p className={styles.noData} style={{gridColumn: '1 / -1'}}>No manual bookings recorded.</p>}
++                                        </div>
++                                    </div>
++                                )}
++
++                                {/* TAB 7: WORKSPACE / HR */}
++                                {activeTab === 'workspace' && (
++                                    <div className={styles.materialsTab} style={{animation: 'fadeInUp 0.3s ease'}}>
++                                        <div className={styles.contentHeader}>
++                                            <div className={styles.headerLeft}>
++                                                <h3>Teacher Workspace</h3>
++                                                <p style={{color: 'var(--text-muted)', fontSize: '0.8rem', marginTop: '2px'}}>Manage your leave balances and request institutional resources.</p>
++                                            </div>
++                                        </div>
++                                        
++                                        <div className={styles.statsBar} style={{gridTemplateColumns: '1fr 1fr', gap: '20px'}}>
++                                            <div style={{padding: '20px', background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: 'var(--radius-md)', display: 'flex', flexDirection: 'column', gap: '8px', borderLeft: '4px solid var(--success)'}}>
++                                                <span style={{fontSize: '0.75rem', textTransform: 'uppercase', fontWeight: 700, color: 'var(--text-muted)', letterSpacing: '0.05em'}}>Casual Leaves Left</span>
++                                                <span style={{fontSize: '2rem', fontWeight: 800}}>4</span>
++                                            </div>
++                                            <div style={{padding: '20px', background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: 'var(--radius-md)', display: 'flex', flexDirection: 'column', gap: '8px', borderLeft: '4px solid var(--warning)'}}>
++                                                <span style={{fontSize: '0.75rem', textTransform: 'uppercase', fontWeight: 700, color: 'var(--text-muted)', letterSpacing: '0.05em'}}>Medical Leaves Left</span>
++                                                <span style={{fontSize: '2rem', fontWeight: 800}}>8</span>
++                                            </div>
++                                        </div>
++
++                                        <div className={styles.uploadSection} style={{marginTop: '24px'}}>
++                                            <h4 style={{marginBottom: '16px', fontSize: '0.95rem', fontWeight: 600}}>Submit Equipment Ticket</h4>
++                                            <form onSubmit={handleEquipmentRequest} style={{display:'flex', flexDirection:'column', gap:'12px'}}>
++                                                <div style={{flex: 1}}>
++                                                    <label style={{fontSize: '0.8rem', color: 'var(--text-muted)'}}>Requisition Item</label>
++                                                    <select className={styles.inputField} value={equipmentType} onChange={e => setEquipmentType(e.target.value)}>
++                                                        <option value="Whiteboard Markers (2 Set)">Whiteboard Markers (2 Set)</option>
++                                                        <option value="HDMI Cable Adapter">HDMI Cable Adapter</option>
++                                                        <option value="Portable Projector">Portable Projector</option>
++                                                        <option value="A4 Paper Rim">A4 Paper Rim</option>
++                                                    </select>
++                                                </div>
++                                                <textarea placeholder="Additional instructions for Admin office (e.g. deliver to Room 102)" className={styles.inputField} rows={3} value={equipmentNote} onChange={e => setEquipmentNote(e.target.value)}></textarea>
++                                                
++                                                <div className={styles.actionFooter}>
++                                                    <p className={`${styles.statusMsg} ${status.type === 'error' ? styles.error : status.type === 'success' ? styles.success : ''}`}>
++                                                        {status.text}
++                                                    </p>
++                                                    <button type="submit" disabled={isSaving} className={styles.saveBtn} style={{background: 'var(--text-primary)', color: 'var(--bg-root)'}}>
++                                                        {isSaving ? 'Submitting...' : 'Submit Ticket'}
++                                                    </button>
++                                                </div>
++                                            </form>
++                                        </div>
++                                    </div>
++                                )}
+                             </div>
+                         </>
+                     )}
