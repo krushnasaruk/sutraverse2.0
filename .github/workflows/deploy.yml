@@ -55,12 +55,25 @@ jobs:
           cp -r .next/static deployment/next-app/.next/static
           
           # Include environment variables for runtime
-          if [ -f .env.local ]; then cp .env.local deployment/next-app/; fi
+          cat << EOF > deployment/next-app/.env.local
+          GEMINI_API_KEY=${{ secrets.GEMINI_API_KEY }}
+          NEXT_PUBLIC_FIREBASE_API_KEY=${{ secrets.NEXT_PUBLIC_FIREBASE_API_KEY }}
+          NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=${{ secrets.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN }}
+          NEXT_PUBLIC_FIREBASE_PROJECT_ID=${{ secrets.NEXT_PUBLIC_FIREBASE_PROJECT_ID }}
+          NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET=${{ secrets.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET }}
+          NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=${{ secrets.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID }}
+          NEXT_PUBLIC_FIREBASE_APP_ID=${{ secrets.NEXT_PUBLIC_FIREBASE_APP_ID }}
+          EOF
           
-          # Clean up unnecessary files to reduce FTP overhead
+          # Clean up unnecessary files to drastically reduce FTP overhead and prevent 503 quota errors
           rm -rf deployment/next-app/node_modules/rxjs
           rm -rf deployment/next-app/node_modules/typescript
           rm -rf deployment/next-app/node_modules/prettier
+          
+          # Clean up Turbopack NFT junk
+          find deployment/next-app -maxdepth 1 -type f \( -name "*.zip" -o -name "*.pdf" -o -name "*.docx" -o -name "*.doc" -o -name "*.ppt" -o -name "*.pptx" -o -name "*.txt" -o -name "*.js" -o -name "*.mjs" \) ! -name "server.js" ! -name "check-case.js" -delete
+          find deployment/next-app -maxdepth 1 -type d \( -name "*pyq*" -o -name "*pattern*" -o -name "*physics*" -o -name "*bee*" -o -name "sutraverse-deployment" -o -name "_deploy" \) -exec rm -rf {} +
+
           
           # Create root server.js for cPanel Passenger
           cat << 'EOF' > deployment/server.js
@@ -68,6 +81,9 @@ jobs:
           process.chdir(path.join(__dirname, 'next-app'));
           require('./next-app/server.js');
           EOF
+          
+          # Copy package.json to the root for cPanel Node.js Selector
+          cp package.json deployment/package.json
           
           mkdir -p deployment/tmp
           touch deployment/tmp/restart.txt
