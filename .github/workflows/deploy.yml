@@ -9,6 +9,7 @@ on:
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
@@ -16,7 +17,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: '22'
           cache: 'npm'
 
       - name: Next.js Cache
@@ -76,5 +77,5 @@ jobs:
           LFTP_PASSWORD: ${{ secrets.FTP_PASSWORD }}
         run: |
           sudo apt-get update && sudo apt-get install -y lftp
-          lftp -c "set ssl:verify-certificate no; set ftp:passive-mode true; open -u '${{ secrets.FTP_USERNAME }}','$LFTP_PASSWORD' ftp://${{ secrets.FTP_SERVER }}; mirror -R -v --parallel=20 --exclude-glob .git/ --exclude-glob .github/ ./deployment/ ./; quit"
+          lftp -c "set net:timeout 30; set net:max-retries 3; set net:reconnect-interval-base 5; set ssl:verify-certificate no; set ftp:passive-mode true; open -u '${{ secrets.FTP_USERNAME }}','$LFTP_PASSWORD' ftp://${{ secrets.FTP_SERVER }}; mirror -R -v --parallel=10 --exclude-glob .git/ --exclude-glob .github/ ./deployment/ ./; quit"
 
