@@ -75,30 +75,14 @@ jobs:
           find deployment/next-app -maxdepth 1 -type d \( -name "*pyq*" -o -name "*pattern*" -o -name "*physics*" -o -name "*bee*" -o -name "sutraverse-deployment" -o -name "_deploy" \) -exec rm -rf {} +
 
           
-          # Create root server.js for cPanel Passenger with error logging
+          # Create root server.js for cPanel Passenger
           cat << 'EOF' > deployment/server.js
-          const fs = require('fs');
+          // cPanel Cloudlinux entry point
+          // Forwards execution to the Next.js standalone application
           const path = require('path');
-          
-          process.on('uncaughtException', function(err) {
-            fs.writeFileSync(path.join(__dirname, 'passenger-error.log'), err.stack || String(err));
-            process.exit(1);
-          });
-          
-          try {
-            process.chdir(path.join(__dirname, 'next-app'));
-            require('./next-app/server.js');
-          } catch (err) {
-            fs.writeFileSync(path.join(__dirname, 'passenger-error.log'), err.stack || String(err));
-            process.exit(1);
-          }
+          process.chdir(path.join(__dirname, 'next-app'));
+          require('./next-app/server.js');
           EOF
-          
-          # Copy package.json to the root for cPanel Node.js Selector
-          cp package.json deployment/package.json
-          
-          mkdir -p deployment/tmp
-          touch deployment/tmp/restart.txt
 
       - name: FTP Sync to Server
         env:
