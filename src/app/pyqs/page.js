@@ -132,7 +132,7 @@ export default function PyqsPage() {
     let url = item.fileURL || item.fileUrl;
     if (!url) return;
     
-    if (!url.includes('firebasestorage')) {
+    if (!url.includes('firebasestorage') && !url.includes('/pyqs/')) {
       let relativePath = '';
       if (url.includes('/api/downloads/')) relativePath = url.split('/api/downloads/')[1];
       else if (url.includes('/uploads/')) relativePath = url.split('/uploads/')[1];

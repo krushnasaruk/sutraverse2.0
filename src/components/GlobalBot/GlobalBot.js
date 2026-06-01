@@ -110,8 +110,8 @@ export default function GlobalBot() {
     }
   };
 
-  // Don't render full bot if on the dedicated assistant page
-  if (pathname === '/assistant') return null;
+  // Don't render full bot if on the dedicated assistant page or mobile redirect
+  if (pathname === '/assistant' || (pathname && pathname.startsWith('/mobile-auth'))) return null;
 
   return (
     <div className={styles.botContainer}>

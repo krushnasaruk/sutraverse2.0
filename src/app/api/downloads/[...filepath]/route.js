@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { readFile } from 'fs/promises';
 import { join } from 'path';
 import { existsSync } from 'fs';
+import os from 'os';
 import { getUploadsDir } from '@/lib/uploadsDir';
 
 /**
@@ -14,7 +15,12 @@ export async function GET(request, { params }) {
     const { filepath } = await params;
 
     // filepath is an array of path segments
-    const relativePath = Array.isArray(filepath) ? filepath.join('/') : filepath;
+    let relativePath = Array.isArray(filepath) ? filepath.join('/') : filepath;
+    try {
+        relativePath = decodeURIComponent(relativePath);
+    } catch (e) {
+        console.error("Error decoding path:", e);
+    }
 
     // Prevent directory traversal attacks
     if (relativePath.includes('..') || relativePath.includes('~')) {
@@ -24,16 +30,30 @@ export async function GET(request, { params }) {
     const uploadsDir = getUploadsDir();
     const filePath = join(uploadsDir, relativePath);
 
-    if (!existsSync(filePath)) {
-        // Fallback: check old public/uploads location for backward compatibility
-        const legacyPath = join(process.cwd(), 'public', 'uploads', relativePath);
-        if (existsSync(legacyPath)) {
-            return serveFile(legacyPath, relativePath);
+    // List of robust fallback paths to try
+    const fallbackPaths = [
+        filePath,
+        join(process.cwd(), 'public', 'uploads', relativePath), // Local / inside standalone
+        join(process.cwd(), '..', 'public', 'uploads', relativePath), // Root public/uploads
+        join(process.cwd(), '..', 'public', 'public', 'uploads', relativePath), // Double public/ folder mistake
+        join(process.cwd(), '..', 'uploads', relativePath), // Root uploads/ folder
+        join(os.homedir(), 'public_html', 'public', 'uploads', relativePath), // Standard cPanel
+        join(os.homedir(), 'public_html', 'user-uploads', relativePath) // Standard cPanel user-uploads
+    ];
+
+    let foundPath = null;
+    for (const p of fallbackPaths) {
+        if (existsSync(p)) {
+            foundPath = p;
+            break;
         }
+    }
+
+    if (!foundPath) {
         return new NextResponse("File not found", { status: 404 });
     }
 
-    return serveFile(filePath, relativePath);
+    return serveFile(foundPath, relativePath);
 }
 
 async function serveFile(filePath, filename) {

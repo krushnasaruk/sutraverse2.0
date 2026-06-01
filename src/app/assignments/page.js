@@ -22,6 +22,7 @@ const SUBJECT_TABS = [
   { key: 'Physics',                 label: 'Physics',    emoji: '🔭', color: '#f97316' },
   { key: 'Engineering Mathematics', label: 'Maths',      emoji: '📐', color: '#22c55e' },
   { key: 'Engineering Mechanics',   label: 'Mechanics',  emoji: '⚙️', color: '#dc2626' },
+  { key: 'Engineering Graphics',    label: 'EG',         emoji: '🎨', color: '#4f46e5' },
 ];
 
 export default function AssignmentsPage() {

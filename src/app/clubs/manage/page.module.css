@@ -711,5 +711,30 @@
     to { opacity: 1; transform: translateY(0); }
 }
 
-@media(max-width:768px){.formCard{padding:24px}.membersGrid{grid-template-columns:1fr}}
-@media(max-width:480px){.formCard{padding:16px}}
+@media(max-width:768px){
+  .pageWrapper { padding: 20px 0 100px; }
+  .container { padding: 0 16px; }
+  .heroTitle { font-size: 2rem; }
+  .statsRow { grid-template-columns: repeat(2, 1fr); gap: 12px; }
+  .statCard { padding: 16px; }
+  .statValue { font-size: 1.5rem; }
+  .tabsWrapper { overflow-x: auto; -webkit-overflow-scrolling: touch; flex-wrap: nowrap; }
+  .tabsWrapper::-webkit-scrollbar { display: none; }
+  .tab { white-space: nowrap; flex-shrink: 0; font-size: 0.82rem; padding: 10px 14px; }
+  .toolbar { flex-direction: column; }
+  .searchBox { max-width: 100%; }
+  .toolbarActions { width: 100%; }
+  .toolbarBtn { flex: 1; justify-content: center; }
+  .membersTable { display: block; overflow-x: auto; }
+  .settingsGrid { grid-template-columns: 1fr; }
+  .settingsSection { padding: 20px; }
+  .composeBox { padding: 16px; }
+  .clubSelectorBar { padding: 6px; gap: 8px; }
+  .clubSelectorItem { padding: 10px 14px; font-size: 0.85rem; }
+}
+@media(max-width:480px){
+  .heroTitle { font-size: 1.6rem; }
+  .statsRow { grid-template-columns: 1fr 1fr; }
+  .statCard { padding: 14px; }
+  .settingsSection { padding: 16px; }
+}

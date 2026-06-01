@@ -25,6 +25,7 @@ export default function NewsPage() {
     const [loading, setLoading] = useState(true);
     const [activeFilter, setActiveFilter] = useState('All');
     const [viewPending, setViewPending] = useState(false);
+    const [expandedCards, setExpandedCards] = useState({});
     useEffect(() => {
         const q = query(collection(db, 'news'), orderBy('timestamp', 'desc'));
         const unsubscribe = onSnapshot(q, (snapshot) => {
@@ -92,6 +93,21 @@ export default function NewsPage() {
         if (!isAdminOrTeacher) return;
         try {
             await updateDoc(doc(db, 'news', id), { status: 'approved' });
+            
+            // Send push notification
+            const approvedNews = newsItems.find(n => n.id === id);
+            if (approvedNews) {
+                fetch('/api/notifications/generate-and-send', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        contentType: 'Campus Notice',
+                        contentTitle: approvedNews.title,
+                        contentDetails: approvedNews.content,
+                    })
+                }).catch(e => console.error('Failed to trigger notification', e));
+            }
+
             alert("News approved successfully!");
         } catch (err) {
             console.error("Error approving news:", err);
@@ -237,7 +253,7 @@ export default function NewsPage() {
                                     </div>
                                     <div className={styles.newsContent}>
                                         <h3 className={styles.newsTitle} style={{ fontSize: isFeatured && !viewPending ? '2rem' : undefined }}>{item.title}</h3>
-                                        <p className={styles.newsBody}>{item.content}</p>
+                                        <p className={styles.newsBody} style={expandedCards[item.id] ? { WebkitLineClamp: 'unset', display: 'block' } : {}}>{item.content}</p>
                                     </div>
                                     <div className={styles.newsFooter} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                                         {viewPending && isAdminOrTeacher ? (
@@ -246,8 +262,13 @@ export default function NewsPage() {
                                                 <button onClick={() => handleReject(item.id)} style={{ padding: '4px 12px', background: '#ef4444', color: '#fff', border: 'none', borderRadius: '4px', cursor: 'pointer', fontWeight: 600 }}>Reject</button>
                                             </div>
                                         ) : (
-                                            <span className={styles.readMore}>
-                                                Read more <span className={styles.readMoreArrow}>→</span>
+                                            <span 
+                                                className={styles.readMore} 
+                                                onClick={() => setExpandedCards(prev => ({ ...prev, [item.id]: !prev[item.id] }))}
+                                                role="button"
+                                                tabIndex={0}
+                                            >
+                                                {expandedCards[item.id] ? 'Show less' : 'Read more'} <span className={styles.readMoreArrow} style={expandedCards[item.id] ? { transform: 'rotate(90deg)' } : {}}>→</span>
                                             </span>
                                         )}
                                         {item.authorName && (

@@ -393,6 +393,11 @@
     align-items: center;
     gap: 6px;
     transition: all 0.3s ease;
+    cursor: pointer;
+    user-select: none;
+}
+.readMore:hover {
+    opacity: 0.8;
 }
 .readMoreArrow {
     display: inline-block;

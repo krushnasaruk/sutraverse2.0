@@ -51,3 +51,17 @@ sutraverse-deployment/
 # Ignore large uploads
 public/uploads/
 public/pyqs/
+
+# Secrets and dummy files
+*.json
+!package.json
+!package-lock.json
+!mobile/package.json
+!mobile/package-lock.json
+!mobile/tsconfig.json
+!mobile/app.json
+!tsconfig.json
+!jsconfig.json
+dummy*.pdf
+*.pdf
+Screenshot*.png

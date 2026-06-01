@@ -607,10 +607,10 @@
 /* ═══════════════════════════════════════════════════════════════════════════ */
 
 @media (max-width:768px){
+  .pageWrapper{padding:20px 0 100px;overflow-x:hidden}
   .heroTitle{font-size:2.2rem}
   .heroSub{font-size:.95rem}
-  .hero{padding:40px 0 24px}
-  .subjectGrid{grid-template-columns:1fr;gap:16px;max-width:calc(100% + 32px);padding:16px;margin:-16px}
+  .hero{padding:20px 16px 24px}
   .paperGrid{grid-template-columns:1fr;gap:16px;max-width:calc(100% + 32px);padding:16px;margin:-16px}
   .pageWrapper{overflow-x:hidden}
   .filterBar{flex-direction:column;align-items:stretch;gap:12px}

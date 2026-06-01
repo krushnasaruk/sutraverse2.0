@@ -3,7 +3,8 @@
 import { useState, useRef, useMemo } from 'react';
 import Link from 'next/link';
 import { collection, doc, setDoc } from 'firebase/firestore';
-import { db } from '@/lib/firebase';
+import { ref, uploadBytesResumable, getDownloadURL } from 'firebase/storage';
+import { db, storage } from '@/lib/firebase';
 import { useAuth } from '@/context/AuthContext';
 import { awardUploadPoints } from '@/lib/points';
 import { BRANCHES, YEARS, getSubjects, getAllSubjects } from '@/lib/subjectMap';
@@ -17,7 +18,7 @@ const UPLOAD_TYPES = [
     { key: 'Assignment', emoji: '📋', label: 'Assignment', desc: 'Solved assignments & lab work' },
 ];
 
-const MAX_FILE_SIZE = 25 * 1024 * 1024; // 25 MB
+const MAX_FILE_SIZE = 100 * 1024 * 1024; // 100 MB
 const ALLOWED_TYPES = [
     'application/pdf',
     'application/msword',
@@ -28,6 +29,8 @@ const ALLOWED_TYPES = [
     'application/x-zip-compressed',
     'image/jpeg',
     'image/png',
+    'video/mp4',
+    'video/x-matroska'
 ];
 
 function formatFileSize(bytes) {
@@ -136,7 +139,7 @@ export default function UploadPage() {
     const canProceedStep3 = title.trim() !== '' && subject !== '';
     const canSubmit = file !== null;
 
-    // ── Upload via Server API (bypasses CORS) ─────────────────────────────────
+    // ── Upload via Server API to cPanel Disk ─────────────────────────────────
     const handleSubmit = async () => {
         if (!file || !user || uploading) return;
         setUploading(true);
@@ -144,85 +147,82 @@ export default function UploadPage() {
         setProgress(0);
 
         try {
-            // 1. Get auth token for server verification
-            let authToken = '';
-            try {
-                const { getAuth } = await import('firebase/auth');
-                const currentUser = getAuth().currentUser;
-                if (currentUser) {
-                    authToken = await currentUser.getIdToken(true);
-                }
-            } catch (e) {
-                console.warn('Token fetch failed, continuing:', e.message);
-            }
-
-            // 2. Build FormData
             const formData = new FormData();
             formData.append('file', file);
-            formData.append('title', title.trim());
-            formData.append('type', fileType);
-            formData.append('subject', subject);
-            formData.append('branch', branch || user.branch || 'Computer');
-            formData.append('year', year || user.year || '1st Year');
-            formData.append('uploaderUID', user.uid);
-            formData.append('uploaderName', user.name || 'Anonymous');
-            formData.append('uploaderEmail', user.email || '');
-            formData.append('authToken', authToken);
+            formData.append('context', 'submission');
 
-            // 3. Simulate progress
-            let simulatedProgress = 0;
-            const progressInterval = setInterval(() => {
-                simulatedProgress = Math.min(simulatedProgress + Math.random() * 10, 85);
-                setProgress(Math.round(simulatedProgress));
-            }, 400);
+            const xhr = new XMLHttpRequest();
 
-            // 4. Upload via API route (no CORS — same origin)
-            const res = await fetch('/api/upload', {
-                method: 'POST',
-                body: formData,
-            });
+            // Track upload progress
+            xhr.upload.onprogress = (event) => {
+                if (event.lengthComputable) {
+                    const pct = Math.round((event.loaded / event.total) * 100);
+                    // Cap at 99% until server finishes processing
+                    setProgress(pct === 100 ? 99 : pct);
+                }
+            };
 
-            clearInterval(progressInterval);
-            setProgress(95);
+            xhr.onload = async () => {
+                if (xhr.status >= 200 && xhr.status < 300) {
+                    try {
+                        const response = JSON.parse(xhr.responseText);
+                        const downloadURL = response.fileURL;
 
-            const data = await res.json();
+                        // Save file metadata to Firestore (making it accessible to mobile/admin)
+                        await setDoc(doc(collection(db, 'files')), {
+                            title: title.trim(),
+                            type: fileType,
+                            subject: subject,
+                            branch: branch || user.branch || 'Computer',
+                            year: year || user.year || '1st Year',
+                            uploaderUID: user.uid,
+                            uploaderName: user.name || 'Anonymous',
+                            uploaderEmail: user.email || '',
+                            fileUrl: downloadURL, // Hosted on cPanel Disk
+                            fileName: file.name,
+                            fileSize: file.size,
+                            downloads: 0,
+                            rating: "0",
+                            status: 'pending',
+                            createdAt: new Date().toISOString(),
+                        });
 
-            if (!res.ok || !data.success) {
-                throw new Error(data.error || 'Server returned an error');
-            }
+                        // Award XP for uploading
+                        try {
+                            await awardUploadPoints(user.uid);
+                        } catch (e) {
+                            console.warn('XP award failed:', e.message);
+                        }
 
-            // 5. Save file metadata to Firestore (so it appears in admin panel)
-            await setDoc(doc(collection(db, 'files')), {
-                title: title.trim(),
-                type: fileType,
-                subject: subject,
-                branch: branch || user.branch || 'Computer',
-                year: year || user.year || '1st Year',
-                uploaderUID: user.uid,
-                uploaderName: user.name || 'Anonymous',
-                uploaderEmail: user.email || '',
-                fileUrl: data.fileURL,
-                fileName: data.fileName,
-                fileSize: data.fileSize,
-                downloads: 0,
-                rating: "0",
-                status: 'pending',
-                createdAt: new Date().toISOString(),
-            });
+                        setProgress(100);
+                        setSuccess(true);
+                        setUploading(false);
+                    } catch (err) {
+                        console.error('Firestore save error:', err);
+                        setError('Failed to register file: ' + err.message);
+                        setUploading(false);
+                    }
+                } else {
+                    try {
+                        const errRes = JSON.parse(xhr.responseText);
+                        setError('Upload failed: ' + (errRes.error || xhr.statusText));
+                    } catch(e) {
+                        setError('Upload failed with status ' + xhr.status);
+                    }
+                    setUploading(false);
+                }
+            };
 
-            // 6. Award XP for uploading
-            try {
-                await awardUploadPoints(user.uid);
-            } catch (e) {
-                console.warn('XP award failed:', e.message);
-            }
+            xhr.onerror = () => {
+                setError('Network error occurred during upload. Check connection or file size limit.');
+                setUploading(false);
+            };
 
-            setProgress(100);
-            setSuccess(true);
-            setUploading(false);
+            xhr.open('POST', '/api/upload');
+            xhr.send(formData);
         } catch (err) {
-            console.error('Upload error:', err);
-            setError('Upload failed: ' + (err.message || 'Unknown error'));
+            console.error('Initiation error:', err);
+            setError('Upload initiation failed: ' + (err.message || 'Unknown error'));
             setUploading(false);
         }
     };
@@ -433,7 +433,7 @@ export default function UploadPage() {
                                                     <div className={styles.dropSubtext}>
                                                         or <span className={styles.dropBrowse}>browse files</span>
                                                         <br />
-                                                        PDF, DOC, PPT, ZIP, JPG, PNG · Max 25 MB
+                                                        PDF, DOC, PPT, ZIP, JPG, PNG, MP4 · Max 100 MB
                                                     </div>
                                                 </>
                                             ) : (

@@ -56,7 +56,11 @@ export function AuthProvider({ children }) {
                         setUser(prev => ({ ...prev, uid: firebaseUser.uid, ...userData }));
                         
                         // Handle onboarding redirect
-                        if (userData && userData.profileComplete === false && window.location.pathname !== '/onboarding' && window.location.pathname !== '/login' && window.location.pathname !== '/signup') {
+                        if (userData && userData.profileComplete === false && 
+                            window.location.pathname !== '/onboarding' && 
+                            window.location.pathname !== '/login' && 
+                            window.location.pathname !== '/signup' &&
+                            !window.location.pathname.startsWith('/mobile-auth')) {
                             window.location.href = '/onboarding';
                         }
                     }, (e) => {

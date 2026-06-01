@@ -709,24 +709,37 @@
 /* ═══════════════════════════════════════════════════════════════════════════ */
 
 @media(max-width:768px){
-  .pageWrapper{overflow-x:hidden}
-  .heroTitle{font-size:2.2rem}
-  .heroSub{font-size:.95rem}
-  .unitGrid{grid-template-columns:1fr}
-  .videoGrid{grid-template-columns:1fr}
-  .filterBar{flex-direction:column;align-items:stretch;gap:12px}
-  .searchBox{width:100%}
-  .statsBanner{flex-wrap:wrap;padding:16px;gap:16px;border-radius:16px;width:100%;justify-content:center}
-  .statDivider{display:none}
-  .statBubble{padding:0 8px;flex:1;min-width:30%}
+  .pageWrapper { padding: 20px 0 100px; overflow-x: hidden; }
+  .hero { padding: 20px 16px 24px; }
+  .heroTitle { font-size: 2.2rem; }
+  .heroSub { font-size: 0.95rem; }
+  .statsBanner { flex-wrap: wrap; padding: 16px; gap: 16px; border-radius: 16px; width: 100%; justify-content: center; box-sizing: border-box; }
+  .statDivider { display: none; }
+  .statBubble { padding: 0 8px; flex: 1; min-width: 30%; }
+  .filterBar { flex-direction: column; align-items: stretch; gap: 12px; margin-left: 16px; margin-right: 16px; }
+  .filterGroup { width: 100%; }
+  .filterSelect { flex: 1; width: 100%; }
+  .subjectGrid { grid-template-columns: 1fr; gap: 16px; padding: 16px; margin: 0; max-width: 100%; }
+  .subjectCard { padding: 20px; }
+  .subjectName { font-size: 1rem; }
+  .lectureGrid { grid-template-columns: 1fr; gap: 16px; padding: 16px; margin: 0; max-width: 100%; }
+  .lectureInfo { padding: 14px 16px; }
+  .lectureTitle { font-size: 0.95rem; }
+  .unitHeader { margin-left: 16px; margin-right: 16px; flex-wrap: wrap; gap: 10px; }
+  .unitBadge { font-size: 0.88rem; padding: 6px 14px; }
+  .breadcrumb { padding: 0 16px; flex-wrap: wrap; }
+  .drillFilterBar { margin-left: 16px; margin-right: 16px; flex-direction: column; align-items: stretch; }
+  .searchBox { width: 100%; }
 }
 @media(max-width:480px){
-  .heroTitle{font-size:1.8rem}
-  .unitCard{padding:20px}
-  .videoCard{padding:16px}
-  .statBubble{min-width:40%}
-  .statValue{font-size:1.3rem}
+  .heroTitle { font-size: 1.8rem; }
+  .subjectCard { padding: 16px; }
+  .subjectIcon { width: 40px; height: 40px; }
+  .statBubble { min-width: 40%; }
+  .statValue { font-size: 1.3rem; }
+  .lectureCard { border-radius: 16px; }
 }
 @media(max-width:360px){
-  .heroTitle{font-size:1.5rem}
+  .heroTitle { font-size: 1.5rem; }
+  .subjectCard { padding: 14px; gap: 10px; }
 }

@@ -1,5 +1,8 @@
 import { NextResponse } from 'next/server';
-import { writeFile, mkdir } from 'fs/promises';
+import { mkdir } from 'fs/promises';
+import { createWriteStream } from 'fs';
+import { pipeline } from 'stream/promises';
+import { Readable } from 'stream';
 import path from 'path';
 import { getUploadsDir } from '@/lib/uploadsDir';
 
@@ -8,13 +11,11 @@ import { getUploadsDir } from '@/lib/uploadsDir';
  * 
  * Saves uploaded file to a persistent directory OUTSIDE the app folder.
  * This ensures files survive app redeployments on cPanel/VPS.
- * 
- * Storage location (in order of priority):
- *   1. UPLOADS_DIR env var (e.g. /home/username/user-uploads)
- *   2. Fallback: public/uploads/ (for local development)
- * 
- * Files are served back via /api/downloads/[...filepath] route.
  */
+
+// Allow longer execution times for large file uploads on Vercel/VPS
+export const maxDuration = 300; 
+
 export async function POST(request) {
     try {
         const formData = await request.formData();
@@ -24,15 +25,13 @@ export async function POST(request) {
             return NextResponse.json({ error: 'No file provided' }, { status: 400 });
         }
 
-        // Determine upload context from optional 'context' field
         const context = formData.get('context') || 'general';
 
-        // Validate file size (25 MB max for general, 5 MB for avatars)
-        const MAX_SIZE = context === 'avatar' ? 5 * 1024 * 1024 : 25 * 1024 * 1024;
-        const buffer = Buffer.from(await file.arrayBuffer());
+        // Validate file size (100 MB max for general, 5 MB for avatars)
+        const MAX_SIZE = context === 'avatar' ? 5 * 1024 * 1024 : 100 * 1024 * 1024;
 
-        if (buffer.length > MAX_SIZE) {
-            const limit = context === 'avatar' ? '5 MB' : '25 MB';
+        if (file.size > MAX_SIZE) {
+            const limit = context === 'avatar' ? '5 MB' : '100 MB';
             return NextResponse.json({ error: `File too large. Maximum ${limit}.` }, { status: 413 });
         }
 
@@ -45,7 +44,7 @@ export async function POST(request) {
                 return NextResponse.json({ error: 'Unsupported image type. Use JPG, PNG, WebP, or GIF.' }, { status: 400 });
             }
         } else {
-            const allowedExts = ['pdf', 'doc', 'docx', 'ppt', 'pptx', 'zip', 'jpg', 'jpeg', 'png'];
+            const allowedExts = ['pdf', 'doc', 'docx', 'ppt', 'pptx', 'zip', 'jpg', 'jpeg', 'png', 'mp4', 'mkv'];
             if (!ext || !allowedExts.includes(ext)) {
                 return NextResponse.json({ error: 'Unsupported file type.' }, { status: 400 });
             }
@@ -55,7 +54,6 @@ export async function POST(request) {
         const timestamp = Date.now();
         const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, '_');
 
-        // Organize into subdirectories based on context
         let subDir = '';
         if (context === 'avatar') {
             subDir = 'avatars';
@@ -67,18 +65,17 @@ export async function POST(request) {
 
         const fileName = `${timestamp}_${safeName}`;
 
-        // Use persistent uploads directory (outside app folder in production)
         const baseUploadsDir = getUploadsDir();
-        const uploadsDir = subDir
-            ? path.join(baseUploadsDir, subDir)
-            : baseUploadsDir;
+        const uploadsDir = subDir ? path.join(baseUploadsDir, subDir) : baseUploadsDir;
         await mkdir(uploadsDir, { recursive: true });
 
-        // Write the file
+        // Stream the file directly to disk to prevent Memory bloat / Out Of Memory errors
+        // This is significantly faster for cPanel environments
         const filePath = path.join(uploadsDir, fileName);
-        await writeFile(filePath, buffer);
+        const readStream = Readable.fromWeb(file.stream());
+        const writeStream = createWriteStream(filePath);
+        await pipeline(readStream, writeStream);
 
-        // Return URL that goes through the API download route (works everywhere)
         const relativePath = subDir ? `${subDir}/${fileName}` : fileName;
         const fileURL = `/api/downloads/${relativePath}`;
 
@@ -86,7 +83,7 @@ export async function POST(request) {
             success: true,
             fileURL,
             fileName: file.name,
-            fileSize: buffer.length,
+            fileSize: file.size,
         });
     } catch (err) {
         console.error('Upload API error:', err);

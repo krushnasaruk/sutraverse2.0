@@ -345,5 +345,18 @@
 }
 @keyframes spin { to { transform: rotate(360deg); } }
 
-@media(max-width:768px){.formCard{padding:24px}}
-@media(max-width:480px){.formCard{padding:16px}}
+@media(max-width:768px){
+  .pageWrapper { padding: 20px 0 100px; }
+  .container { padding: 0 16px; }
+  .formCard { padding: 24px; }
+  .formHeader { font-size: 1.4rem; }
+  .progressLine { width: 40px; }
+  .stepLabel { font-size: 0.68rem; }
+  .formRow { flex-direction: column; gap: 0; }
+}
+@media(max-width:480px){
+  .formCard { padding: 16px; }
+  .formHeader { font-size: 1.2rem; }
+  .emojiPreview { font-size: 2.5rem; }
+  .emojiOption { width: 40px; height: 40px; font-size: 1.2rem; }
+}

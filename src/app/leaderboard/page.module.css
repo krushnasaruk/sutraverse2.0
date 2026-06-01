@@ -500,6 +500,37 @@
 
 /* ============================================ */
 
-@media(max-width:768px){.heroTitle{font-size:2.2rem}.podium{flex-direction:column;gap:16px}.podiumFirst{order:-1}.leaderboardGrid{grid-template-columns:1fr}}
-@media(max-width:480px){.heroTitle{font-size:1.8rem}.podiumAvatar{width:60px;height:60px}}
-@media(max-width:360px){.heroTitle{font-size:1.5rem}}
+@media(max-width:768px){
+  .pageWrapper { padding: 20px 0 100px; }
+  .container { padding: 0 16px; }
+  .header { margin-bottom: 24px; }
+  .title { font-size: 2.2rem; }
+  .subtitle { font-size: 1rem; }
+  .statsStrip { flex-wrap: wrap; gap: 16px; justify-content: center; }
+  .statNum { font-size: 1.4rem; }
+  .podium { grid-template-columns: 1fr; gap: 16px; margin-bottom: 24px; }
+  .podiumCard.gold { order: -1; padding-top: var(--space-2xl); }
+  .podiumCard.silver { order: 0; }
+  .podiumCard.bronze { order: 1; }
+  .crown { top: -36px; font-size: 1.5rem; }
+  .gold .podiumAvatar, .gold .avatarFallback { width: 72px; height: 72px; font-size: 2rem; }
+  .podiumAvatar, .avatarFallback { width: 56px; height: 56px; }
+  .listHeader { display: none; }
+  .listItem { grid-template-columns: 40px 1fr auto; padding: 12px 16px; }
+  .levelCol { display: none; }
+  .xpCol { font-size: 0.85rem; }
+  .leaderboardList { border-radius: 16px; }
+}
+@media(max-width:480px){
+  .title { font-size: 1.8rem; }
+  .podiumName { font-size: 0.9rem; }
+  .gold .podiumName { font-size: 1rem; }
+  .listItem { padding: 10px 12px; }
+  .listAvatar, .listAvatarFallback { width: 32px; height: 32px; }
+  .rankCol { font-size: 0.85rem; }
+}
+@media(max-width:360px){
+  .title { font-size: 1.5rem; }
+  .podiumXP { font-size: 1rem; }
+  .gold .podiumXP { font-size: 1.15rem; }
+}

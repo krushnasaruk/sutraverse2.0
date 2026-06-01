@@ -1512,30 +1512,78 @@
 
 /* RESPONSIVE — CLEAN MOBILE */
 @media (max-width: 768px) {
-  .hero { padding: calc(var(--navbar-height) + 20px) 16px 32px; min-height: auto; }
-  .heroBadge { font-size: 0.72rem; padding: 6px 14px; white-space: normal; text-align: center; }
-  .heroLine1 { font-size: 2rem; }
-  .heroLine2 { font-size: 2.6rem; }
-  .heroSubtitle { font-size: 0.9rem; padding: 0 8px; margin-bottom: 16px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
-  .heroSearchBar { flex-direction: column; padding: 0; gap: 10px; background: transparent; box-shadow: none; border: none; backdrop-filter: none; }
+  .hero { padding: calc(var(--navbar-height) + 20px) 16px 32px; min-height: auto; overflow: hidden; max-width: 100vw; box-sizing: border-box; }
+  .heroBadge { font-size: 0.65rem; padding: 5px 12px; white-space: normal; text-align: center; max-width: 90%; word-break: break-word; }
+  .heroLine1 { font-size: 1.6rem; word-break: break-word; }
+  .heroLine2 { font-size: 2rem; word-break: break-word; }
+  .heroSubtitle { font-size: 0.85rem; padding: 0 8px; margin-bottom: 16px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+  .heroSearchBar { flex-direction: column; padding: 0; gap: 10px; background: transparent; box-shadow: none; border: none; backdrop-filter: none; max-width: 100%; }
   .heroSearchIcon { display: none; }
-  .heroSearchInput { background: var(--bg-card); padding: 14px 16px; border-radius: 12px; border: 1px solid var(--border); width: 100%; }
+  .heroSearchInput { background: var(--bg-card); padding: 14px 16px; border-radius: 12px; border: 1px solid var(--border); width: 100%; box-sizing: border-box; }
   .heroSearchBtn { padding: 14px; width: 100%; border-radius: 12px; }
-  .heroStatPills { flex-wrap: wrap; gap: 8px; justify-content: center; }
-  .heroPill { font-size: 0.8rem; padding: 8px 14px; }
-  .dockSection { margin-top: 20px; padding: 0 16px; box-sizing: border-box; max-width: 100%; }
-  .dockContainer { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; padding: 14px; border-radius: 14px; overflow: hidden; }
+  .heroStatPills { flex-wrap: wrap; gap: 8px; justify-content: center; max-width: 100%; }
+  .heroPill { font-size: 0.75rem; padding: 6px 12px; }
+  .dockSection { margin-top: 20px; padding: 0 16px; box-sizing: border-box; max-width: 100%; overflow: hidden; }
+  .dockContainer { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; padding: 14px; border-radius: 14px; overflow: hidden; }
   .dockItem { min-width: 0; padding: 10px 4px; gap: 6px; border-radius: 12px; }
   .dockIcon { width: 38px; height: 38px; border-radius: 12px; }
   .dockLabel { font-size: 0.68rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
   .dockDesc { display: none; }
   .tickerSection { padding: 0 16px; margin-top: 20px; max-width: 100%; box-sizing: border-box; }
   .tickerBar { border-radius: 12px; padding: 10px 14px; max-width: 100%; box-sizing: border-box; overflow: hidden; }
-  .campusSection { padding: 32px 16px; }
-  .campusTitle { font-size: 1.5rem; }
-  .campusSubtitle { display: none; }
-  .campusGrid { grid-template-columns: 1fr; gap: 16px; }
-  .campusCardHero { height: auto; }
+  .campusSection { padding: 20px 16px !important; }
+  .campusHeader { margin-bottom: 12px !important; }
+  .campusTitle { font-size: 1.3rem !important; }
+  .campusSubtitle { display: none !important; }
+  .campusBadge { font-size: 0.65rem !important; padding: 4px 10px !important; margin-bottom: 6px !important; }
+  .campusGrid { grid-template-columns: 1fr !important; gap: 12px !important; }
+  .campusCardHero { height: auto !important; }
+  .campusRight { gap: 12px !important; }
+  .campusCard { border-radius: 16px !important; }
+  .campusCardGradient { height: 80px !important; }
+  .campusCardInner { padding: 14px !important; gap: 6px !important; }
+  .campusCardTop { margin-bottom: 0 !important; }
+  .campusCardIconLg { width: 32px !important; height: 32px !important; font-size: 0.95rem !important; border-radius: 10px !important; box-shadow: none !important; }
+  .campusCardName { font-size: 1rem !important; }
+  .campusCardDesc { 
+    font-size: 0.75rem !important; 
+    display: -webkit-box !important; 
+    -webkit-line-clamp: 1 !important; 
+    -webkit-box-orient: vertical !important; 
+    overflow: hidden !important; 
+    line-height: 1.4 !important;
+    margin: 0 !important;
+  }
+  .campusLiveDot { width: 8px !important; height: 8px !important; }
+  .campusFeed { gap: 4px !important; margin-top: 2px !important; }
+  .campusFeedItem { padding: 5px 8px !important; gap: 6px !important; border-radius: 8px !important; }
+  .campusFeedItem:nth-child(n+3) { display: none !important; }
+  .campusFeedAvatar { width: 22px !important; height: 22px !important; font-size: 0.6rem !important; }
+  .campusFeedBody { gap: 0 !important; }
+  .campusFeedAuthor { font-size: 0.65rem !important; }
+  .campusFeedText { font-size: 0.68rem !important; }
+  .campusFeedMeta { font-size: 0.6rem !important; }
+  .campusTagsRow { 
+    flex-wrap: nowrap !important; 
+    overflow-x: auto !important; 
+    -webkit-overflow-scrolling: touch; 
+    gap: 4px !important;
+    scrollbar-width: none;
+    margin-top: 0 !important;
+  }
+  .campusTagsRow::-webkit-scrollbar { display: none; }
+  .campusTag { white-space: nowrap; flex-shrink: 0; font-size: 0.6rem !important; padding: 2px 7px !important; }
+  .campusNewsList { gap: 3px !important; margin-top: 0 !important; }
+  .campusNewsRow { padding: 4px 8px !important; gap: 6px !important; border-radius: 6px !important; }
+  .campusNewsType { width: 18px !important; height: 18px !important; font-size: 0.55rem !important; border-radius: 4px !important; }
+  .campusNewsText { font-size: 0.7rem !important; }
+  .campusNewsTime { font-size: 0.58rem !important; }
+  .campusCardAction { padding-top: 6px !important; font-size: 0.75rem !important; margin-top: auto !important; }
+  .campusArrowIcon { width: 20px !important; height: 20px !important; font-size: 0.75rem !important; }
+  .campusCountBadge { padding: 2px 8px !important; }
+  .campusCountNum { font-size: 0.8rem !important; }
+  .campusCountLabel { font-size: 0.55rem !important; }
+  .campusCard { box-shadow: none !important; }
   .uploadsSection { padding: 32px 16px; }
   .uploadsGrid { grid-template-columns: 1fr; gap: 16px; }
   /* Hide verbose marketing sections on mobile */
@@ -1549,7 +1597,7 @@
   .ctaBtnPrimary, .ctaBtnSecondary { width: 100%; justify-content: center; padding: 14px 24px; }
   .sectionHeader { flex-direction: column; align-items: flex-start; gap: 8px; }
   .sectionTitle { font-size: 1.3rem; }
-  .footer { padding: 32px 16px calc(32px + 30px); }
+  .footer { padding: 32px 16px; }
   .footerTop { flex-direction: column; gap: 24px; }
   .footerBrand { max-width: 100%; text-align: center; }
   .footerColumns { display: none; }

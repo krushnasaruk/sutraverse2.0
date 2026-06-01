@@ -506,5 +506,31 @@
     margin-bottom: var(--space-xl);
 }
 
-@media(max-width:768px){.clubHeader{flex-direction:column;text-align:center}.postsGrid{grid-template-columns:1fr}}
-@media(max-width:480px){.clubName{font-size:1.5rem}}
+@media(max-width:768px){
+  .pageWrapper { padding-bottom: 100px; }
+  .heroBanner { padding-top: 0; padding-bottom: 32px; }
+  .heroContent { flex-direction: column; align-items: center; text-align: center; }
+  .heroActions { margin-top: 20px; min-width: 100%; align-items: stretch; }
+  .heroIcon { width: 80px; height: 80px; font-size: 2.5rem; }
+  .heroIconWrap { width: 80px; height: 80px; }
+  .clubName { font-size: 1.8rem; }
+  .clubDesc { font-size: 0.92rem; }
+  .heroTags { justify-content: center; }
+  .heroMetaRow { justify-content: center; }
+  .joinBtnLarge { width: 100%; justify-content: center; }
+  .container { padding: 0 16px; }
+  .tabs { flex-wrap: nowrap; overflow-x: auto; -webkit-overflow-scrolling: touch; gap: 2px; }
+  .tabs::-webkit-scrollbar { display: none; }
+  .tab { min-width: 80px; font-size: 0.82rem; padding: 10px 12px; white-space: nowrap; flex-shrink: 0; }
+  .memberGrid { grid-template-columns: 1fr; }
+  .aboutGrid { grid-template-columns: 1fr; }
+  .composeBox { flex-direction: column; }
+  .bannerPickerGrid { grid-template-columns: repeat(4, 1fr); }
+  .settingsSection { padding: 16px; }
+}
+@media(max-width:480px){
+  .clubName { font-size: 1.5rem; }
+  .heroIcon { width: 64px; height: 64px; font-size: 2rem; }
+  .heroIconWrap { width: 64px; height: 64px; }
+  .tab { font-size: 0.78rem; padding: 8px 10px; }
+}

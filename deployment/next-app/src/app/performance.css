@@ -1,0 +1,105 @@
+/* ═══════════════════════════════════════════════════════════════════════════ */
+/*  PERFORMANCE.CSS — Smart performance overrides                            */
+/*  Desktop: keeps tasteful effects. Mobile: strips everything heavy.        */
+/* ═══════════════════════════════════════════════════════════════════════════ */
+
+/* ── GLOBAL: Remove the worst offenders everywhere ───────────────────────── */
+
+/* Kill decorative orbs/blobs — pure GPU waste */
+[class*="Orb"],
+[class*="heroOrb"],
+[class*="bgOrb"],
+[class*="blob"],
+[class*="Blob"] {
+  display: none !important;
+}
+
+/* Kill heavy infinite keyframe animations that run forever */
+@keyframes orbDrift { 0%, 100% { transform: none; } }
+@keyframes particleUp { 0%, 100% { transform: none; opacity: 1; } }
+@keyframes particleRise { 0%, 100% { transform: none; opacity: 1; } }
+@keyframes float { 0%, 100% { transform: none; } }
+@keyframes crownFloat { 0%, 100% { transform: none; } }
+@keyframes bookFloat { 0%, 100% { transform: none; } }
+@keyframes spinSlow { 0%, 100% { transform: none; } }
+@keyframes wobble { 0%, 100% { transform: none; } }
+@keyframes shimmerMove { 0%, 100% { transform: none; } }
+@keyframes neon-pulse { 0%, 100% { opacity: 1; } }
+@keyframes scanLine { 0%, 100% { transform: none; } }
+@keyframes glowPulse { 0%, 100% { box-shadow: none; } }
+@keyframes tooltipRingPulse { 0%, 100% { transform: none; opacity: 1; } }
+@keyframes arrowBounce { 0%, 100% { transform: none; } }
+@keyframes btnShine { 0%, 100% { background-position: 0; } }
+
+/* Simplify pulse/dot animations — keep dot visible, no pulsing */
+@keyframes pulse { 0%, 100% { opacity: 1; transform: none; } }
+@keyframes dotPulse { 0%, 100% { opacity: 1; transform: none; } }
+
+/* prefers-reduced-motion: respect user OS setting */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+
+/* ── DESKTOP (>768px): Keep it stunning ──────────────────────────────────── */
+@media (min-width: 769px) {
+  /* Strip backdrop-filter from cards/panels but keep it on navbar */
+  *:not(nav):not([class*="Nav"]):not([class*="nav"]):not([class*="mobile"]):not([class*="Cookie"]) {
+    -webkit-backdrop-filter: none !important;
+    backdrop-filter: none !important;
+  }
+}
+
+
+/* ── MOBILE & TABLET (≤768px): Strip EVERYTHING heavy ────────────────────── */
+@media (max-width: 768px) {
+
+  /* Kill ALL backdrop-filter — biggest mobile perf killer */
+  * {
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+  }
+
+  /* Kill all animations (exclude html/body to preserve native scroll) */
+  *:not(html):not(body):not(main),
+  *::before,
+  *::after {
+    animation: none !important;
+    animation-delay: 0s !important;
+    animation-duration: 0s !important;
+    transition-duration: 0.1s !important;
+    transition-delay: 0s !important;
+  }
+
+  /* Kill all hover transforms (useless on touch) */
+  *:hover {
+    transform: none !important;
+  }
+
+  /* Kill shimmer effects */
+  [class*="shimmer"],
+  [class*="Shimmer"],
+  [class*="cardGlow"],
+  [class*="Glow"]:not(button):not(a) {
+    opacity: 0 !important;
+  }
+
+  /* ScrollReveal — show immediately */
+  .sr-init,
+  .sr-up, .sr-down, .sr-left, .sr-right, .sr-scale {
+    opacity: 1 !important;
+    transform: none !important;
+  }
+
+  /* Kill grid background pattern */
+  body {
+    background-image: none !important;
+  }
+}

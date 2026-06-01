@@ -80,7 +80,7 @@ export default function SubjectsPage() {
         if (cancelled) return;
         const data = snap.docs
           .map(d => { const f = d.data(); if (f.subject === 'BE') f.subject = 'BEE'; return { id: d.id, ...f }; })
-          .filter(f => f.status === 'approved' && f.type === 'Notes');
+          .filter(f => f.status === 'approved');
         data.sort((a, b) => (b.createdAt || '').localeCompare(a.createdAt || ''));
         if (!cancelled) setAllFiles(data);
       } catch (e) { console.error(e); if (!cancelled) setAllFiles([]); }

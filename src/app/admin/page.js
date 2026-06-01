@@ -29,6 +29,10 @@ export default function AdminPage() {
     const [clubsList, setClubsList] = useState([]);
     const [searchQuery, setSearchQuery] = useState('');
 
+    // Broadcast State
+    const [broadcastTitle, setBroadcastTitle] = useState('');
+    const [broadcastBody, setBroadcastBody] = useState('');
+
     // Branding State
     const { branding: liveBranding } = useCollege();
     const [brandingForm, setBrandingForm] = useState({
@@ -188,6 +192,20 @@ export default function AdminPage() {
         setActionLoading(newsId);
         try {
             await updateDoc(doc(db, 'news', newsId), { status: 'approved' });
+            
+            const approvedNews = newsList.find(n => n.id === newsId);
+            if (approvedNews) {
+                fetch('/api/notifications/generate-and-send', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        contentType: 'Campus Notice',
+                        contentTitle: approvedNews.title,
+                        contentDetails: approvedNews.content,
+                    })
+                }).catch(e => console.error('Failed to trigger notification', e));
+            }
+
             setNewsList(prev => prev.filter(n => n.id !== newsId));
         } catch (error) {
             console.error('Error approving news:', error);
@@ -296,6 +314,19 @@ export default function AdminPage() {
         setActionLoading(fileId);
         try {
             await updateDoc(doc(db, 'files', fileId), { status: 'approved' });
+            
+            const approvedFile = files.find(f => f.id === fileId);
+            if (approvedFile) {
+                fetch('/api/notifications/generate-and-send', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        contentType: approvedFile.type || 'Study Material',
+                        contentTitle: `${approvedFile.subject || 'Subject'} - ${approvedFile.title}`,
+                    })
+                }).catch(e => console.error('Failed to trigger notification', e));
+            }
+
             setFiles(prev => prev.filter(f => f.id !== fileId));
         } catch (error) {
             console.error('Error approving file:', error);
@@ -425,6 +456,34 @@ export default function AdminPage() {
             url = '/api/downloads/' + relativePath;
         }
         window.open(url, '_blank');
+    };
+
+    const handleBroadcastNotification = async () => {
+        if (!broadcastTitle || !broadcastBody) {
+            alert('Title and body are required for broadcast');
+            return;
+        }
+        if (!confirm('Are you sure you want to send this push notification to ALL app users?')) return;
+        
+        setActionLoading('broadcast');
+        try {
+            const res = await fetch('/api/notifications/send', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ title: broadcastTitle, body: broadcastBody })
+            });
+            const data = await res.json();
+            if (data.success) {
+                alert(`Broadcast sent successfully! (Sent to ${data.sentCount} devices)`);
+                setBroadcastTitle('');
+                setBroadcastBody('');
+            } else {
+                alert('Failed to send broadcast: ' + (data.error || 'Unknown error'));
+            }
+        } catch (e) {
+            alert('Error sending broadcast: ' + e.message);
+        }
+        setActionLoading('');
     };
 
     const openEditModal = (file) => {
@@ -1004,6 +1063,36 @@ export default function AdminPage() {
                     </div>
                 ) : tab === 'system' ? (
                     <div style={{marginTop: '20px'}}>
+                        
+                        <div className={styles.fileCard} style={{marginBottom: '20px', padding: '20px', borderLeft: '4px solid var(--accent)'}}>
+                            <h3 style={{marginBottom: '10px'}}>📢 Global Push Notification Broadcast</h3>
+                            <p style={{color: 'var(--text-secondary)', marginBottom: '15px'}}>Manually blast a push notification to all mobile app users (e.g. for new features, urgent alerts).</p>
+                            <div style={{display: 'flex', flexDirection: 'column', gap: '10px', maxWidth: '500px'}}>
+                                <input 
+                                    type="text" 
+                                    placeholder="Notification Title (e.g. 🚀 Exam Mode is Live!)" 
+                                    className={styles.modalInput}
+                                    value={broadcastTitle}
+                                    onChange={e => setBroadcastTitle(e.target.value)}
+                                />
+                                <textarea 
+                                    placeholder="Notification Body" 
+                                    className={styles.modalInput}
+                                    rows={3}
+                                    value={broadcastBody}
+                                    onChange={e => setBroadcastBody(e.target.value)}
+                                />
+                                <button 
+                                    className={`${styles.actionBtn} ${styles.approveBtn}`}
+                                    onClick={handleBroadcastNotification}
+                                    disabled={actionLoading === 'broadcast'}
+                                    style={{padding: '10px 20px', background: 'var(--accent)', color: '#fff', alignSelf: 'flex-start'}}
+                                >
+                                    {actionLoading === 'broadcast' ? 'Sending...' : 'Blast Notification'}
+                                </button>
+                            </div>
+                        </div>
+
                         <div className={styles.fileCard} style={{marginBottom: '20px', padding: '20px'}}>
                             <h3 style={{marginBottom: '10px'}}>M2 Notes Functionality</h3>
                             <p style={{color: 'var(--text-secondary)', marginBottom: '15px'}}>Use these tools to seed Engineering Mathematics II notes or fix mapping issues if they are not showing up in the subject section.</p>

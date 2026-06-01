@@ -3,7 +3,8 @@
 import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { collection, getDocs, query, where, orderBy, limit, addDoc, onSnapshot, doc, updateDoc } from 'firebase/firestore';
-import { db } from '@/lib/firebase';
+import { db, storage } from '@/lib/firebase';
+import { ref, uploadBytesResumable, getDownloadURL } from 'firebase/storage';
 import { useAuth } from '@/context/AuthContext';
 import { IconUpload, IconDownload, IconStar, IconFolder, IconNotes, IconPyq, IconAssignment, IconLock, IconCalendar } from '@/components/Icons';
 import Webcam from 'react-webcam';
@@ -48,6 +49,8 @@ export default function DashboardPage() {
     const [uploads, setUploads] = useState([]);
     const [loadingUploads, setLoadingUploads] = useState(true);
     const [editing, setEditing] = useState(false);
+    const [dockOpen, setDockOpen] = useState(false);
+    const [showOnboarding, setShowOnboarding] = useState(false);
 
     // Profile Edit State
     const [editName, setEditName] = useState('');
@@ -109,6 +112,17 @@ export default function DashboardPage() {
         const timer = setInterval(() => setNow(new Date()), 1000);
         return () => clearInterval(timer);
     }, []);
+
+    // Onboarding popup — show once on mobile for new users
+    useEffect(() => {
+        if (typeof window === 'undefined') return;
+        const isMobile = window.innerWidth <= 768;
+        const hasSeen = localStorage.getItem('dashboard_onboarding_seen');
+        if (isMobile && !hasSeen && user) {
+            const timer = setTimeout(() => setShowOnboarding(true), 800);
+            return () => clearTimeout(timer);
+        }
+    }, [user]);
 
     const formatCountdown = (targetDateStr) => {
         const diff = new Date(targetDateStr) - now;
@@ -563,23 +577,15 @@ export default function DashboardPage() {
         if (!avatarFile || !user) return null;
         setUploadingAvatar(true);
         try {
-            const formData = new FormData();
-            formData.append('file', avatarFile);
-            formData.append('context', 'avatar');
+            const safeName = avatarFile.name.replace(/[^a-zA-Z0-9._-]/g, '_');
+            const fileName = `${Date.now()}_${safeName}`;
+            const storageRef = ref(storage, `avatars/${fileName}`);
 
-            const res = await fetch('/api/upload', {
-                method: 'POST',
-                body: formData,
-            });
-
-            const data = await res.json();
-
-            if (!res.ok || !data.success) {
-                throw new Error(data.error || 'Avatar upload failed');
-            }
+            const uploadTask = await uploadBytesResumable(storageRef, avatarFile);
+            const downloadURL = await getDownloadURL(uploadTask.ref);
 
             setUploadingAvatar(false);
-            return data.fileURL;
+            return downloadURL;
         } catch (err) {
             console.error('Avatar upload failed:', err);
             setUploadingAvatar(false);
@@ -682,51 +688,52 @@ export default function DashboardPage() {
         e.preventDefault();
         if (!submissionFile) return;
         setSubmittingAssignment(deadline.id);
+        setSubmissionProgress(0);
         
         try {
-            const formData = new FormData();
-            formData.append('file', submissionFile);
-            formData.append('context', 'submission');
+            const safeName = submissionFile.name.replace(/[^a-zA-Z0-9._-]/g, '_');
+            const fileName = `${Date.now()}_${safeName}`;
+            const storageRef = ref(storage, `submissions/${fileName}`);
 
-            // Simulate progress while uploading
-            let simulatedProgress = 0;
-            const progressInterval = setInterval(() => {
-                simulatedProgress = Math.min(simulatedProgress + Math.random() * 15, 85);
-                setSubmissionProgress(Math.round(simulatedProgress));
-            }, 400);
+            const uploadTask = uploadBytesResumable(storageRef, submissionFile);
 
-            const res = await fetch('/api/upload', {
-                method: 'POST',
-                body: formData,
-            });
+            uploadTask.on(
+                'state_changed',
+                (snapshot) => {
+                    const pct = Math.round((snapshot.bytesTransferred / snapshot.totalBytes) * 100);
+                    setSubmissionProgress(pct);
+                },
+                (err) => {
+                    console.error('Submission upload error:', err);
+                    setSubmittingAssignment(null);
+                    setSubmissionProgress(0);
+                },
+                async () => {
+                    try {
+                        const downloadURL = await getDownloadURL(uploadTask.snapshot.ref);
 
-            clearInterval(progressInterval);
-            setSubmissionProgress(95);
-
-            const data = await res.json();
-
-            if (!res.ok || !data.success) {
-                throw new Error(data.error || 'Submission upload failed');
-            }
-
-            setSubmissionProgress(100);
-
-            const newSub = {
-                deadlineId: deadline.id,
-                studentEmail: user.email,
-                studentName: user.name || 'Anonymous',
-                studentPhone: user.studentPhone || '',
-                parentPhone: user.parentPhone || '',
-                fileUrl: data.fileURL,
-                submittedAt: new Date().toISOString()
-            };
-            
-            const docRef = await addDoc(collection(db, 'submissions'), newSub);
-            setMySubmissions(prev => [...prev, { id: docRef.id, ...newSub }]);
-            
-            setSubmittingAssignment(null);
-            setSubmissionFile(null);
-            setSubmissionProgress(0);
+                        const newSub = {
+                            deadlineId: deadline.id,
+                            studentEmail: user.email,
+                            studentName: user.name || 'Anonymous',
+                            studentPhone: user.studentPhone || '',
+                            parentPhone: user.parentPhone || '',
+                            fileUrl: downloadURL, // Public HTTPS Firebase Storage URL!
+                            submittedAt: new Date().toISOString()
+                        };
+                        
+                        const docRef = await addDoc(collection(db, 'submissions'), newSub);
+                        setMySubmissions(prev => [...prev, { id: docRef.id, ...newSub }]);
+                        
+                        setSubmittingAssignment(null);
+                        setSubmissionFile(null);
+                        setSubmissionProgress(0);
+                    } catch (err) {
+                        console.error('Firestore save error:', err);
+                        setSubmittingAssignment(null);
+                    }
+                }
+            );
         } catch(e) {
             console.error(e);
             setSubmittingAssignment(null);
@@ -874,24 +881,36 @@ export default function DashboardPage() {
                     </div>
                 </section>
 
-                {/* ═══ QUICK ACCESS DOCK ═══ */}
+                {/* ═══ QUICK ACCESS DOCK (Collapsible on Mobile) ═══ */}
                 <section className={styles.dockSection}>
-                    <div className={styles.dockGrid}>
-                        {[
-                            { href: '/community', emoji: '💬', label: 'Community', color: '#b91c1c' },
-                            { href: '/leaderboard', emoji: '🏆', label: 'Leaderboard', color: '#FFD700' },
-                            { href: '/subjects', emoji: '📚', label: 'Subjects', color: '#dc2626' },
-                            { href: '/pyqs', emoji: '📄', label: 'PYQs', color: '#16a34a' },
-                            { href: '/assistant', emoji: '🤖', label: 'AI Tutor', color: '#166534' },
-                            { href: `/profile/${user.uid}`, emoji: '👤', label: 'Public Profile', color: '#22c55e' },
-                        ].map(item => (
-                            <Link key={item.href} href={item.href} className={styles.dockItem}>
-                                <div className={styles.dockIcon} style={{ background: `${item.color}15`, color: item.color }}>
-                                    <span>{item.emoji}</span>
-                                </div>
-                                <span className={styles.dockLabel}>{item.label}</span>
-                            </Link>
-                        ))}
+                    <button 
+                        className={styles.dockToggle} 
+                        onClick={() => setDockOpen(prev => !prev)}
+                    >
+                        <span className={styles.dockToggleLeft}>
+                            <span className={styles.dockToggleEmoji}>⚡</span>
+                            Quick Access
+                        </span>
+                        <span className={`${styles.dockToggleArrow} ${dockOpen ? styles.dockToggleArrowOpen : ''}`}>▼</span>
+                    </button>
+                    <div className={`${styles.dockCollapsible} ${dockOpen ? styles.dockCollapsibleOpen : ''}`}>
+                        <div className={styles.dockGrid}>
+                            {[
+                                { href: '/community', emoji: '💬', label: 'Community', color: '#b91c1c' },
+                                { href: '/leaderboard', emoji: '🏆', label: 'Leaderboard', color: '#FFD700' },
+                                { href: '/subjects', emoji: '📚', label: 'Subjects', color: '#dc2626' },
+                                { href: '/pyqs', emoji: '📄', label: 'PYQs', color: '#16a34a' },
+                                { href: '/assistant', emoji: '🤖', label: 'AI Tutor', color: '#166534' },
+                                { href: `/profile/${user.uid}`, emoji: '👤', label: 'Public Profile', color: '#22c55e' },
+                            ].map(item => (
+                                <Link key={item.href} href={item.href} className={styles.dockItem}>
+                                    <div className={styles.dockIcon} style={{ background: `${item.color}15`, color: item.color }}>
+                                        <span>{item.emoji}</span>
+                                    </div>
+                                    <span className={styles.dockLabel}>{item.label}</span>
+                                </Link>
+                            ))}
+                        </div>
                     </div>
                 </section>
 
@@ -1262,8 +1281,37 @@ export default function DashboardPage() {
                                         <div className={styles.profileField}><span className={styles.fieldLabel}>Semester</span><span className={styles.fieldValue}>{user.semester}</span></div>
                                     </div>
                                 ) : (
-                                    <div className={styles.noProfile}>
-                                        <p>No academic profile set. <button onClick={startEditing} className={styles.link}>Set it up now →</button></p>
+                                    <div className={styles.profileSetupCard}>
+                                        <span className={styles.setupIcon}>🎯</span>
+                                        <h3 className={styles.setupTitle}>Complete Your Profile</h3>
+                                        <p className={styles.setupDesc}>
+                                            Set up your academic profile to unlock personalized notes, exam prep, and class features.
+                                        </p>
+                                        <div className={styles.setupProgressWrap}>
+                                            <div className={styles.setupProgressLabel}>
+                                                <span>Progress</span>
+                                                <span>{Math.round(([user.name, user.college, user.branch, user.year, user.semester].filter(Boolean).length / 5) * 100)}%</span>
+                                            </div>
+                                            <div className={styles.setupProgressTrack}>
+                                                <div className={styles.setupProgressFill} style={{ width: `${Math.round(([user.name, user.college, user.branch, user.year, user.semester].filter(Boolean).length / 5) * 100)}%` }}></div>
+                                            </div>
+                                        </div>
+                                        <div className={styles.setupChecklist}>
+                                            {[
+                                                { label: 'Name', done: !!user.name },
+                                                { label: 'College', done: !!user.college },
+                                                { label: 'Branch', done: !!user.branch },
+                                                { label: 'Year', done: !!user.year },
+                                                { label: 'Semester', done: !!user.semester },
+                                            ].map(c => (
+                                                <span key={c.label} className={`${styles.setupCheckItem} ${c.done ? styles.setupCheckDone : styles.setupCheckPending}`}>
+                                                    {c.done ? '✓' : '○'} {c.label}
+                                                </span>
+                                            ))}
+                                        </div>
+                                        <button className={styles.setupBtn} onClick={startEditing}>
+                                            ⚙️ Set Up Now
+                                        </button>
                                     </div>
                                 )}
                                 {user.subjects && user.subjects.length > 0 && (
@@ -1667,6 +1715,48 @@ export default function DashboardPage() {
                                 {scanStatus === 'verifying' ? 'Extracting Bio-Data...' : 'Extract Bio-Data'}
                             </button>
                         </div>
+                    </div>
+                </div>
+            )}
+
+            {/* ═══ ONBOARDING POPUP (Mobile, First Visit) ═══ */}
+            {showOnboarding && (
+                <div className={styles.onboardingOverlay} onClick={() => { setShowOnboarding(false); localStorage.setItem('dashboard_onboarding_seen', 'true'); }}>
+                    <div className={styles.onboardingCard} onClick={(e) => e.stopPropagation()}>
+                        <div className={styles.onboardingHeader}>
+                            <span className={styles.onboardingEmoji}>👋</span>
+                            <h3 className={styles.onboardingTitle}>Welcome to Your Dashboard!</h3>
+                            <p className={styles.onboardingSubtitle}>Here&apos;s how to navigate</p>
+                        </div>
+                        <div className={styles.onboardingTips}>
+                            <div className={styles.onboardingTip}>
+                                <div className={styles.onboardingTipIcon}>⚡</div>
+                                <div className={styles.onboardingTipText}>
+                                    <span className={styles.onboardingTipTitle}>Quick Access Dock</span>
+                                    <span className={styles.onboardingTipDesc}>Tap &quot;Quick Access&quot; to jump to any page instantly</span>
+                                </div>
+                            </div>
+                            <div className={styles.onboardingTip}>
+                                <div className={styles.onboardingTipIcon}>🧭</div>
+                                <div className={styles.onboardingTipText}>
+                                    <span className={styles.onboardingTipTitle}>Bottom Navigation</span>
+                                    <span className={styles.onboardingTipDesc}>Use the bottom bar for Home, Subjects, Upload, AI &amp; Community</span>
+                                </div>
+                            </div>
+                            <div className={styles.onboardingTip}>
+                                <div className={styles.onboardingTipIcon}>🏠</div>
+                                <div className={styles.onboardingTipText}>
+                                    <span className={styles.onboardingTipTitle}>Your Hub Lives Here</span>
+                                    <span className={styles.onboardingTipDesc}>Profile, class data, grades &amp; attendance — all in one place</span>
+                                </div>
+                            </div>
+                        </div>
+                        <button 
+                            className={styles.onboardingBtn} 
+                            onClick={() => { setShowOnboarding(false); localStorage.setItem('dashboard_onboarding_seen', 'true'); }}
+                        >
+                            Got it! 🚀
+                        </button>
                     </div>
                 </div>
             )}

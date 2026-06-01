@@ -1,0 +1,52 @@
+@keyframes fadeInUp { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
+
+.schedulerPage { animation: fadeInUp 0.4s ease both; }
+.pageHeader { margin-bottom: 24px; }
+.pageTitle { font-family: var(--font-heading); font-size: 1.5rem; font-weight: 800; color: var(--text-primary); letter-spacing: -0.02em; }
+.pageSubtitle { color: var(--text-muted); font-size: 0.85rem; margin-top: 4px; }
+
+.bookingCard { background: var(--bg-surface); border: 1px solid var(--border); border-radius: var(--radius-md); padding: 24px; margin-bottom: 28px; max-width: 600px; }
+.cardTitle { font-family: var(--font-heading); font-size: 1rem; font-weight: 700; margin-bottom: 16px; }
+.bookingForm { display: flex; flex-direction: column; gap: 14px; }
+.formField { display: flex; flex-direction: column; gap: 6px; }
+.formField label { font-size: 0.78rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.04em; }
+.select { padding: 10px 14px; border-radius: var(--radius-sm); border: 1px solid var(--border); background: var(--bg-input); color: var(--text-primary); font-family: var(--font-body); font-size: 0.88rem; cursor: pointer; }
+.select:focus { border-color: var(--primary); box-shadow: 0 0 0 3px var(--primary-glow); }
+
+.claimBtn { padding: 10px 24px; background: var(--gradient-brand); color: #fff; border: none; border-radius: var(--radius-sm); font-weight: 700; font-size: 0.85rem; cursor: pointer; box-shadow: 0 2px 8px rgba(0,0,0,0.15); transition: all 0.2s; align-self: flex-start; }
+.claimBtn:hover:not(:disabled) { transform: translateY(-1px); box-shadow: 0 2px 8px rgba(0,0,0,0.15); }
+.claimBtn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+.statusMsg { font-size: 0.82rem; font-weight: 500; }
+.statusError { color: var(--error); }
+.statusSuccess { color: var(--success); }
+
+.sectionTitle { font-family: var(--font-heading); font-size: 1rem; font-weight: 700; margin-bottom: 14px; }
+
+/* Matrix */
+.matrixWrapper { overflow-x: auto; margin-bottom: 28px; border: 1px solid var(--border); border-radius: var(--radius-md); }
+.matrix { min-width: 500px; }
+.matrixHeader { display: grid; grid-template-columns: 140px repeat(4, 1fr); background: var(--bg-card); border-bottom: 1px solid var(--border); }
+.matrixCorner { padding: 12px; }
+.matrixColHeader { padding: 12px 8px; font-size: 0.78rem; font-weight: 700; color: var(--text-primary); text-align: center; border-left: 1px solid var(--border); }
+.matrixRow { display: grid; grid-template-columns: 140px repeat(4, 1fr); border-bottom: 1px solid var(--border); }
+.matrixRow:last-child { border-bottom: none; }
+.matrixRowHeader { padding: 12px; font-size: 0.78rem; font-weight: 700; color: var(--text-muted); display: flex; align-items: center; }
+.matrixCell { padding: 12px 8px; text-align: center; border-left: 1px solid var(--border); display: flex; align-items: center; justify-content: center; font-size: 0.82rem; transition: all 0.2s; }
+.cellOpen { background: rgba(16,185,129,0.04); }
+.cellBooked { background: rgba(239,68,68,0.04); }
+.cellAvailable { color: var(--success); font-weight: 600; font-size: 0.75rem; }
+.cellTeacher { color: var(--text-secondary); font-weight: 600; font-size: 0.75rem; }
+
+/* Bookings Grid */
+.bookingsGrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 12px; }
+.bookingChip { padding: 14px 16px; background: var(--bg-surface); border: 1px solid var(--border); border-radius: var(--radius-sm); display: flex; flex-direction: column; gap: 4px; transition: all 0.2s; }
+.bookingChip:hover { border-color: var(--border-glow); }
+.bookingChip strong { font-size: 0.9rem; color: var(--text-primary); }
+.chipSession { font-size: 0.82rem; color: var(--text-secondary); }
+.chipTeacher { font-size: 0.72rem; color: var(--primary); font-weight: 600; }
+
+.noData { color: var(--text-muted); font-size: 0.88rem; padding: 16px 0; }
+
+@media(max-width:768px){.pageWrapper{padding:12px}.grid,.statsGrid,.kpiGrid{grid-template-columns:1fr}.filterBar{flex-direction:column;align-items:stretch}}
+@media(max-width:480px){.pageWrapper{padding:8px}}

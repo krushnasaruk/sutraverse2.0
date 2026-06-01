@@ -1,0 +1,505 @@
+/* ============================================ */
+/* LEADERBOARD – PREMIUM REDESIGN              */
+/* ============================================ */
+
+.pageWrapper {
+    min-height: 100vh;
+    padding: var(--space-4xl) 0;
+    position: relative;
+    overflow: hidden;
+}
+
+/* ── Animated Orbs ── */
+.bgOrb1, .bgOrb2, .bgOrb3 {
+    position: absolute;
+    border-radius: 50%;
+    filter: blur(120px);
+    z-index: 0;
+    pointer-events: none;
+}
+
+.bgOrb1 {
+    top: -5%;
+    left: -10%;
+    width: 700px;
+    height: 700px;
+    background: linear-gradient(135deg, #FFD700, #FFA500);
+    opacity: 0.08;
+    animation: orbDrift 25s ease-in-out infinite alternate;
+}
+
+.bgOrb2 {
+    bottom: 10%;
+    right: -12%;
+    width: 550px;
+    height: 550px;
+    background: var(--primary);
+    opacity: 0.1;
+    animation: orbDrift 30s ease-in-out infinite alternate-reverse;
+}
+
+.bgOrb3 {
+    top: 50%;
+    left: 50%;
+    width: 400px;
+    height: 400px;
+    background: var(--accent);
+    opacity: 0.06;
+    animation: orbDrift 22s ease-in-out infinite alternate;
+}
+
+@keyframes orbDrift {
+    0% { transform: translate(0, 0) scale(1); }
+    50% { transform: translate(30px, -20px) scale(1.05); }
+    100% { transform: translate(-20px, 40px) scale(0.95); }
+}
+
+.container {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 0 var(--space-xl);
+    position: relative;
+    z-index: 1;
+}
+
+/* ── Hero Header ── */
+.header {
+    text-align: center;
+    margin-bottom: var(--space-3xl);
+}
+
+.heroBadge {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-xs);
+    padding: 6px 18px;
+    background: linear-gradient(135deg, rgba(255, 215, 0, 0.12), rgba(255, 165, 0, 0.08));
+    color: #FFD700;
+    border-radius: 100px;
+    font-size: 0.8rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    margin-bottom: var(--space-lg);
+    border: 1px solid rgba(255, 215, 0, 0.25);
+}
+
+.heroBadgeDot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: #FFD700;
+    box-shadow: 0 0 8px rgba(255, 215, 0, 0.6);
+    animation: dotPulse 2s infinite ease-in-out;
+}
+
+@keyframes dotPulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.4; }
+}
+
+.title {
+    font-size: clamp(2.5rem, 6vw, 4.5rem);
+    font-weight: 900;
+    color: var(--text-primary);
+    line-height: 1.05;
+    letter-spacing: -0.03em;
+    margin-bottom: var(--space-md);
+    font-family: var(--font-heading);
+}
+
+.titleAccent {
+    background: linear-gradient(135deg, #FFD700 0%, #FF8C00 50%, #FFD700 100%);
+    background-size: 200% 200%;animation: shimmer 4s ease-in-out infinite;
+}
+
+@keyframes shimmer {
+    0%, 100% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+}
+
+.subtitle {
+    font-size: 1.15rem;
+    color: var(--text-secondary);
+    max-width: 560px;
+    margin: 0 auto;
+    line-height: 1.7;
+}
+
+/* ── Stats Strip ── */
+.statsStrip {
+    display: flex;
+    justify-content: center;
+    gap: var(--space-xl);
+    margin-top: var(--space-xl);
+}
+
+.statItem {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+}
+
+.statNum {
+    font-size: 1.8rem;
+    font-weight: 800;
+    color: var(--text-primary);
+    font-family: var(--font-heading);
+}
+
+.statLabel {
+    font-size: 0.78rem;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    font-weight: 600;
+}
+
+/* ============================================ */
+/* TOP 3 PODIUM – Card-based redesign           */
+/* ============================================ */
+.podium {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: var(--space-lg);
+    margin-bottom: var(--space-3xl);
+    align-items: end;
+}
+
+.podiumCard {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: var(--space-xl) var(--space-lg);
+    border-radius: var(--radius-xl);
+    border: 1px solid var(--border);
+    background: rgba(var(--bg-surface-rgb), 0.5);
+    backdrop-filter: blur(24px);
+    position: relative;
+    transition: all 0.3s ease;
+    text-decoration: none;
+    color: inherit;
+}
+
+.podiumCard:hover {
+    transform: translateY(-6px);
+    box-shadow: 0 20px 50px rgba(0,0,0,0.12);
+}
+
+/* Rank-specific height stacking */
+.podiumCard.gold {
+    order: 2;
+    padding-top: var(--space-3xl);
+    padding-bottom: var(--space-2xl);
+    background: linear-gradient(180deg, rgba(255, 215, 0, 0.06) 0%, rgba(var(--bg-surface-rgb), 0.5) 100%);
+    border-color: rgba(255, 215, 0, 0.3);
+    box-shadow: 0 0 40px rgba(255, 215, 0, 0.06);
+}
+
+.podiumCard.silver {
+    order: 1;
+    padding-top: var(--space-2xl);
+    background: linear-gradient(180deg, rgba(192, 192, 192, 0.05) 0%, rgba(var(--bg-surface-rgb), 0.5) 100%);
+    border-color: rgba(192, 192, 192, 0.25);
+}
+
+.podiumCard.bronze {
+    order: 3;
+    padding-top: var(--space-xl);
+    background: linear-gradient(180deg, rgba(205, 127, 50, 0.05) 0%, rgba(var(--bg-surface-rgb), 0.5) 100%);
+    border-color: rgba(205, 127, 50, 0.25);
+}
+
+.rankBadge {
+    position: absolute;
+    top: -14px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.85rem;
+    font-weight: 800;
+    z-index: 2;
+    border: 2px solid var(--bg-main);
+}
+
+.gold .rankBadge {
+    background: linear-gradient(135deg, #FFD700, #FFA500);
+    color: #000;
+    width: 40px;
+    height: 40px;
+    font-size: 1.1rem;
+    top: -18px;
+    box-shadow: 0 4px 20px rgba(255, 215, 0, 0.4);
+}
+
+.silver .rankBadge {
+    background: linear-gradient(135deg, #C0C0C0, #A0A0A0);
+    color: #000;
+    box-shadow: 0 4px 15px rgba(192, 192, 192, 0.3);
+}
+
+.bronze .rankBadge {
+    background: linear-gradient(135deg, #CD7F32, #B8860B);
+    color: #fff;
+    box-shadow: 0 4px 15px rgba(205, 127, 50, 0.3);
+}
+
+.crown {
+    position: absolute;
+    top: -42px;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 1.8rem;
+    filter: drop-shadow(0 2px 8px rgba(255, 215, 0, 0.5));
+    animation: crownFloat 3s ease-in-out infinite;
+    z-index: 3;
+}
+
+@keyframes crownFloat {
+    0%, 100% { transform: translateX(-50%) translateY(0) rotate(0deg); }
+    25% { transform: translateX(-50%) translateY(-6px) rotate(3deg); }
+    75% { transform: translateX(-50%) translateY(-3px) rotate(-2deg); }
+}
+
+.podiumAvatar {
+    width: 72px;
+    height: 72px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 3px solid var(--border);
+    margin-bottom: var(--space-md);
+    box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+}
+
+.gold .podiumAvatar {
+    width: 96px;
+    height: 96px;
+    border-color: #FFD700;
+    box-shadow: 0 0 30px rgba(255, 215, 0, 0.2), 0 10px 30px rgba(0,0,0,0.15);
+}
+
+.silver .podiumAvatar {
+    border-color: #C0C0C0;
+    box-shadow: 0 0 20px rgba(192, 192, 192, 0.15), 0 8px 25px rgba(0,0,0,0.12);
+}
+
+.bronze .podiumAvatar {
+    border-color: #CD7F32;
+    box-shadow: 0 0 20px rgba(205, 127, 50, 0.15), 0 8px 25px rgba(0,0,0,0.12);
+}
+
+.avatarFallback {
+    width: 72px;
+    height: 72px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--primary), var(--accent));
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.8rem;
+    font-weight: 700;
+    border: 3px solid var(--border);
+    margin-bottom: var(--space-md);
+}
+
+.gold .avatarFallback { width: 96px; height: 96px; font-size: 2.5rem; border-color: #FFD700; }
+.silver .avatarFallback { border-color: #C0C0C0; }
+.bronze .avatarFallback { border-color: #CD7F32; }
+
+.podiumName {
+    font-weight: 700;
+    font-size: 1rem;
+    color: var(--text-primary);
+    margin-bottom: 4px;
+    text-align: center;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 100%;
+}
+
+.gold .podiumName {
+    font-size: 1.2rem;
+    font-weight: 800;
+}
+
+.podiumMeta {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.82rem;
+    color: var(--text-secondary);
+    margin-bottom: var(--space-sm);
+}
+
+.podiumXP {
+    font-weight: 800;
+    font-size: 1.15rem;
+    color: var(--primary);
+    font-family: var(--font-heading);
+}
+
+.gold .podiumXP {
+    font-size: 1.4rem;
+    color: var(--primary);}
+
+/* ── XP Progress Mini Bar ── */
+.miniProgress {
+    width: 100%;
+    height: 4px;
+    background: rgba(var(--primary-rgb), 0.1);
+    border-radius: 100px;
+    margin-top: var(--space-sm);
+    overflow: hidden;
+}
+
+.miniProgressFill {
+    height: 100%;
+    border-radius: 100px;
+    background: linear-gradient(90deg, var(--primary), var(--accent));
+    transition: width 1s ease;
+}
+
+/* ============================================ */
+/* LEADERBOARD TABLE                            */
+/* ============================================ */
+.leaderboardList {
+    background: rgba(var(--bg-surface-rgb), 0.4);
+    backdrop-filter: blur(24px);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-xl);
+    overflow: hidden;
+    box-shadow: 0 16px 40px rgba(0,0,0,0.06);
+}
+
+.listHeader {
+    display: grid;
+    grid-template-columns: 50px 1fr 130px 110px;
+    padding: 14px var(--space-xl);
+    background: rgba(var(--bg-surface-rgb), 0.6);
+    border-bottom: 1px solid var(--border);
+    font-weight: 700;
+    color: var(--text-muted);
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+}
+
+.listItem {
+    display: grid;
+    grid-template-columns: 50px 1fr 130px 110px;
+    align-items: center;
+    padding: 14px var(--space-xl);
+    border-bottom: 1px solid rgba(var(--border-rgb, 128, 128, 128), 0.3);
+    transition: all 0.2s ease;
+    text-decoration: none;
+    color: inherit;
+    position: relative;
+}
+
+.listItem:last-child {
+    border-bottom: none;
+}
+
+.listItem:hover {
+    background: rgba(var(--primary-rgb), 0.04);
+}
+
+.listItem:hover .listName {
+    color: var(--primary);
+}
+
+.rankCol {
+    font-weight: 800;
+    color: var(--text-muted);
+    font-size: 0.95rem;
+    font-family: var(--font-heading);
+}
+
+.userCol {
+    display: flex;
+    align-items: center;
+    gap: var(--space-md);
+    min-width: 0;
+}
+
+.listAvatar {
+    width: 38px;
+    height: 38px;
+    border-radius: 50%;
+    object-fit: cover;
+    flex-shrink: 0;
+    border: 2px solid var(--border);
+}
+
+.listAvatarFallback {
+    width: 38px;
+    height: 38px;
+    border-radius: 50%;
+    background: var(--bg-elevated);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+    flex-shrink: 0;
+    border: 2px solid var(--border);
+}
+
+.listName {
+    font-weight: 600;
+    color: var(--text-primary);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    transition: color 0.2s ease;
+}
+
+.levelCol {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+    font-weight: 600;
+}
+
+.xpCol {
+    font-weight: 800;
+    color: var(--primary);
+    text-align: right;
+    font-size: 0.95rem;
+    font-family: var(--font-heading);
+}
+
+/* ── States ── */
+.loadingState {
+    text-align: center;
+    padding: 120px 20px;
+    color: var(--text-secondary);
+    font-size: 1.1rem;
+}
+
+.emptyState {
+    text-align: center;
+    padding: 80px 20px;
+    color: var(--text-muted);
+    font-size: 1.1rem;
+    background: rgba(var(--bg-surface-rgb), 0.3);
+    border-radius: var(--radius-xl);
+    border: 1px dashed var(--border);
+}
+
+/* ============================================ */
+
+@media(max-width:768px){.heroTitle{font-size:2.2rem}.podium{flex-direction:column;gap:16px}.podiumFirst{order:-1}.leaderboardGrid{grid-template-columns:1fr}}
+@media(max-width:480px){.heroTitle{font-size:1.8rem}.podiumAvatar{width:60px;height:60px}}
+@media(max-width:360px){.heroTitle{font-size:1.5rem}}

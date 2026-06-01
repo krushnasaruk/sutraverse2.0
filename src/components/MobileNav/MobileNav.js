@@ -52,8 +52,8 @@ export default function MobileNav() {
   const pathname = usePathname();
   const { user } = useAuth();
 
-  // Don't show on login/signup pages
-  if (pathname === '/login' || pathname === '/signup') return null;
+  // Don't show on login/signup/mobile-auth pages
+  if (pathname === '/login' || pathname === '/signup' || (pathname && pathname.startsWith('/mobile-auth'))) return null;
 
   const isAdmin = user && (user.isAdmin || ['sutraverse11@gmail.com'].includes(user.email));
 

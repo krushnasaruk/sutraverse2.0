@@ -8,7 +8,7 @@ import { useAuth } from '@/context/AuthContext';
 import { BRANCHES, YEARS, getSubjectsByYear } from '@/lib/subjectMap';
 import { ScrollReveal } from '@/components/Animations';
 import { Skeleton } from '@/components/Skeleton/Skeleton';
-import { IconLock } from '@/components/Icons';
+import { IconLock, IconYoutube } from '@/components/Icons';
 import styles from './page.module.css';
 
 /* ── Subject accent colours ──────────────────────────────────────────────── */
@@ -253,8 +253,8 @@ export default function YouTubePage() {
 
                         {/* Header */}
                         <div className={styles.subjectCardHeader}>
-                          <div className={styles.subjectIcon} style={{ background: `${accent}15`, borderColor: `${accent}30`, color: accent }}>
-                            ▶
+                          <div className={styles.subjectIcon} style={{ background: `${accent}15`, borderColor: `${accent}30`, color: '#ff0000' }}>
+                            <IconYoutube size={20} />
                           </div>
                           <div className={styles.cardBadge} style={{ color: accent, background: `${accent}15` }}>
                             {content.length} {content.length === 1 ? 'video' : 'videos'}
@@ -361,7 +361,7 @@ export default function YouTubePage() {
                                 </div>
                               </div>
                               <div className={styles.ytBadge}>
-                                <span className={styles.ytDot}></span> YouTube
+                                <IconYoutube size={14} style={{ marginRight: 4 }} /> YouTube
                               </div>
                             </div>
 
@@ -373,7 +373,7 @@ export default function YouTubePage() {
                               </div>
                               <div className={styles.lectureFooter}>
                                 <div className={styles.channelInfo}>
-                                  <span className={styles.channelDot}>▶</span>
+                                  <IconYoutube size={14} style={{ marginRight: 4 }} />
                                   YouTube
                                 </div>
                                 <span className={styles.watchText}>

@@ -2,8 +2,9 @@
 
 import { useState } from 'react';
 import { useTeacher } from '../layout';
-import { db } from '@/lib/firebase';
+import { db, storage } from '@/lib/firebase';
 import { collection, doc, setDoc } from 'firebase/firestore';
+import { ref, uploadBytesResumable, getDownloadURL } from 'firebase/storage';
 import styles from './page.module.css';
 
 export default function MaterialsPage() {
@@ -22,50 +23,67 @@ export default function MaterialsPage() {
         if (!selectedClass) return;
 
         setIsSaving(true);
-        setUploadProgress(10);
+        setUploadProgress(0);
         setStatus({ text: 'Uploading...', type: '' });
 
         try {
-            // Build FormData for local server upload
-            const formData = new FormData();
-            formData.append('file', uploadFile);
-            formData.append('context', 'teacher-material');
+            // Create a storage reference: materials/timestamp_filename
+            const safeName = uploadFile.name.replace(/[^a-zA-Z0-9._-]/g, '_');
+            const fileName = `${Date.now()}_${safeName}`;
+            const storageRef = ref(storage, `materials/${fileName}`);
 
-            // Simulate progress while uploading
-            let simulatedProgress = 10;
-            const progressInterval = setInterval(() => {
-                simulatedProgress = Math.min(simulatedProgress + Math.random() * 15, 85);
-                setUploadProgress(Math.round(simulatedProgress));
-            }, 400);
+            // Upload the file
+            const uploadTask = uploadBytesResumable(storageRef, uploadFile);
 
-            // Upload via local API route (no Firebase Storage needed)
-            const res = await fetch('/api/upload', {
-                method: 'POST',
-                body: formData,
-            });
+            // Set up task listeners
+            uploadTask.on(
+                'state_changed',
+                (snapshot) => {
+                    const pct = Math.round((snapshot.bytesTransferred / snapshot.totalBytes) * 100);
+                    setUploadProgress(pct);
+                },
+                (err) => {
+                    console.error('Firebase Storage upload error:', err);
+                    setStatus({ text: 'Error: ' + err.message, type: 'error' });
+                    setIsSaving(false);
+                },
+                async () => {
+                    try {
+                        // Get public download URL
+                        const downloadURL = await getDownloadURL(uploadTask.snapshot.ref);
 
-            clearInterval(progressInterval);
-            setUploadProgress(90);
+                        // Save metadata to Firestore
+                        await setDoc(doc(collection(db, 'files')), {
+                            title: uploadTitle.trim(),
+                            type: uploadType,
+                            subject: selectedClass.subject,
+                            classId: selectedClass.classId,
+                            uploaderName: user.name || user.email,
+                            uploaderUID: user.uid,
+                            fileUrl: downloadURL, // Public HTTPS Firebase Storage URL!
+                            downloads: 0,
+                            rating: "0",
+                            status: "approved",
+                            createdAt: new Date().toISOString()
+                        });
 
-            const data = await res.json();
-
-            if (!res.ok || !data.success) {
-                throw new Error(data.error || 'Upload failed');
-            }
-
-            // Save metadata to Firestore
-            await setDoc(doc(collection(db, 'files')), {
-                title: uploadTitle.trim(), type: uploadType,
-                subject: selectedClass.subject, classId: selectedClass.classId,
-                uploaderName: user.name || user.email, uploaderUID: user.uid,
-                fileUrl: data.fileURL, downloads: 0, rating: "0",
-                status: "approved", createdAt: new Date().toISOString()
-            });
-
-            setUploadProgress(100);
-            setStatus({ text: `Uploaded to ${selectedClass.classId}!`, type: 'success' });
-            setUploadFile(null); setUploadTitle(''); setUploadProgress(0); setIsSaving(false);
-        } catch(err) { setStatus({ text: 'Error: ' + err.message, type: 'error' }); setIsSaving(false); }
+                        setUploadProgress(100);
+                        setStatus({ text: `Uploaded to ${selectedClass.classId}!`, type: 'success' });
+                        setUploadFile(null);
+                        setUploadTitle('');
+                        setUploadProgress(0);
+                        setIsSaving(false);
+                    } catch (err) {
+                        console.error('Firestore save error:', err);
+                        setStatus({ text: 'Error: ' + err.message, type: 'error' });
+                        setIsSaving(false);
+                    }
+                }
+            );
+        } catch(err) {
+            setStatus({ text: 'Error: ' + err.message, type: 'error' });
+            setIsSaving(false);
+        }
     };
 
     if (!selectedClass) return <div className={styles.emptyState}><p>Select a class from the sidebar</p></div>;
