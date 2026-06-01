@@ -9,20 +9,89 @@ import { awardDownloadPoints } from '@/lib/points';
 import { ScrollReveal } from '@/components/Animations';
 import { Skeleton } from '@/components/Skeleton/Skeleton';
 import { IconPyq, IconSearch, IconLock, IconDownload, IconStar, IconHat, IconUser, IconFlag } from '@/components/Icons';
+import { BRANCHES, YEARS, getSubjectsByYear } from '@/lib/subjectMap';
 import styles from './page.module.css';
+
+// Normalize subject names from different sources
+export function normalizeSubjectName(name) {
+  if (!name) return '';
+  const n = name.trim().toLowerCase();
+  
+  if (n === 'bee' || n === 'basic electrical engineering' || n === 'be') return 'BEE';
+  if (n === 'physics' || n === 'engineering physics') return 'Physics';
+  if (n === 'chemistry' || n === 'engineering chemistry') return 'Chemistry';
+  if (n === 'electronics' || n === 'basic electronics' || n === 'basic electronics engineering') return 'Basic Electronics Engineering';
+  if (n === 'engineering mathematics i' || n === 'engineering mathematics 1' || n === 'maths 1' || n === 'maths i') return 'Engineering Mathematics I';
+  if (n === 'engineering mathematics ii' || n === 'engineering mathematics 2' || n === 'maths 2' || n === 'maths ii') return 'Engineering Mathematics II';
+  if (n === 'engineering mechanics' || n === 'mechanics' || n === 'em') return 'Engineering Mechanics';
+  if (n === 'pps' || n === 'programming & problem solving' || n === 'programming and problem solving') return 'PPS';
+  if (n === 'engineering graphics' || n === 'graphics' || n === 'eg') return 'Engineering Graphics';
+  
+  return name.trim();
+}
 
 // ── Subject config ─────────────────────────────────────────────────────────
 const SUBJECTS = [
-  { key: 'BEE',                       label: 'Basic Electrical Engineering', short: 'BEE',      emoji: '⚡', color: '#f59e0b', grad: 'linear-gradient(135deg,#f59e0b22,#fbbf2411)' },
-  { key: 'Engineering Chemistry',     label: 'Engineering Chemistry',        short: 'Chem',     emoji: '🧪', color: '#10b981', grad: 'linear-gradient(135deg,#10b98122,#34d39911)' },
-  { key: 'Electronics',               label: 'Basic Electronics',            short: 'Elec',     emoji: '📡', color: '#dc2626', grad: 'linear-gradient(135deg,#dc262622,#ef444411)' },
-  { key: 'Engineering Graphics',      label: 'Engineering Graphics',         short: 'EG',       emoji: '✏️', color: '#b91c1c', grad: 'linear-gradient(135deg,#b91c1c22,#a78bfa11)' },
-  { key: 'Engineering Mathematics 1', label: 'Engineering Mathematics I',    short: 'Maths I',  emoji: '📐', color: '#ef4444', grad: 'linear-gradient(135deg,#ef444422,#f8717111)' },
-  { key: 'Engineering Mathematics 2', label: 'Engineering Mathematics II',   short: 'Maths II', emoji: '📏', color: '#22c55e', grad: 'linear-gradient(135deg,#22c55e22,#f4728411)' },
-  { key: 'Engineering Mechanics',     label: 'Engineering Mechanics',        short: 'EM',       emoji: '⚙️', color: '#15803d', grad: 'linear-gradient(135deg,#15803d22,#16a34a11)' },
-  { key: 'Engineering Physics',       label: 'Engineering Physics',          short: 'Physics',  emoji: '🔭', color: '#f97316', grad: 'linear-gradient(135deg,#f9731622,#fb923c11)' },
-  { key: 'PPS',                        label: 'Programming & Problem Solving',short: 'PPS',     emoji: '💻', color: '#16a34a', grad: 'linear-gradient(135deg,#16a34a22,#86efac11)' },
+  { key: 'BEE',                             label: 'Basic Electrical Engineering', short: 'BEE',      emoji: '⚡', color: '#f59e0b', grad: 'linear-gradient(135deg,#f59e0b22,#fbbf2411)' },
+  { key: 'Chemistry',                       label: 'Engineering Chemistry',        short: 'Chem',     emoji: '🧪', color: '#10b981', grad: 'linear-gradient(135deg,#10b98122,#34d39911)' },
+  { key: 'Basic Electronics Engineering',   label: 'Basic Electronics',            short: 'Elec',     emoji: '📡', color: '#dc2626', grad: 'linear-gradient(135deg,#dc262622,#ef444411)' },
+  { key: 'Engineering Graphics',            label: 'Engineering Graphics',         short: 'EG',       emoji: '✏️', color: '#b91c1c', grad: 'linear-gradient(135deg,#b91c1c22,#a78bfa11)' },
+  { key: 'Engineering Mathematics I',       label: 'Engineering Mathematics I',    short: 'Maths I',  emoji: '📐', color: '#ef4444', grad: 'linear-gradient(135deg,#ef444422,#f8717111)' },
+  { key: 'Engineering Mathematics II',      label: 'Engineering Mathematics II',   short: 'Maths II', emoji: '📏', color: '#22c55e', grad: 'linear-gradient(135deg,#22c55e22,#f4728411)' },
+  { key: 'Engineering Mechanics',           label: 'Engineering Mechanics',        short: 'EM',       emoji: '⚙️', color: '#15803d', grad: 'linear-gradient(135deg,#15803d22,#16a34a11)' },
+  { key: 'Physics',                         label: 'Engineering Physics',          short: 'Physics',  emoji: '🔭', color: '#f97316', grad: 'linear-gradient(135deg,#f9731622,#fb923c11)' },
+  { key: 'PPS',                             label: 'Programming & Problem Solving',short: 'PPS',     emoji: '💻', color: '#16a34a', grad: 'linear-gradient(135deg,#16a34a22,#86efac11)' },
 ];
+
+const SUBJECT_COLORS = [
+  '#f59e0b', '#10b981', '#dc2626', '#b91c1c', '#ef4444', 
+  '#22c55e', '#15803d', '#f97316', '#16a34a', '#8b5cf6',
+  '#4f46e5', '#3b82f6', '#ec4899', '#f43f5e', '#06b6d4'
+];
+
+const SUBJECT_EMOJIS = {
+  'bee': '⚡',
+  'chemistry': '🧪',
+  'physics': '🔭',
+  'mechanics': '⚙️',
+  'graphics': '✏️',
+  'math': '📐',
+  'structure': '📚',
+  'data': '📊',
+  'program': '💻',
+  'object': '📦',
+  'digital': '📡',
+  'software': '🛠️',
+  'operating': '🖥️',
+  'visualization': '📈',
+  'database': '🗄️',
+  'network': '🌐'
+};
+
+function getSubjectMeta(subjectName, index = 0) {
+  const normalized = normalizeSubjectName(subjectName);
+  const existing = SUBJECTS.find(s => normalizeSubjectName(s.key) === normalized);
+  if (existing) return existing;
+
+  const color = SUBJECT_COLORS[index % SUBJECT_COLORS.length];
+  let emoji = '📖';
+  const nameL = subjectName.toLowerCase();
+  for (const [kw, em] of Object.entries(SUBJECT_EMOJIS)) {
+    if (nameL.includes(kw)) {
+      emoji = em;
+      break;
+    }
+  }
+
+  return {
+    key: subjectName,
+    label: subjectName,
+    short: subjectName.substring(0, 10),
+    emoji,
+    color,
+    grad: `linear-gradient(135deg, ${color}22, ${color}11)`
+  };
+}
 
 // Extract readable period from filename
 function parsePeriod(title) {
@@ -48,6 +117,23 @@ export default function PyqsPage() {
   const [activeSubject, setActiveSubject] = useState(null);
   const [search, setSearch] = useState('');
   const [yearFilter, setYearFilter] = useState('All');
+  const [branch, setBranch] = useState('Computer');
+  const [year, setYear] = useState('1st Year');
+  const [hasLoadedPrefs, setHasLoadedPrefs] = useState(false);
+
+  useEffect(() => {
+    if (!authLoading && !hasLoadedPrefs) {
+      if (user) {
+        setBranch(user.branch || 'Computer');
+        setYear(user.year || '1st Year');
+      }
+      setHasLoadedPrefs(true);
+    }
+  }, [user, authLoading, hasLoadedPrefs]);
+
+  const activeBranchSubjects = useMemo(() => {
+    return getSubjectsByYear(branch, year);
+  }, [branch, year]);
 
   // ── Fetch ──────────────────────────────────────────────────────────────────
   useEffect(() => {
@@ -88,7 +174,7 @@ export default function PyqsPage() {
   const countBySubject = useMemo(() => {
     const map = {};
     pyqs.forEach(p => {
-      const key = p.subject?.trim() || 'Other';
+      const key = normalizeSubjectName(p.subject) || 'Other';
       map[key] = (map[key] || 0) + 1;
     });
     return map;
@@ -97,7 +183,7 @@ export default function PyqsPage() {
   const latestBySubject = useMemo(() => {
     const map = {};
     pyqs.forEach(p => {
-      const key = p.subject?.trim() || 'Other';
+      const key = normalizeSubjectName(p.subject) || 'Other';
       if (!map[key]) map[key] = [];
       if (map[key].length < 3) map[key].push(p);
     });
@@ -106,9 +192,9 @@ export default function PyqsPage() {
 
   const subjectPyqs = useMemo(() => {
     if (!activeSubject) return [];
+    const normalizedActive = normalizeSubjectName(activeSubject);
     return pyqs.filter(p => {
-      const subj = p.subject?.trim() || '';
-      return subj === activeSubject || subj.toLowerCase() === activeSubject.toLowerCase();
+      return normalizeSubjectName(p.subject) === normalizedActive;
     });
   }, [pyqs, activeSubject]);
 
@@ -132,12 +218,26 @@ export default function PyqsPage() {
     let url = item.fileURL || item.fileUrl;
     if (!url) return;
     
+    // Normalize localhost / absolute self-hosted URLs to relative paths
+    if (url.startsWith('http://') || url.startsWith('https://')) {
+      if (!url.includes('firebasestorage.googleapis.com')) {
+        try {
+          const parsed = new URL(url);
+          url = parsed.pathname + parsed.search;
+        } catch (e) {
+          console.warn('URL parsing failed:', e);
+        }
+      }
+    }
+
     if (!url.includes('firebasestorage')) {
-      let relativePath = '';
-      if (url.includes('/api/downloads/')) relativePath = url.split('/api/downloads/')[1];
-      else if (url.includes('/uploads/')) relativePath = url.split('/uploads/')[1];
-      else relativePath = url.split('/').pop();
-      
+      let relativePath = url;
+      if (relativePath.startsWith('/')) {
+        relativePath = relativePath.substring(1);
+      }
+      if (relativePath.includes('api/downloads/')) {
+        relativePath = relativePath.split('api/downloads/')[1];
+      }
       relativePath = relativePath.split('?')[0];
       url = '/api/downloads/' + relativePath;
     }
@@ -165,7 +265,11 @@ export default function PyqsPage() {
     </div>
   );
 
-  const activeMeta = SUBJECTS.find(s => s.key === activeSubject);
+  const activeMeta = useMemo(() => {
+    if (!activeSubject) return null;
+    const idx = activeBranchSubjects.indexOf(activeSubject);
+    return getSubjectMeta(activeSubject, idx >= 0 ? idx : 0);
+  }, [activeSubject, activeBranchSubjects]);
 
   return (
     <div className={styles.pageWrapper}>
@@ -208,7 +312,7 @@ export default function PyqsPage() {
                 </div>
                 <div className={styles.statDivider}></div>
                 <div className={styles.statBubble}>
-                  <span className={styles.statValue}>{SUBJECTS.length}</span>
+                  <span className={styles.statValue}>{activeBranchSubjects.length}</span>
                   <span className={styles.statLabel}>Subjects</span>
                 </div>
                 <div className={styles.statDivider}></div>
@@ -233,6 +337,21 @@ export default function PyqsPage() {
         {/* ══════════════════════════════════════════════════════════════════ */}
         {!activeSubject && (
           <>
+            {/* Branch / Year Filters */}
+            <ScrollReveal delay={100}>
+              <div className={styles.filterBar}>
+                <div className={styles.filterGroup}>
+                  <select className={styles.filterSelect} value={branch} onChange={e => setBranch(e.target.value)}>
+                    {BRANCHES.map(b => <option key={b} value={b}>{b}</option>)}
+                  </select>
+                  <select className={styles.filterSelect} value={year} onChange={e => setYear(e.target.value)}>
+                    {YEARS.map(y => <option key={y} value={y}>{y}</option>)}
+                  </select>
+                </div>
+                <span className={styles.filterCount}>{activeBranchSubjects.length} subjects found</span>
+              </div>
+            </ScrollReveal>
+
             {loading ? (
               <div className={styles.subjectGrid}>
                 {[...Array(9)].map((_, i) => (
@@ -241,11 +360,12 @@ export default function PyqsPage() {
               </div>
             ) : (
               <div className={styles.subjectGrid}>
-                {SUBJECTS.map((s, i) => {
+                {activeBranchSubjects.map((subj, i) => {
+                  const s = getSubjectMeta(subj, i);
                   const count = countBySubject[s.key] || 0;
                   const latest = latestBySubject[s.key] || [];
                   return (
-                    <ScrollReveal key={s.key} delay={i * 60}>
+                    <ScrollReveal key={s.key} delay={i * 60} style={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
                       <button
                         className={styles.subjectCard}
                         style={{ '--accent-color': s.color }}
@@ -268,7 +388,7 @@ export default function PyqsPage() {
                         <h3 className={styles.subjectName}>{s.label}</h3>
 
                         {/* Latest papers preview */}
-                        {latest.length > 0 && (
+                        {latest.length > 0 ? (
                           <div className={styles.latestStack}>
                             {latest.map((p, j) => (
                               <div key={p.id} className={styles.latestItem} style={{ '--i': j }}>
@@ -278,6 +398,11 @@ export default function PyqsPage() {
                                 </span>
                               </div>
                             ))}
+                          </div>
+                        ) : (
+                          <div className={styles.noContent}>
+                            <p>No papers yet</p>
+                            <span className={styles.emptyDesc}>Be the first to upload!</span>
                           </div>
                         )}
 

@@ -21,33 +21,134 @@ export async function POST(req) {
             paperSummary = body.paperSummary || 'No paper summary context loaded.';
             const subjectName = body.subjectName || '';
 
-            // --- INJECT OFFLINE PYQ DATABASE CONTEXT ---
+            // --- INJECT OFFLINE PYQ DATABASE & SYLLABUS CONTEXT ---
             let dbContext = '';
+            let syllabusContext = '';
             try {
                 const fs = require('fs');
                 const path = require('path');
                 const dbPath = path.join(process.cwd(), 'public', 'data', 'pyq_index.json');
+                const syllabusPath = path.join(process.cwd(), 'public', 'data', 'sppu_syllabus.json');
+                
+                let pyqDb = {};
+                let syllabusDb = {};
+                
                 if (fs.existsSync(dbPath)) {
-                    const pyqDb = JSON.parse(fs.readFileSync(dbPath, 'utf8'));
-                    let matchedSubjectData = null;
-                    const searchName = subjectName.toLowerCase();
+                    pyqDb = JSON.parse(fs.readFileSync(dbPath, 'utf8'));
+                }
+                if (fs.existsSync(syllabusPath)) {
+                    syllabusDb = JSON.parse(fs.readFileSync(syllabusPath, 'utf8'));
+                }
+                
+                let matchedKey = null;
+                const searchName = subjectName.toLowerCase().replace(/[^a-z0-9]/g, ' ');
+                const checkKeys = Object.keys(pyqDb).length > 0 ? Object.keys(pyqDb) : Object.keys(syllabusDb);
+                
+                for (const dbSubj of checkKeys) {
+                    const cleanDb = dbSubj.toLowerCase();
+                    let isMatch = false;
                     
-                    for (const [dbSubj, data] of Object.entries(pyqDb)) {
-                        const cleanDb = dbSubj.toLowerCase();
-                        if (searchName.includes(cleanDb) || cleanDb.includes(searchName) ||
-                            (cleanDb === 'bee' && searchName.includes('electrical')) ||
-                            (cleanDb === 'maths 1' && searchName.includes('mathematics i')) ||
-                            (cleanDb === 'maths 2' && searchName.includes('mathematics ii')) ||
-                            (cleanDb === 'engineering mechanics' && searchName.includes('mechanics')) ||
-                            (cleanDb === 'engineering physics' && searchName.includes('physics'))) {
-                            matchedSubjectData = data;
-                            break;
-                        }
+                    // Direct or containment matches
+                    if (searchName.includes(cleanDb) || cleanDb.includes(searchName)) {
+                        isMatch = true;
+                    } 
+                    // BEE (Basic Electrical Engineering) matches
+                    else if (cleanDb === 'bee' && (
+                        searchName.includes('bee') || 
+                        searchName.includes('electrical') || 
+                        searchName.includes('basic electrical') ||
+                        searchName.includes('elec')
+                    )) {
+                        isMatch = true;
+                    }
+                    // Engineering Physics matches
+                    else if (cleanDb === 'engineering physics' && (
+                        searchName.includes('physics') || 
+                        searchName.includes('phy') ||
+                        searchName.includes('ep')
+                    )) {
+                        isMatch = true;
+                    }
+                    // Engineering Chemistry matches
+                    else if (cleanDb === 'engineering chemistry' && (
+                        searchName.includes('chemistry') || 
+                        searchName.includes('chem') ||
+                        searchName.includes('ec')
+                    )) {
+                        isMatch = true;
+                    }
+                    // Engineering Mathematics 1 matches
+                    else if (cleanDb === 'engineering mathematics 1' && (
+                        searchName.includes('math 1') || 
+                        searchName.includes('maths 1') || 
+                        searchName.includes('mathematics 1') ||
+                        searchName.includes('math1') ||
+                        searchName.includes('maths1') ||
+                        searchName.includes('m1') ||
+                        searchName.includes('m 1') ||
+                        searchName.includes('mathematics i')
+                    )) {
+                        isMatch = true;
+                    }
+                    // Engineering Mathematics 2 matches
+                    else if (cleanDb === 'engineering mathematics 2' && (
+                        searchName.includes('math 2') || 
+                        searchName.includes('maths 2') || 
+                        searchName.includes('mathematics 2') ||
+                        searchName.includes('math2') ||
+                        searchName.includes('maths2') ||
+                        searchName.includes('m2') ||
+                        searchName.includes('m 2') ||
+                        searchName.includes('mathematics ii')
+                    )) {
+                        isMatch = true;
+                    }
+                    // Engineering Mechanics matches
+                    else if (cleanDb === 'engineering mechanics' && (
+                        searchName.includes('mechanics') || 
+                        searchName.includes('mech') ||
+                        searchName.includes('em')
+                    )) {
+                        isMatch = true;
+                    }
+                    // Engineering Graphics matches
+                    else if (cleanDb === 'engineering graphics' && (
+                        searchName.includes('graphics') || 
+                        searchName.includes('drawing') ||
+                        searchName.includes('eg') ||
+                        searchName.includes('graphics design')
+                    )) {
+                        isMatch = true;
+                    }
+                    // Electronics matches
+                    else if (cleanDb === 'electronics' && (
+                        searchName.includes('electronics') || 
+                        searchName.includes('bxe') || 
+                        searchName.includes('electronic')
+                    )) {
+                        isMatch = true;
+                    }
+                    // PPS matches
+                    else if (cleanDb === 'pps' && (
+                        searchName.includes('pps') || 
+                        searchName.includes('programming') || 
+                        searchName.includes('python') || 
+                        searchName.includes('solving')
+                    )) {
+                        isMatch = true;
                     }
 
+                    if (isMatch) {
+                        matchedKey = dbSubj;
+                        break;
+                    }
+                }
+
+                if (matchedKey) {
+                    const matchedSubjectData = pyqDb[matchedKey];
                     if (matchedSubjectData && matchedSubjectData.questions) {
                         dbContext = `\n---
-🎓 **OFFLINE DATABASE CONTEXT (CRITICAL PRIORITY)** 🎓
+🎓 **OFFLINE DATABASE CONTEXT (CRITICAL PRIORITY FOR GENERAL TOPIC/PREDICTION INQUIRIES)** 🎓
 You have direct access to the university's offline PYQ database for this subject!
 When the user asks for "predicted questions", "important derivations", or "frequency of questions", you MUST pull from this list below! Provide the full question, its frequency, and the official answer derivation.
 Here are the highest-yield recurring questions for this subject:\n`;
@@ -59,9 +160,24 @@ Here are the highest-yield recurring questions for this subject:\n`;
                         });
                         dbContext += `---\n`;
                     }
+                    
+                    const matchedSyllabus = syllabusDb[matchedKey];
+                    if (matchedSyllabus && matchedSyllabus.units) {
+                        syllabusContext = `\n---
+📚 **OFFICIAL UNIVERSITY SYLLABUS CONTEXT (STRICT AND ABSOLUTE SCOPE LIMITS)** 📚
+This is the ONLY official university syllabus structure for the subject: ${matchedSyllabus.subject} (${matchedSyllabus.code}).
+You MUST strictly confine your explanations, answers, and formulas to the topics listed within these units.
+Do NOT mix in topics, formulas, or concepts from other First Year subjects (e.g. NEVER mix Basic Electrical Engineering (BEE) with Engineering Physics, or vice versa)! Keep their respective boundaries completely solid!
+
+Here is the exact units and topics breakdown:\n`;
+                        matchedSyllabus.units.forEach((u) => {
+                            syllabusContext += `\n**${u.unit}: ${u.title}**\n*Topics included:* ${u.topics}\n`;
+                        });
+                        syllabusContext += `---\n`;
+                    }
                 }
             } catch (dbErr) {
-                console.warn('[Paper Analysis Chat] Could not inject offline database:', dbErr.message);
+                console.warn('[Paper Analysis Chat] Could not inject offline database & syllabus:', dbErr.message);
             }
             // ------------------------------------------
 
@@ -69,13 +185,24 @@ Here are the highest-yield recurring questions for this subject:\n`;
 You are an elite academic professor analyzing a specific question paper for the subject: ${subjectName || 'Engineering'}.
 The user will ask you questions about the paper, or ask you to solve specific questions from it.
 
-Below is the strategic summary of the paper and important offline predicted context you must use:
+CRITICAL INSTRUCTION FOR CONTEXT DIVISION:
+There are THREE distinct sources of information and instructions in your context:
+1. The **Actual Question Paper PDF** attached to the chat (also summarized below as "Strategic Summary"). This represents the specific exam paper currently active (e.g. October 2022).
+2. The **Official University Syllabus** (labeled 'OFFICIAL UNIVERSITY SYLLABUS CONTEXT'). This dictates the exact academic boundaries of this course. You MUST strictly adhere to this subject's scope and never merge or confuse it with any other engineering subjects (e.g., NEVER include quantum mechanics, photonics, or optics in a Basic Electrical Engineering answer!). Keep the subject scope completely pure.
+3. The **Offline predicted question database** (labeled 'OFFLINE DATABASE CONTEXT'). This is a pre-compiled list of historical high-frequency questions and their ideal derivations for this subject.
+
+How to handle student queries:
+- If the student asks to 'solve the first question', 'explain Q3', or any question referring to a specific item from the *active exam paper*, you MUST look strictly at the attached PDF/Strategic Summary of that specific paper and solve *that paper's* question. DO NOT solve the question with that index from the Offline Database.
+- If the student asks for 'predicted questions', 'important derivations', 'recurring questions', or 'highly repeated questions', you MUST answer from the Offline Database (drawing from the frequencies and ideal derivations provided).
+
+Below is the strategic summary of the active paper, the official syllabus boundaries, and the offline predicted context:
 ---
 ${paperSummary}
+${syllabusContext}
 ${dbContext}
 ---
 
-Your response MUST be extremely accurate, beautifully formatted in Markdown, and use step-by-step logic for any numericals. Do NOT hallucinate equations. If the question requires a diagram, use bold text to describe what the diagram should look like.
+Your response MUST be extremely accurate, beautifully formatted in Markdown, and use step-by-step logic for any numericals. Do NOT hallucinate equations or solutions. If the question requires a diagram, use bold text to describe what the diagram should look like.
 `;
 
             const model = genAI.getGenerativeModel({

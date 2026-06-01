@@ -124,18 +124,8 @@ async function packStandaloneCPanel() {
   archive.on('error', function(err) { throw err; });
   archive.pipe(output);
 
-  // Place all standalone files into 'next-app' folder inside the zip
-  archive.directory(standaloneDir, 'next-app');
-
-  // Add root server.js that forwards to standalone
-  const rootServerJs = `
-// cPanel Cloudlinux entry point
-// Forwards execution to the Next.js standalone application
-const path = require('path');
-process.chdir(path.join(__dirname, 'next-app'));
-require('./next-app/server.js');
-`;
-  archive.append(rootServerJs, { name: 'server.js' });
+  // Place all standalone files directly at the root of the zip
+  archive.directory(standaloneDir, false);
 
   archive.finalize();
 }

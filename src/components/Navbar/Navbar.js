@@ -305,6 +305,7 @@ export default function Navbar() {
                     {/* Search Trigger — opens Spotlight */}
                     {pathname !== '/onboarding' && (
                         <button
+                            suppressHydrationWarning={true}
                             className={styles.searchTrigger}
                             onClick={() => { setSpotlightOpen(true); setSpotlightQuery(''); setSpotlightIndex(0); }}
                         >

@@ -122,7 +122,7 @@ export default function GlobalBot() {
             <span className={styles.avatar}>🧠</span>
             Sutras Copilot
           </div>
-          <button className={styles.closeBtn} onClick={toggleBot}>×</button>
+          <button suppressHydrationWarning={true} className={styles.closeBtn} onClick={toggleBot}>×</button>
         </div>
 
         <div className={styles.chatArea}>
@@ -158,14 +158,14 @@ export default function GlobalBot() {
             className={styles.inputField}
             disabled={isLoading}
           />
-          <button type="submit" className={styles.sendBtn} disabled={!input.trim() || isLoading}>
+          <button suppressHydrationWarning={true} type="submit" className={styles.sendBtn} disabled={!input.trim() || isLoading}>
             ↑
           </button>
         </form>
       </div>
 
       {/* Floating Action Button */}
-      <button className={styles.fab} onClick={toggleBot}>
+      <button suppressHydrationWarning={true} className={styles.fab} onClick={toggleBot}>
         <span className={styles.fabIcon}>✨</span>
         {!isOpen && hasUnread && <span className={styles.badge}>1</span>}
       </button>

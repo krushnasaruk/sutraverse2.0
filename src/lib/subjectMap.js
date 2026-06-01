@@ -14,7 +14,7 @@ export const COLLEGES = [
     'Other',
 ];
 
-export const BRANCHES = ['Computer', 'IT', 'Mechanical', 'Civil', 'Electrical', 'Electronics'];
+export const BRANCHES = ['Computer', 'IT', 'CSE (Data Science)', 'Mechanical', 'Civil', 'Electrical', 'Electronics'];
 
 export const YEARS = ['1st Year', '2nd Year', '3rd Year', '4th Year'];
 
@@ -46,6 +46,28 @@ const FESem2 = [
 ];
 
 export const SUBJECT_MAP = {
+    'CSE (Data Science)': {
+        'Sem 1': FESem1,
+        'Sem 2': FESem2,
+        'Sem 3': [
+            'Mathematical Foundation for Data Science - I',
+            'Data Structures & Algorithms',
+            'Object Oriented Programming',
+            'Digital Electronics and Logic Design',
+            'Software Engineering and Project Management'
+        ],
+        'Sem 4': [
+            'Mathematical Foundation for Data Science - II',
+            'Operating Systems',
+            'Data Storytelling and Visualization',
+            'Database Management System',
+            'Computer Graphics'
+        ],
+        'Sem 5': [],
+        'Sem 6': [],
+        'Sem 7': [],
+        'Sem 8': [],
+    },
     Computer: {
         'Sem 1': FESem1,
         'Sem 2': FESem2,

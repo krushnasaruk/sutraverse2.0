@@ -1,7 +1,8 @@
 import os
 import json
 
-WORKSPACE_DIR = "/Users/shrikantsaruk/Documents/college project"
+SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
+WORKSPACE_DIR = os.path.dirname(SCRIPT_DIR)
 OUTPUT_FILE = os.path.join(WORKSPACE_DIR, "public", "data", "pyq_index.json")
 
 # Compile a robust, premium structured database of First Year Engineering 2019 Pattern PYQs

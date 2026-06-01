@@ -188,12 +188,26 @@ export default function HomePage() {
     let url = file.fileURL || file.fileUrl;
     if (!url) return;
 
+    // Normalize localhost / absolute self-hosted URLs to relative paths
+    if (url.startsWith('http://') || url.startsWith('https://')) {
+      if (!url.includes('firebasestorage.googleapis.com')) {
+        try {
+          const parsed = new URL(url);
+          url = parsed.pathname + parsed.search;
+        } catch (e) {
+          console.warn('URL parsing failed:', e);
+        }
+      }
+    }
+
     if (!url.includes('firebasestorage')) {
-      let relativePath = '';
-      if (url.includes('/api/downloads/')) relativePath = url.split('/api/downloads/')[1];
-      else if (url.includes('/uploads/')) relativePath = url.split('/uploads/')[1];
-      else relativePath = url.split('/').pop();
-      
+      let relativePath = url;
+      if (relativePath.startsWith('/')) {
+        relativePath = relativePath.substring(1);
+      }
+      if (relativePath.includes('api/downloads/')) {
+        relativePath = relativePath.split('api/downloads/')[1];
+      }
       relativePath = relativePath.split('?')[0];
       url = '/api/downloads/' + relativePath;
     }

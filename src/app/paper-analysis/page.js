@@ -22,6 +22,7 @@ export default function PaperAnalysisPage() {
     const [isAnalyzing, setIsAnalyzing] = useState(false);
     const [pdfSummary, setPdfSummary] = useState('');
     const [analysisError, setAnalysisError] = useState('');
+    const [activePdfPath, setActivePdfPath] = useState(null);
     
     // Chat Interface States
     const [chatMessages, setChatMessages] = useState([]);
@@ -84,6 +85,7 @@ export default function PaperAnalysisPage() {
             }
 
             setPdfSummary(data.summary);
+            setActivePdfPath(data.pdfPath);
             setChatMessages([
                 {
                     role: 'assistant',
@@ -154,6 +156,7 @@ export default function PaperAnalysisPage() {
             }
             
             setPdfSummary(data.summary);
+            setActivePdfPath(data.pdfPath);
             setChatMessages([
                 {
                     role: 'assistant',
@@ -187,7 +190,7 @@ export default function PaperAnalysisPage() {
                     messages: updatedMessages,
                     paperSummary: pdfSummary,
                     subjectName: selectedPaper ? selectedPaper.subject : (pdfFile ? pdfFile.name : ''),
-                    pdfPath: selectedPaper ? `${selectedPaper.folder}/${selectedPaper.file}` : null
+                    pdfPath: activePdfPath
                 })
             });
             

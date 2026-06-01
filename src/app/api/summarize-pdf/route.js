@@ -11,6 +11,7 @@ export async function POST(req) {
         let base64Data;
         let fileName = 'unknown.pdf';
         let cacheSearchName = '';
+        let pdfPathForResponse = null;
 
         // Determine the input source: JSON body (library path) or FormData (file upload)
         const contentType = req.headers.get('content-type') || '';
@@ -38,6 +39,7 @@ export async function POST(req) {
             base64Data = buffer.toString('base64');
             fileName = path.basename(safePath);
             cacheSearchName = pdfPath.replace('pyqs/', '').replace('.pdf', '').replace(/\//g, '/');
+            pdfPathForResponse = pdfPath.replace('pyqs/', '');
             
             console.log(`[API] Processing library PDF: ${pdfPath} (${buffer.length} bytes)`);
         } else {
@@ -57,11 +59,23 @@ export async function POST(req) {
 
             const bytes = await file.arrayBuffer();
             const buffer = Buffer.from(bytes);
+            
+            // Save the uploaded PDF to public/pyqs/uploads so the chat API can access it
+            const uploadsDir = path.join(process.cwd(), 'public', 'pyqs', 'uploads');
+            if (!fs.existsSync(uploadsDir)) {
+                fs.mkdirSync(uploadsDir, { recursive: true });
+            }
+            const cleanName = file.name.replace(/[^a-zA-Z0-9.-]/g, '_');
+            const tempFileName = `temp-${Date.now()}-${cleanName}`;
+            const tempFilePath = path.join(uploadsDir, tempFileName);
+            fs.writeFileSync(tempFilePath, buffer);
+            
+            pdfPathForResponse = `uploads/${tempFileName}`;
             base64Data = buffer.toString('base64');
             fileName = file.name;
             cacheSearchName = file.name.toLowerCase();
 
-            console.log(`[API] Processing uploaded PDF: ${file.name} (${buffer.length} bytes)`);
+            console.log(`[API] Processing uploaded PDF: ${file.name} (${buffer.length} bytes), saved to ${pdfPathForResponse}`);
         }
 
         // --- CACHE LOOKUP FALLBACK (Rate-limit immune) ---
@@ -97,7 +111,7 @@ export async function POST(req) {
 
                 if (bestCacheKey) {
                     console.log(`[API] Cache Hit! Serving offline summary for: ${bestCacheKey}`);
-                    return NextResponse.json({ summary: cachedSummaries[bestCacheKey] });
+                    return NextResponse.json({ summary: cachedSummaries[bestCacheKey], pdfPath: bestCacheKey });
                 }
             }
         } catch (cacheErr) {
@@ -166,7 +180,7 @@ export async function POST(req) {
         ]);
 
         const summary = result.response.text();
-        return NextResponse.json({ summary });
+        return NextResponse.json({ summary, pdfPath: pdfPathForResponse });
 
     } catch (error) {
         console.error('PDF Summarization Error:', error);

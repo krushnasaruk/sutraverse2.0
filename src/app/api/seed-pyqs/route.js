@@ -11,13 +11,13 @@ const SUBJECT_MAP = {
     year: '1st Year',
   },
   'chemistry': {
-    subject: 'Engineering Chemistry',
+    subject: 'Chemistry',
     fullName: 'Engineering Chemistry',
     branch: 'All',
     year: '1st Year',
   },
   'electronics': {
-    subject: 'Electronics',
+    subject: 'Basic Electronics Engineering',
     fullName: 'Basic Electronics Engineering',
     branch: 'All',
     year: '1st Year',
@@ -29,13 +29,13 @@ const SUBJECT_MAP = {
     year: '1st Year',
   },
   'maths1': {
-    subject: 'Engineering Mathematics 1',
+    subject: 'Engineering Mathematics I',
     fullName: 'Engineering Mathematics - I',
     branch: 'All',
     year: '1st Year',
   },
   'maths2': {
-    subject: 'Engineering Mathematics 2',
+    subject: 'Engineering Mathematics II',
     fullName: 'Engineering Mathematics - II',
     branch: 'All',
     year: '1st Year',
@@ -47,7 +47,7 @@ const SUBJECT_MAP = {
     year: '1st Year',
   },
   'physics': {
-    subject: 'Engineering Physics',
+    subject: 'Physics',
     fullName: 'Engineering Physics',
     branch: 'All',
     year: '1st Year',

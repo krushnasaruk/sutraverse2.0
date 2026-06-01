@@ -9,6 +9,7 @@ import { awardDownloadPoints } from '@/lib/points';
 import { ScrollReveal } from '@/components/Animations';
 import { Skeleton } from '@/components/Skeleton/Skeleton';
 import { IconAssignment, IconUser, IconHat, IconDownload, IconStar, IconSearch, IconLock, IconFlag } from '@/components/Icons';
+import { BRANCHES, YEARS, getSubjectsByYear } from '@/lib/subjectMap';
 import styles from './page.module.css';
 
 // Subjects with warm/playful colors
@@ -25,12 +26,84 @@ const SUBJECT_TABS = [
   { key: 'Engineering Graphics',    label: 'EG',         emoji: '🎨', color: '#4f46e5' },
 ];
 
+const SUBJECT_COLORS = [
+  '#f59e0b', '#10b981', '#dc2626', '#b91c1c', '#ef4444', 
+  '#22c55e', '#15803d', '#f97316', '#16a34a', '#8b5cf6',
+  '#4f46e5', '#3b82f6', '#ec4899', '#f43f5e', '#06b6d4'
+];
+
+const SUBJECT_EMOJIS = {
+  'bee': '⚡',
+  'chemistry': '🧪',
+  'physics': '🔭',
+  'mechanics': '⚙️',
+  'graphics': '✏️',
+  'math': '📐',
+  'structure': '📚',
+  'data': '📊',
+  'program': '💻',
+  'object': '📦',
+  'digital': '📡',
+  'software': '🛠️',
+  'operating': '🖥️',
+  'visualization': '📈',
+  'database': '🗄️',
+  'network': '🌐'
+};
+
+function getSubjectTabMeta(subjectName, index = 0) {
+  const existing = SUBJECT_TABS.find(t => t.key.toLowerCase() === subjectName.toLowerCase());
+  if (existing) return existing;
+
+  const color = SUBJECT_COLORS[index % SUBJECT_COLORS.length];
+  let emoji = '✏️';
+  const nameL = subjectName.toLowerCase();
+  for (const [kw, em] of Object.entries(SUBJECT_EMOJIS)) {
+    if (nameL.includes(kw)) {
+      emoji = em;
+      break;
+    }
+  }
+
+  return {
+    key: subjectName,
+    label: subjectName,
+    emoji,
+    color
+  };
+}
+
 export default function AssignmentsPage() {
   const { user, loading: authLoading } = useAuth();
   const [assignments, setAssignments] = useState([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('All');
   const [search, setSearch] = useState('');
+  const [branch, setBranch] = useState('Computer');
+  const [year, setYear] = useState('1st Year');
+  const [hasLoadedPrefs, setHasLoadedPrefs] = useState(false);
+
+  useEffect(() => {
+    if (!authLoading && !hasLoadedPrefs) {
+      if (user) {
+        setBranch(user.branch || 'Computer');
+        setYear(user.year || '1st Year');
+      }
+      setHasLoadedPrefs(true);
+    }
+  }, [user, authLoading, hasLoadedPrefs]);
+
+  const activeBranchSubjects = useMemo(() => {
+    return getSubjectsByYear(branch, year);
+  }, [branch, year]);
+
+  const activeTabsList = useMemo(() => {
+    const list = [{ key: 'All', label: 'All Files', emoji: '📚', color: '#b91c1c' }];
+    activeBranchSubjects.forEach((subj, idx) => {
+      list.push(getSubjectTabMeta(subj, idx + 1));
+    });
+    return list;
+  }, [activeBranchSubjects]);
 
   useEffect(() => {
     let cancelled = false;
@@ -86,12 +159,26 @@ export default function AssignmentsPage() {
     let url = item.fileURL || item.fileUrl;
     if (!url) return;
     
+    // Normalize localhost / absolute self-hosted URLs to relative paths
+    if (url.startsWith('http://') || url.startsWith('https://')) {
+      if (!url.includes('firebasestorage.googleapis.com')) {
+        try {
+          const parsed = new URL(url);
+          url = parsed.pathname + parsed.search;
+        } catch (e) {
+          console.warn('URL parsing failed:', e);
+        }
+      }
+    }
+
     if (!url.includes('firebasestorage')) {
-      let relativePath = '';
-      if (url.includes('/api/downloads/')) relativePath = url.split('/api/downloads/')[1];
-      else if (url.includes('/uploads/')) relativePath = url.split('/uploads/')[1];
-      else relativePath = url.split('/').pop();
-      
+      let relativePath = url;
+      if (relativePath.startsWith('/')) {
+        relativePath = relativePath.substring(1);
+      }
+      if (relativePath.includes('api/downloads/')) {
+        relativePath = relativePath.split('api/downloads/')[1];
+      }
       relativePath = relativePath.split('?')[0];
       url = '/api/downloads/' + relativePath;
     }
@@ -118,7 +205,9 @@ export default function AssignmentsPage() {
     </div>
   );
 
-  const activeMeta = SUBJECT_TABS.find(t => t.key === activeTab);
+  const activeMeta = useMemo(() => {
+    return activeTabsList.find(t => t.key === activeTab) || activeTabsList[0];
+  }, [activeTab, activeTabsList]);
 
   return (
     <div className={styles.pageWrapper}>
@@ -133,7 +222,24 @@ export default function AssignmentsPage() {
         </div>
       </div>
 
-      <div className={`container ${styles.layout}`}>
+      {/* Branch / Year Filters */}
+      <div className="container" style={{ marginTop: '30px', position: 'relative', zIndex: 10 }}>
+        <ScrollReveal delay={100}>
+          <div className={styles.filterBar} style={{ background: 'var(--bg-glass)', border: '1px solid var(--border-light)', padding: '12px 24px', borderRadius: 'var(--radius-lg)' }}>
+            <div className={styles.filterGroup}>
+              <select className={styles.filterSelect} value={branch} onChange={e => { setBranch(e.target.value); setActiveTab('All'); }}>
+                {BRANCHES.map(b => <option key={b} value={b}>{b}</option>)}
+              </select>
+              <select className={styles.filterSelect} value={year} onChange={e => { setYear(e.target.value); setActiveTab('All'); }}>
+                {YEARS.map(y => <option key={y} value={y}>{y}</option>)}
+              </select>
+            </div>
+            <span className={styles.filterCount} style={{ color: 'var(--text-muted)' }}>{activeBranchSubjects.length} subjects loaded</span>
+          </div>
+        </ScrollReveal>
+      </div>
+
+      <div className={`container ${styles.layout}`} style={{ marginTop: '30px' }}>
         {/* ═══ Left Sidebar ═══ */}
         <aside className={styles.sidebar}>
           <div className={styles.sidebarHeader}>
@@ -142,7 +248,7 @@ export default function AssignmentsPage() {
           </div>
 
           <div className={styles.sidebarList}>
-            {SUBJECT_TABS.map(t => {
+            {activeTabsList.map(t => {
               const count = countBySubject[t.key] || 0;
               const isActive = activeTab === t.key;
               return (
@@ -211,7 +317,7 @@ export default function AssignmentsPage() {
           ) : (
             <div className={styles.cardGrid}>
               {filtered.map((item, i) => {
-                const subMeta = SUBJECT_TABS.find(t => t.key !== 'All' && (item.subject === t.key || item.subject?.toLowerCase().includes(t.key.toLowerCase())));
+                const subMeta = activeTabsList.find(t => t.key !== 'All' && (item.subject === t.key || item.subject?.toLowerCase().includes(t.key.toLowerCase())));
                 const accent = subMeta?.color || '#b91c1c';
                 return (
                   <ScrollReveal key={item.id} delay={i * 30}>

@@ -80,7 +80,7 @@ export default function SubjectsPage() {
         if (cancelled) return;
         const data = snap.docs
           .map(d => { const f = d.data(); if (f.subject === 'BE') f.subject = 'BEE'; return { id: d.id, ...f }; })
-          .filter(f => f.status === 'approved' && f.type === 'Notes');
+          .filter(f => f.status === 'approved');
         data.sort((a, b) => (b.createdAt || '').localeCompare(a.createdAt || ''));
         if (!cancelled) setAllFiles(data);
       } catch (e) { console.error(e); if (!cancelled) setAllFiles([]); }
@@ -140,12 +140,26 @@ export default function SubjectsPage() {
     let url = item.fileURL || item.fileUrl;
     if (!url) return;
     
+    // Normalize localhost / absolute self-hosted URLs to relative paths
+    if (url.startsWith('http://') || url.startsWith('https://')) {
+      if (!url.includes('firebasestorage.googleapis.com')) {
+        try {
+          const parsed = new URL(url);
+          url = parsed.pathname + parsed.search;
+        } catch (e) {
+          console.warn('URL parsing failed:', e);
+        }
+      }
+    }
+
     if (!url.includes('firebasestorage')) {
-      let relativePath = '';
-      if (url.includes('/api/downloads/')) relativePath = url.split('/api/downloads/')[1];
-      else if (url.includes('/uploads/')) relativePath = url.split('/uploads/')[1];
-      else relativePath = url.split('/').pop();
-      
+      let relativePath = url;
+      if (relativePath.startsWith('/')) {
+        relativePath = relativePath.substring(1);
+      }
+      if (relativePath.includes('api/downloads/')) {
+        relativePath = relativePath.split('api/downloads/')[1];
+      }
       relativePath = relativePath.split('?')[0];
       url = '/api/downloads/' + relativePath;
     }

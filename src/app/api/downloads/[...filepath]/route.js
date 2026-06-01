@@ -5,12 +5,19 @@ import { existsSync } from 'fs';
 import os from 'os';
 import { getUploadsDir } from '@/lib/uploadsDir';
 
-/**
- * GET /api/downloads/[...filepath]
- * 
- * Serves uploaded files from the persistent uploads directory.
- * Supports subdirectories: /api/downloads/avatars/file.jpg
- */
+function findAppRoot() {
+    let current = __dirname;
+    for (let i = 0; i < 12; i++) {
+        if (existsSync(join(current, 'package.json')) || existsSync(join(current, '.next')) || existsSync(join(current, 'public'))) {
+            return current;
+        }
+        const parent = join(current, '..');
+        if (parent === current) break;
+        current = parent;
+    }
+    return process.cwd(); // Fallback
+}
+
 export async function GET(request, { params }) {
     const { filepath } = await params;
 
@@ -27,18 +34,30 @@ export async function GET(request, { params }) {
         return new NextResponse("Invalid path", { status: 400 });
     }
 
+    const appRoot = findAppRoot();
     const uploadsDir = getUploadsDir();
     const filePath = join(uploadsDir, relativePath);
 
     // List of robust fallback paths to try
     const fallbackPaths = [
+        // 1. Direct path inside standard uploadsDir (configured or home directory)
         filePath,
-        join(process.cwd(), 'public', 'uploads', relativePath), // Local / inside standalone
-        join(process.cwd(), '..', 'public', 'uploads', relativePath), // Root public/uploads
-        join(process.cwd(), '..', 'public', 'public', 'uploads', relativePath), // Double public/ folder mistake
-        join(process.cwd(), '..', 'uploads', relativePath), // Root uploads/ folder
-        join(os.homedir(), 'public_html', 'public', 'uploads', relativePath), // Standard cPanel
-        join(os.homedir(), 'public_html', 'user-uploads', relativePath) // Standard cPanel user-uploads
+        join(uploadsDir, relativePath.replace(/^uploads\//, '')), // Strip uploads/ if nested
+        join(uploadsDir, relativePath.replace(/^pyqs\//, '')), // Strip pyqs/ if nested
+        
+        // 2. Relative to dynamic appRoot (highly reliable Passenger & standalone fallback)
+        join(appRoot, 'public', relativePath), 
+        join(appRoot, 'public', relativePath.replace(/^uploads\//, 'uploads/')), // Ensure uploads/ nested
+        join(appRoot, relativePath),
+        
+        // 3. process.cwd() fallback
+        join(process.cwd(), 'public', relativePath),
+        join(process.cwd(), '..', 'public', relativePath),
+        
+        // 4. cPanel home folder public_html fallbacks
+        join(os.homedir(), 'public_html', 'public', relativePath),
+        join(os.homedir(), 'public_html', 'public', relativePath.replace(/^uploads\//, 'uploads/')),
+        join(os.homedir(), 'public_html', relativePath)
     ];
 
     let foundPath = null;
@@ -50,6 +69,7 @@ export async function GET(request, { params }) {
     }
 
     if (!foundPath) {
+        console.warn(`File not found across fallbacks for relativePath: ${relativePath}`);
         return new NextResponse("File not found", { status: 404 });
     }
 
