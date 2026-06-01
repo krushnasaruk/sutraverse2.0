@@ -1,0 +1,17 @@
+# Local mobile ignores
+node_modules/
+.expo/
+dist/
+web-build/
+android/
+ios/
+
+# Parent/Root directory ignores (matched globally since there is no leading slash)
+deployment/
+_deploy/
+bee_temp_extract/
+*.zip
+*.pdf
+*.docx
+*.pptx
+Screenshot*
