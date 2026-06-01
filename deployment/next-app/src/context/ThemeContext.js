@@ -5,16 +5,16 @@ import { createContext, useContext, useEffect, useState } from 'react';
 const ThemeContext = createContext();
 
 export function ThemeProvider({ children }) {
-    const [theme, setTheme] = useState('dark'); // default to Dark (notebook style)
+    const [theme, setTheme] = useState('light'); // default to Light
 
     useEffect(() => {
         const saved = localStorage.getItem('sutras-theme');
-        if (saved === 'light') {
-            setTheme('light');
-            document.documentElement.classList.add('light');
-        } else {
+        if (saved === 'dark') {
             setTheme('dark');
             document.documentElement.classList.remove('light');
+        } else {
+            setTheme('light');
+            document.documentElement.classList.add('light');
         }
     }, []);
 

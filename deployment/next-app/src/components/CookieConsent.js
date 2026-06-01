@@ -2,10 +2,14 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { usePathname } from 'next/navigation';
 import styles from './CookieConsent.module.css';
 
 export default function CookieConsent() {
+  const pathname = usePathname();
   const [visible, setVisible] = useState(false);
+
+  if (pathname && pathname.startsWith('/mobile-auth')) return null;
 
   useEffect(() => {
     // Check if user has already given consent

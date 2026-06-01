@@ -180,24 +180,21 @@ export default function ProfilePage({ params: paramsPromise }) {
                         </div>
                     )}
 
-                    {/* Stats Strip */}
-                    <div className={styles.statsStrip}>
-                        <div className={styles.statPill}>
+                    {/* Stats Grid */}
+                    <div className={styles.statsGrid}>
+                        <div className={styles.statCard}>
                             <span className={styles.statNum}>{profileUser.points || 0}</span>
                             <span className={styles.statLbl}>XP</span>
                         </div>
-                        <div className={styles.statDivider}></div>
-                        <div className={styles.statPill}>
+                        <div className={styles.statCard}>
                             <span className={styles.statNum}>{userPosts.length}</span>
                             <span className={styles.statLbl}>Posts</span>
                         </div>
-                        <div className={styles.statDivider}></div>
-                        <div className={styles.statPill}>
+                        <div className={styles.statCard}>
                             <span className={styles.statNum}>{profileUser.classId || '—'}</span>
                             <span className={styles.statLbl}>Class</span>
                         </div>
-                        <div className={styles.statDivider}></div>
-                        <div className={styles.statPill}>
+                        <div className={styles.statCard}>
                             <span className={styles.statNum}>{profileUser.createdAt ? formatDate(profileUser.createdAt).split(',')[0] : '—'}</span>
                             <span className={styles.statLbl}>Joined</span>
                         </div>

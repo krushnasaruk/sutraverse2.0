@@ -1,4 +1,5 @@
 'use client';
+// Force Turbopack reload 2
 
 import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
@@ -857,23 +858,20 @@ export default function DashboardPage() {
                         </div>
                     </div>
 
-                    {/* ── Stats Strip ── */}
+                    {/* ── Stats Cards ── */}
                     <div className={styles.heroStats}>
                         <div className={styles.heroStatItem}>
                             <span className={styles.heroStatNum}>{uploads.length}</span>
                             <span className={styles.heroStatLabel}>Uploads</span>
                         </div>
-                        <div className={styles.heroStatDivider}></div>
                         <div className={styles.heroStatItem}>
                             <span className={styles.heroStatNum}>{totalDownloads}</span>
                             <span className={styles.heroStatLabel}>Downloads</span>
                         </div>
-                        <div className={styles.heroStatDivider}></div>
                         <div className={styles.heroStatItem}>
                             <span className={styles.heroStatNum}>{userPoints}</span>
                             <span className={styles.heroStatLabel}>Total XP</span>
                         </div>
-                        <div className={styles.heroStatDivider}></div>
                         <div className={styles.heroStatItem}>
                             <span className={styles.heroStatNum}>{earnedBadges.length}</span>
                             <span className={styles.heroStatLabel}>Badges</span>
@@ -1273,12 +1271,27 @@ export default function DashboardPage() {
                                     <button className={styles.editBtn} onClick={startEditing}>Configure</button>
                                 </div>
                                 {user.branch ? (
-                                    <div className={styles.profileGrid}>
-                                        <div className={styles.profileField}><span className={styles.fieldLabel}>Display Name</span><span className={styles.fieldValue}>{user.name || 'Not set'}</span></div>
-                                        <div className={styles.profileField}><span className={styles.fieldLabel}>College</span><span className={styles.fieldValue}>{user.college || 'Not set'}</span></div>
-                                        <div className={styles.profileField}><span className={styles.fieldLabel}>Branch</span><span className={styles.fieldValue}>{user.branch}</span></div>
-                                        <div className={styles.profileField}><span className={styles.fieldLabel}>Year</span><span className={styles.fieldValue}>{user.year}</span></div>
-                                        <div className={styles.profileField}><span className={styles.fieldLabel}>Semester</span><span className={styles.fieldValue}>{user.semester}</span></div>
+                                    <div className={styles.premiumGrid}>
+                                        <div className={styles.premiumFieldCard}>
+                                            <span className={styles.fieldTitle}>Display Name</span>
+                                            <span className={styles.fieldValueMain}>{user.name || 'Not set'}</span>
+                                        </div>
+                                        <div className={styles.premiumFieldCard}>
+                                            <span className={styles.fieldTitle}>College</span>
+                                            <span className={styles.fieldValueMain}>{user.college || 'Not set'}</span>
+                                        </div>
+                                        <div className={styles.premiumFieldCard}>
+                                            <span className={styles.fieldTitle}>Branch</span>
+                                            <span className={styles.fieldValueMain}>{user.branch}</span>
+                                        </div>
+                                        <div className={styles.premiumFieldCard}>
+                                            <span className={styles.fieldTitle}>Year</span>
+                                            <span className={styles.fieldValueMain}>{user.year}</span>
+                                        </div>
+                                        <div className={styles.premiumFieldCard}>
+                                            <span className={styles.fieldTitle}>Semester</span>
+                                            <span className={styles.fieldValueMain}>{user.semester}</span>
+                                        </div>
                                     </div>
                                 ) : (
                                     <div className={styles.profileSetupCard}>
@@ -1356,51 +1369,56 @@ export default function DashboardPage() {
                                     </div>
                                 </div>
 
-                                <div className={styles.editGrid}>
-                                    <div className={styles.editField} style={{ gridColumn: '1 / -1' }}>
-                                        <label>Display Name</label>
-                                        <input type="text" maxLength={40} value={editName} onChange={(e) => setEditName(e.target.value)} placeholder="Your name" />
+                                <div className={styles.glassForm}>
+                                    <div className={styles.modernInputWrap}>
+                                        <label className={styles.modernLabel}>Display Name</label>
+                                        <input type="text" maxLength={40} className={styles.premiumInput} value={editName} onChange={(e) => setEditName(e.target.value)} placeholder="Your name" />
                                     </div>
-                                    <div className={styles.editField} style={{ gridColumn: '1 / -1' }}>
-                                        <label>Short Bio</label>
-                                        <input type="text" maxLength={60} value={editBio} onChange={(e) => setEditBio(e.target.value)} placeholder="e.g. Code wizard & coffee consumer" />
+                                    <div className={styles.modernInputWrap}>
+                                        <label className={styles.modernLabel}>Short Bio</label>
+                                        <input type="text" maxLength={60} className={styles.premiumInput} value={editBio} onChange={(e) => setEditBio(e.target.value)} placeholder="e.g. Code wizard & coffee consumer" />
                                     </div>
-                                    <div className={styles.editField}>
-                                        <label>Student Phone</label>
-                                        <input type="tel" value={editStudentPhone} onChange={(e) => setEditStudentPhone(e.target.value)} placeholder="+1234567890" />
+                                    <div className={styles.formGroupRow}>
+                                        <div className={styles.modernInputWrap}>
+                                            <label className={styles.modernLabel}>Student Phone</label>
+                                            <input type="tel" className={styles.premiumInput} value={editStudentPhone} onChange={(e) => setEditStudentPhone(e.target.value)} placeholder="+1234567890" />
+                                        </div>
+                                        <div className={styles.modernInputWrap}>
+                                            <label className={styles.modernLabel}>Parent Phone</label>
+                                            <input type="tel" className={styles.premiumInput} value={editParentPhone} onChange={(e) => setEditParentPhone(e.target.value)} placeholder="+1987654321" />
+                                        </div>
                                     </div>
-                                    <div className={styles.editField}>
-                                        <label>Parent Phone</label>
-                                        <input type="tel" value={editParentPhone} onChange={(e) => setEditParentPhone(e.target.value)} placeholder="+1987654321" />
+                                    <div className={styles.formGroupRow}>
+                                        <div className={styles.modernInputWrap}>
+                                            <label className={styles.modernLabel}>College</label>
+                                            <select className={`${styles.premiumInput} ${styles.premiumSelect}`} value={editCollege} onChange={(e) => setEditCollege(e.target.value)}>
+                                                <option value="">Select</option>
+                                                {COLLEGES.map(c => <option key={c} value={c}>{c}</option>)}
+                                            </select>
+                                        </div>
+                                        <div className={styles.modernInputWrap}>
+                                            <label className={styles.modernLabel}>Branch</label>
+                                            <select className={`${styles.premiumInput} ${styles.premiumSelect}`} value={editBranch} onChange={(e) => { setEditBranch(e.target.value); setEditSemester(''); }}>
+                                                <option value="">Select</option>
+                                                {BRANCHES.map(b => <option key={b} value={b}>{b}</option>)}
+                                            </select>
+                                        </div>
                                     </div>
-
-                                    <div className={styles.editField}>
-                                        <label>College</label>
-                                        <select value={editCollege} onChange={(e) => setEditCollege(e.target.value)}>
-                                            <option value="">Select</option>
-                                            {COLLEGES.map(c => <option key={c} value={c}>{c}</option>)}
-                                        </select>
-                                    </div>
-                                    <div className={styles.editField}>
-                                        <label>Branch</label>
-                                        <select value={editBranch} onChange={(e) => { setEditBranch(e.target.value); setEditSemester(''); }}>
-                                            <option value="">Select</option>
-                                            {BRANCHES.map(b => <option key={b} value={b}>{b}</option>)}
-                                        </select>
-                                    </div>
-                                    <div className={styles.editField}>
-                                        <label>Year</label>
-                                        <select value={editYear} onChange={(e) => { setEditYear(e.target.value); setEditSemester(''); }}>
-                                            <option value="">Select</option>
-                                            {YEARS.map(y => <option key={y} value={y}>{y}</option>)}
-                                        </select>
-                                    </div>
-                                    <div className={styles.editField}>
-                                        <label>Semester</label>
-                                        <select value={editSemester} onChange={(e) => setEditSemester(e.target.value)} disabled={!editYear}>
-                                            <option value="">Select</option>
-                                            {availableSemesters.map(s => <option key={s} value={s}>{s}</option>)}
-                                        </select>
+                                    <div className={styles.formGroupRow}>
+                                        <div className={styles.modernInputWrap}>
+                                            <label className={styles.modernLabel}>Year</label>
+                                            <select className={`${styles.premiumInput} ${styles.premiumSelect}`} value={editYear} onChange={(e) => { setEditYear(e.target.value); setEditSemester(''); }}>
+                                                <option value="">Select</option>
+                                                {YEARS.map(y => <option key={y} value={y}>{y}</option>)}
+                                            </select>
+                                        </div>
+                                        <div className={styles.modernInputWrap}>
+                                            <label className={styles.modernLabel}>Semester</label>
+                                            <select className={`${styles.premiumInput} ${styles.premiumSelect}`} value={editSemester} onChange={(e) => setEditSemester(e.target.value)} disabled={!editYear}>
+                                                <option value="">Select</option>
+                                                {availableSemesters.map(s => <option key={s} value={s}>{s}</option>)}
+                                            </select>
+                                        </div>
                                     </div>
                                 </div>
 
@@ -1463,35 +1481,46 @@ export default function DashboardPage() {
                                     )}
                                 </div>
                             
-                            <div className={styles.formGroup} style={{ marginTop: '24px', borderTop: '1px solid rgba(255,255,255,0.1)', paddingTop: '20px' }}>
-                                <h3>Secure Biometrics</h3>
-                                <p style={{fontSize: '0.85rem', color: 'var(--text-secondary)', marginBottom: '16px'}}>
-                                    Provide a baseline geometric scan of your face. This mathematical data is required for ultra-fast Live Radar Check-Ins. We extract 128 coordinate points.
-                                </p>
+                            <div className={styles.formGroup} style={{ marginTop: '32px', padding: '24px', background: 'var(--bg-subtle)', borderRadius: '24px', border: '1px solid var(--border-subtle)' }}>
+                                <div style={{display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:'24px'}}>
+                                    <div>
+                                        <h3 style={{margin:0, fontSize:'1.2rem', color:'var(--text-primary)'}}>Secure Biometrics</h3>
+                                        <p style={{margin:'4px 0 0', fontSize:'0.85rem', color:'var(--text-secondary)'}}>Live Radar Check-In Facial Topography</p>
+                                    </div>
+                                    <div className={`${styles.bioStatusOrb} ${user.faceDescriptor && enrollmentStatus === '' ? '' : styles.inactive}`}>
+                                        {user.faceDescriptor && enrollmentStatus === '' ? '🛡️' : '⚠️'}
+                                    </div>
+                                </div>
                                 
                                 {user.faceDescriptor && enrollmentStatus === '' ? (
-                                    <div style={{color:'var(--success)', fontWeight:'bold', display:'flex', alignItems:'center', gap:'8px'}}>
-                                        ✅ Biometrics Active
-                                        <button type="button" onClick={() => setEnrollmentStatus('restart')} className={styles.btnSecondary} style={{padding:'4px 8px', fontSize:'0.8rem'}}>Re-Enroll</button>
+                                    <div style={{display:'flex', justifyContent:'space-between', alignItems:'center', background:'rgba(34, 197, 94, 0.05)', padding:'16px', borderRadius:'16px', border:'1px solid var(--success)'}}>
+                                        <div>
+                                            <div style={{color:'var(--success)', fontWeight:'bold', fontSize:'1rem'}}>Active & Secured</div>
+                                            <div style={{color:'var(--text-secondary)', fontSize:'0.8rem'}}>128-point math embedded</div>
+                                        </div>
+                                        <button type="button" onClick={() => setEnrollmentStatus('restart')} className={styles.btnSecondary} style={{padding:'8px 16px', borderRadius:'12px', fontSize:'0.85rem'}}>Recalibrate</button>
                                     </div>
                                 ) : (
-                                    <div style={{display:'flex', flexDirection:'column', gap:'12px', background:'rgba(0,0,0,0.3)', padding:'16px', borderRadius:'12px', border:'1px solid rgba(22, 163, 74, 0.3)'}}>
+                                    <div style={{display:'flex', flexDirection:'column', gap:'16px', background:'var(--bg-elevated)', padding:'24px', borderRadius:'16px', border:'1px solid var(--primary-glow)'}}>
                                         {(enrollmentStatus === 'loading' || enrollmentStatus === 'acquiring' || enrollmentStatus === 'restart') && (
-                                            <div style={{width:'100%', height:'200px', borderRadius:'8px', overflow:'hidden', position:'relative'}}>
+                                            <div style={{width:'100%', height:'240px', borderRadius:'12px', overflow:'hidden', position:'relative', boxShadow:'0 0 20px var(--primary-glow)'}}>
                                                 <Webcam audio={false} ref={enrollWebcamRef} screenshotFormat="image/jpeg" videoConstraints={{ facingMode: "user" }} style={{width:'100%', height:'100%', objectFit:'cover'}} />
+                                                {enrollmentStatus === 'acquiring' && (
+                                                    <div style={{position:'absolute', top:0, left:0, right:0, bottom:0, background:'linear-gradient(to bottom, var(--primary-glow), transparent)', border:'2px solid var(--primary)', animation:'scan 2s infinite linear'}} />
+                                                )}
                                             </div>
                                         )}
                                         
                                         {enrollmentStatus === '' || enrollmentStatus === 'restart' ? (
-                                            <button type="button" onClick={enrollBiometrics} className={styles.btnVerifyGeo} style={{width:'100%', margin:0}}>Initialize ML Scanner</button>
+                                            <button type="button" onClick={enrollBiometrics} className={styles.btnVerifyGeo} style={{width:'100%', padding:'16px', borderRadius:'12px', fontSize:'1rem', fontWeight:'bold', letterSpacing:'1px', textTransform:'uppercase'}}>Initialize ML Scanner</button>
                                         ) : enrollmentStatus === 'loading' ? (
-                                            <div style={{textAlign:'center', color:'var(--neo)'}}>Downloading AI Math Models (Wait)...</div>
+                                            <div style={{textAlign:'center', color:'var(--neo)', padding:'12px', background:'rgba(99,102,241,0.1)', borderRadius:'12px'}}>Downloading AI Math Models (Wait)...</div>
                                         ) : enrollmentStatus === 'acquiring' ? (
-                                            <div style={{textAlign:'center', color:'var(--warning)'}}>Extracting 128-point face topography... Hold still.</div>
+                                            <div style={{textAlign:'center', color:'var(--warning)', padding:'12px', background:'rgba(245,158,11,0.1)', borderRadius:'12px'}}>Extracting 128-point face topography... Hold still.</div>
                                         ) : enrollmentStatus === 'success' ? (
-                                            <div style={{textAlign:'center', color:'var(--success)', fontWeight:'bold'}}>✅ Registration Complete! Math embedded.</div>
+                                            <div style={{textAlign:'center', color:'var(--success)', fontWeight:'bold', padding:'12px', background:'rgba(34,197,94,0.1)', borderRadius:'12px'}}>✅ Registration Complete! Math embedded.</div>
                                         ) : (
-                                            <div style={{textAlign:'center', color:'var(--error)'}}>❌ {enrollmentStatus.split('error: ')[1]} <br/><span style={{cursor:'pointer', textDecoration:'underline'}} onClick={() => setEnrollmentStatus('restart')}>Try Again</span></div>
+                                            <div style={{textAlign:'center', color:'var(--error)', padding:'12px', background:'rgba(239,68,68,0.1)', borderRadius:'12px'}}>❌ {enrollmentStatus.split('error: ')[1]} <br/><span style={{cursor:'pointer', textDecoration:'underline', display:'inline-block', marginTop:'8px', fontWeight:'bold'}} onClick={() => setEnrollmentStatus('restart')}>Try Again</span></div>
                                         )}
                                     </div>
                                 )}
@@ -1508,36 +1537,37 @@ export default function DashboardPage() {
                     </div>
 
                     {/* Tile 2: Stats */}
-                    <div className={`${styles.bentoTile} glass-panel`} style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-                        <h2 className={styles.sectionTitle} style={{ margin: 0 }}>Metrics</h2>
-                        <div className={styles.bentoStats}>
-                            <div className={styles.bentoStatCard}>
-                                <div className={styles.statIcon}><IconUpload size={20} /></div>
-                                <div>
-                                    <div className={styles.bentoStatNum}>{uploads.length}</div>
-                                    <div className={styles.bentoStatLabel}>Uploads</div>
-                                </div>
+                    <div className={`${styles.bentoTile} glass-panel`} style={{ padding: '24px' }}>
+                        <div style={{display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '8px'}}>
+                            <div style={{width: '8px', height: '32px', background: 'var(--primary)', borderRadius: '4px'}}></div>
+                            <h2 className={styles.sectionTitle} style={{ margin: 0, fontSize: '1.5rem', letterSpacing: '0.05em' }}>Metrics Engine</h2>
+                        </div>
+                        <p style={{color: 'var(--text-secondary)', marginBottom: '24px', fontSize: '0.9rem'}}>Live statistics of your contributions and academic power.</p>
+                        
+                        <div className={styles.premiumMetricGrid}>
+                            <div className={styles.premiumMetricCard}>
+                                <div className={styles.metricGlow}></div>
+                                <IconUpload size={28} color="var(--primary-light)" />
+                                <div className={styles.metricValueBig}>{uploads.length}</div>
+                                <div className={styles.metricLabelBig}>Total Uploads</div>
                             </div>
-                            <div className={styles.bentoStatCard}>
-                                <div className={styles.statIcon}><IconDownload size={20} /></div>
-                                <div>
-                                    <div className={styles.bentoStatNum}>{totalDownloads}</div>
-                                    <div className={styles.bentoStatLabel}>Downloads</div>
-                                </div>
+                            <div className={styles.premiumMetricCard}>
+                                <div className={styles.metricGlow}></div>
+                                <IconDownload size={28} color="#22c55e" />
+                                <div className={styles.metricValueBig}>{totalDownloads}</div>
+                                <div className={styles.metricLabelBig}>Downloads</div>
                             </div>
-                            <div className={styles.bentoStatCard}>
-                                <div className={styles.statIcon}><span style={{ fontSize: '1.2rem' }}>⭐</span></div>
-                                <div>
-                                    <div className={styles.bentoStatNum}>{userPoints}</div>
-                                    <div className={styles.bentoStatLabel}>Total XP</div>
-                                </div>
+                            <div className={styles.premiumMetricCard}>
+                                <div className={styles.metricGlow}></div>
+                                <span style={{ fontSize: '1.8rem' }}>⭐</span>
+                                <div className={styles.metricValueBig}>{userPoints}</div>
+                                <div className={styles.metricLabelBig}>Total XP</div>
                             </div>
-                            <div className={styles.bentoStatCard}>
-                                <div className={styles.statIcon}><span style={{ fontSize: '1.2rem' }}>{currentBadge?.icon || '🌱'}</span></div>
-                                <div>
-                                    <div className={styles.bentoStatNum}>Lvl {userLevel}</div>
-                                    <div className={styles.bentoStatLabel}>{currentBadge?.name}</div>
-                                </div>
+                            <div className={styles.premiumMetricCard}>
+                                <div className={styles.metricGlow}></div>
+                                <span style={{ fontSize: '1.8rem' }}>{currentBadge?.icon || '🌱'}</span>
+                                <div className={styles.metricValueBig} style={{fontSize: '1.8rem', marginTop: '18px'}}>Lvl {userLevel}</div>
+                                <div className={styles.metricLabelBig} style={{marginTop: '8px'}}>{currentBadge?.name}</div>
                             </div>
                         </div>
                     </div>

@@ -151,6 +151,7 @@ export default function GlobalBot() {
 
         <form className={styles.inputArea} onSubmit={handleSend}>
           <input
+            suppressHydrationWarning={true}
             type="text"
             value={input}
             onChange={(e) => setInput(e.target.value)}

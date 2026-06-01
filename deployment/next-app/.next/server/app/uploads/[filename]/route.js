@@ -1,6 +1,0 @@
-var R=require("../../../chunks/[turbopack]_runtime.js")("server/app/uploads/[filename]/route.js")
-R.c("server/chunks/[root-of-the-server]__0l7f-rx._.js")
-R.c("server/chunks/[root-of-the-server]__0nglzhr._.js")
-R.c("server/chunks/_next-internal_server_app_uploads_[filename]_route_actions_0s8_9uc.js")
-R.m(26270)
-module.exports=R.m(26270).exports

@@ -354,6 +354,7 @@ export default function Navbar() {
 
                         {/* Theme Toggle — left of profile icon */}
                         <button
+                            suppressHydrationWarning={true}
                             className={styles.themeToggle}
                             onClick={toggleTheme}
                             title={`Switch to ${theme === 'light' ? 'Dark' : 'Light'} Mode`}

@@ -110,22 +110,27 @@ const spotlightLinks = [
     { href: '/pyqs', label: 'Past Year Questions', icon: '📄', section: 'Pages' },
     { href: '/assignments', label: 'Assignments', icon: '📋', section: 'Pages' },
     { href: '/exam-mode', label: 'Exam Mode', icon: '🎯', section: 'Pages' },
+    { href: '/paper-analysis', label: 'Paper Analysis', icon: '🔍', section: 'Pages' },
     { href: '/community', label: 'Community', icon: '💬', section: 'Social' },
     { href: '/clubs', label: 'Clubs', icon: '🏢', section: 'Social' },
     { href: '/news', label: 'College News', icon: '📰', section: 'Social' },
     { href: '/leaderboard', label: 'Leaderboard', icon: '🏆', section: 'Social' },
     { href: '/upload', label: 'Upload Material', icon: '📤', section: 'Tools' },
     { href: '/assistant', label: 'AI Tutor', icon: '🤖', section: 'Tools' },
-    { href: '/dashboard', label: 'Dashboard', icon: '📊', section: 'Tools' },
+    { href: '/dashboard', label: 'My Profile', icon: '👤', section: 'Tools' },
 ];
 
 export default function Navbar() {
     const { user, logout } = useAuth();
     const { theme, toggleTheme } = useTheme();
     const pathname = usePathname();
+    if (pathname && pathname.startsWith('/mobile-auth')) {
+        return null;
+    }
     const router = useRouter();
     const [menuOpen, setMenuOpen] = useState(false);
     const [scrolled, setScrolled] = useState(false);
+    const [mobileNavOpen, setMobileNavOpen] = useState(false);
     const [spotlightOpen, setSpotlightOpen] = useState(false);
     const [spotlightQuery, setSpotlightQuery] = useState('');
     const [spotlightIndex, setSpotlightIndex] = useState(0);
@@ -237,14 +242,14 @@ export default function Navbar() {
         { href: '/pyqs', label: 'PYQs' },
         { href: '/assignments', label: 'Assignments' },
         { href: '/exam-mode', label: 'Exam Mode' },
+        { href: '/paper-analysis', label: 'Paper Analysis' },
     ];
 
     /* ── Dropdown menu config ── */
     const menuGroups = [
         {
             items: [
-                { href: `/profile/${user?.uid}`, label: 'My Profile', icon: <Icons.User /> },
-                { href: '/dashboard', label: 'Dashboard', icon: <Icons.BarChart /> },
+                { href: '/dashboard', label: 'My Profile', icon: <Icons.User /> },
                 ...(user?.role === 'teacher' ? [{ href: '/teacher', label: 'Teacher Dashboard', icon: <Icons.GraduationCap />, accent: true }] : []),
             ]
         },
@@ -258,6 +263,30 @@ export default function Navbar() {
                 { href: '/news', label: 'College News', icon: <Icons.Newspaper /> },
             ]
         }
+    ];
+
+    /* ── Mobile Dropdown Links ── */
+    const mobileNavLinks = [
+        { section: 'Pages', items: [
+            { href: '/', label: 'Home', icon: '🏠' },
+            { href: '/subjects', label: 'Subjects', icon: '📚' },
+            { href: '/youtube', label: 'Lectures', icon: '▶️' },
+            { href: '/pyqs', label: 'PYQs', icon: '📄' },
+            { href: '/exam-mode', label: 'Exam Prep', icon: '🎯' },
+            { href: '/assignments', label: 'Assignments', icon: '📋' },
+            { href: '/paper-analysis', label: 'Paper Analysis', icon: '🔍' },
+        ]},
+        { section: 'Social', items: [
+            { href: '/community', label: 'Community', icon: '💬' },
+            { href: '/clubs', label: 'Clubs', icon: '🏢' },
+            { href: '/news', label: 'News', icon: '📰' },
+            { href: '/leaderboard', label: 'Leaderboard', icon: '🏆' },
+        ]},
+        { section: 'Tools', items: [
+            { href: '/upload', label: 'Upload', icon: '📤' },
+            { href: '/assistant', label: 'AI Tutor', icon: '🤖' },
+            { href: '/dashboard', label: 'My Profile', icon: '👤' },
+        ]},
     ];
 
     return (
@@ -275,6 +304,7 @@ export default function Navbar() {
                     {/* Search Trigger — opens Spotlight */}
                     {pathname !== '/onboarding' && (
                         <button
+                            suppressHydrationWarning={true}
                             className={styles.searchTrigger}
                             onClick={() => { setSpotlightOpen(true); setSpotlightQuery(''); setSpotlightIndex(0); }}
                         >
@@ -303,6 +333,18 @@ export default function Navbar() {
 
                     {/* Actions */}
                     <div className={styles.navActions}>
+                        {/* Hamburger — mobile only */}
+                        <button
+                            className={styles.mobileMenuBtn}
+                            onClick={() => setMobileNavOpen(prev => !prev)}
+                            aria-label="Navigation menu"
+                        >
+                            {mobileNavOpen ? (
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                            ) : (
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+                            )}
+                        </button>
                         {/* Upload Button — visible when logged in */}
                         {user && pathname !== '/onboarding' && (
                             <Link href="/upload" className={styles.uploadBtn}>
@@ -312,6 +354,7 @@ export default function Navbar() {
 
                         {/* Theme Toggle — left of profile icon */}
                         <button
+                            suppressHydrationWarning={true}
                             className={styles.themeToggle}
                             onClick={toggleTheme}
                             title={`Switch to ${theme === 'light' ? 'Dark' : 'Light'} Mode`}
@@ -345,7 +388,7 @@ export default function Navbar() {
                                         <div className={styles.avatarTooltipContent}>
                                             <span className={styles.avatarTooltipEmoji}>💡</span>
                                             <p className={styles.avatarTooltipText}>
-                                                Tap your <strong>profile picture</strong> to access Dashboard, Community, Clubs, News & more!
+                                                Tap your <strong>profile picture</strong> to access My Profile, Community, Clubs, News & more!
                                             </p>
                                             <button className={styles.avatarTooltipBtn} onClick={dismissAvatarTip}>
                                                 Got it!
@@ -416,16 +459,38 @@ export default function Navbar() {
                 </div>
             </nav>
 
-            {/* Mobile-only Theme Toggle — visible when navbar is hidden */}
-            <button
-                className={styles.themeToggleMobile}
-                onClick={toggleTheme}
-                title={`Switch to ${theme === 'light' ? 'Dark' : 'Light'} Mode`}
-            >
-                <span className={styles.themeIconWrap}>
-                    {theme === 'light' ? <Icons.Moon /> : <Icons.Sun />}
-                </span>
-            </button>
+            {/* ── Mobile Dropdown Panel ── */}
+            {mobileNavOpen && (
+                <>
+                    <div className={styles.mobileDropdownOverlay} onClick={() => setMobileNavOpen(false)} />
+                    <div className={styles.mobileDropdown}>
+                        {mobileNavLinks.map(group => (
+                            <div key={group.section}>
+                                <div className={styles.mobileDropSection}>{group.section}</div>
+                                {group.items.map(item => (
+                                    <Link
+                                        key={item.href}
+                                        href={item.href}
+                                        className={`${styles.mobileDropItem} ${pathname === item.href ? styles.mobileDropItemActive : ''}`}
+                                        onClick={() => setMobileNavOpen(false)}
+                                    >
+                                        <span className={styles.mobileDropItemIcon}>{item.icon}</span>
+                                        {item.label}
+                                    </Link>
+                                ))}
+                            </div>
+                        ))}
+                        <div className={styles.mobileDropThemeRow}>
+                            <span className={styles.mobileDropThemeLabel}>
+                                {theme === 'light' ? '☀️ Light Mode' : '🌙 Dark Mode'}
+                            </span>
+                            <button className={styles.mobileDropThemeBtn} onClick={toggleTheme}>
+                                {theme === 'light' ? <Icons.Moon /> : <Icons.Sun />}
+                            </button>
+                        </div>
+                    </div>
+                </>
+            )}
 
             {/* ── Spotlight / Command Palette ── */}
             {spotlightOpen && (

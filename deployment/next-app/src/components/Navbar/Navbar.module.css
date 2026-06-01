@@ -1001,28 +1001,192 @@
    RESPONSIVE — MOBILE: HIDE NAVBAR, KEEP THEME TOGGLE
    ═══════════════════════════════════════════════════ */
 @media (max-width: 768px) {
+    /* ── Show Navbar as a compact mobile bar ── */
     .navbar {
-        display: none;
+        top: 0 !important;
+        left: 0 !important;
+        right: 0 !important;
+        width: 100% !important;
+        max-width: 100% !important;
+        transform: none !important;
+        border-radius: 0 !important;
+        height: 52px !important;
+        animation: none !important;
+        border-left: none !important;
+        border-right: none !important;
+        border-top: none !important;
     }
-    .themeToggle {
-        display: none;
+    .navbar::before { display: none; }
+
+    /* Hide desktop-only elements */
+    .navLinks { display: none !important; }
+    .searchTrigger { display: none !important; }
+    .uploadBtn { display: none !important; }
+    .searchKbd { display: none !important; }
+    .themeToggle { display: none !important; }
+
+    /* Show the mobile theme toggle floating button — hidden since we have it in nav */
+    .themeToggleMobile { display: none !important; }
+
+    /* ── Logo: compact ── */
+    .logo { gap: 6px; }
+    .logoIcon { width: 28px; height: 28px; font-size: 0.85rem; }
+    .logoText { font-size: 1rem; }
+
+    /* ── Nav Actions: show hamburger ── */
+    .navActions { gap: 8px !important; }
+    .avatar { width: 30px !important; height: 30px !important; }
+
+    /* ── Hamburger Button (mobile only) ── */
+    .mobileMenuBtn {
+        display: flex !important;
+        align-items: center;
+        justify-content: center;
+        width: 36px;
+        height: 36px;
+        border-radius: 10px;
+        border: 1px solid var(--border);
+        background: var(--bg-input);
+        color: var(--text-primary);
+        cursor: pointer;
+        transition: all 0.2s ease;
     }
-    .themeToggleMobile {
+    .mobileMenuBtn:active {
+        transform: scale(0.92);
+    }
+
+    /* ── Mobile Dropdown Panel ── */
+    .mobileDropdown {
+        display: flex !important;
+        flex-direction: column;
+        position: fixed;
+        top: 52px;
+        left: 0;
+        right: 0;
+        background: var(--bg-surface);
+        backdrop-filter: blur(24px);
+        -webkit-backdrop-filter: blur(24px);
+        border-bottom: 1px solid var(--border);
+        box-shadow: 0 8px 32px rgba(0,0,0,0.12);
+        z-index: 999;
+        max-height: calc(100vh - 52px);
+        overflow-y: auto;
+        animation: mobileSlideDown 0.25s ease forwards;
+        padding: 8px 0;
+    }
+
+    @keyframes mobileSlideDown {
+        from { opacity: 0; transform: translateY(-8px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+
+    .mobileDropdownOverlay {
+        display: block !important;
+        position: fixed;
+        inset: 0;
+        top: 52px;
+        background: rgba(0,0,0,0.3);
+        z-index: 998;
+    }
+
+    /* ── Section Header in Dropdown ── */
+    .mobileDropSection {
+        display: block;
+        padding: 8px 20px 4px;
+        font-size: 0.6rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.1em;
+        color: var(--text-muted);
+    }
+    .mobileDropSection:not(:first-child) {
+        border-top: 1px solid var(--border);
+        margin-top: 4px;
+        padding-top: 10px;
+    }
+
+    /* ── Dropdown Nav Item ── */
+    .mobileDropItem {
+        display: flex !important;
+        align-items: center;
+        gap: 12px;
+        padding: 10px 20px;
+        color: var(--text-primary);
+        text-decoration: none;
+        font-size: 0.88rem;
+        font-weight: 600;
+        transition: background 0.15s ease;
+        border: none;
+        background: none;
+        width: 100%;
+        text-align: left;
+        cursor: pointer;
+    }
+    .mobileDropItem:active {
+        background: var(--bg-input);
+    }
+    .mobileDropItemActive {
+        color: var(--primary) !important;
+        background: var(--primary-glow);
+    }
+    .mobileDropItemIcon {
         display: flex;
         align-items: center;
         justify-content: center;
-        position: fixed;
-        top: 12px;
-        right: 12px;
-        z-index: 9998;
-        width: 40px;
-        height: 40px;
-        background: var(--bg-surface);
+        width: 32px;
+        height: 32px;
+        border-radius: 10px;
+        background: var(--bg-input);
+        font-size: 1rem;
+        flex-shrink: 0;
+    }
+    .mobileDropItemActive .mobileDropItemIcon {
+        background: var(--primary-glow);
+    }
+
+    /* ── Theme row in dropdown ── */
+    .mobileDropThemeRow {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 10px 20px;
+        border-top: 1px solid var(--border);
+        margin-top: 4px;
+    }
+    .mobileDropThemeLabel {
+        font-size: 0.82rem;
+        font-weight: 600;
+        color: var(--text-secondary);
+    }
+    .mobileDropThemeBtn {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 36px;
+        height: 36px;
+        border-radius: 10px;
         border: 1px solid var(--border);
-        border-radius: 50%;
-        box-shadow: var(--shadow-md);
+        background: var(--bg-input);
         color: var(--text-primary);
         cursor: pointer;
-        overflow: hidden;
     }
+
+    /* ── Profile Menu on Mobile ── */
+    .profileMenu {
+        position: fixed !important;
+        top: 52px !important;
+        right: 0 !important;
+        left: 0 !important;
+        width: 100% !important;
+        max-width: 100% !important;
+        border-radius: 0 0 16px 16px !important;
+    }
+}
+
+/* Hide mobile-only elements on desktop */
+@media (min-width: 769px) {
+    .mobileMenuBtn { display: none !important; }
+    .mobileDropdown { display: none !important; }
+    .mobileDropdownOverlay { display: none !important; }
+    .themeToggleMobile { display: none; }
 }

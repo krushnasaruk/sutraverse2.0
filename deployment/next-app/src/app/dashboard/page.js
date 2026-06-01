@@ -1,9 +1,11 @@
 'use client';
+// Force Turbopack reload 2
 
 import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { collection, getDocs, query, where, orderBy, limit, addDoc, onSnapshot, doc, updateDoc } from 'firebase/firestore';
-import { db } from '@/lib/firebase';
+import { db, storage } from '@/lib/firebase';
+import { ref, uploadBytesResumable, getDownloadURL } from 'firebase/storage';
 import { useAuth } from '@/context/AuthContext';
 import { IconUpload, IconDownload, IconStar, IconFolder, IconNotes, IconPyq, IconAssignment, IconLock, IconCalendar } from '@/components/Icons';
 import Webcam from 'react-webcam';
@@ -48,6 +50,8 @@ export default function DashboardPage() {
     const [uploads, setUploads] = useState([]);
     const [loadingUploads, setLoadingUploads] = useState(true);
     const [editing, setEditing] = useState(false);
+    const [dockOpen, setDockOpen] = useState(false);
+    const [showOnboarding, setShowOnboarding] = useState(false);
 
     // Profile Edit State
     const [editName, setEditName] = useState('');
@@ -109,6 +113,17 @@ export default function DashboardPage() {
         const timer = setInterval(() => setNow(new Date()), 1000);
         return () => clearInterval(timer);
     }, []);
+
+    // Onboarding popup — show once on mobile for new users
+    useEffect(() => {
+        if (typeof window === 'undefined') return;
+        const isMobile = window.innerWidth <= 768;
+        const hasSeen = localStorage.getItem('dashboard_onboarding_seen');
+        if (isMobile && !hasSeen && user) {
+            const timer = setTimeout(() => setShowOnboarding(true), 800);
+            return () => clearTimeout(timer);
+        }
+    }, [user]);
 
     const formatCountdown = (targetDateStr) => {
         const diff = new Date(targetDateStr) - now;
@@ -563,23 +578,15 @@ export default function DashboardPage() {
         if (!avatarFile || !user) return null;
         setUploadingAvatar(true);
         try {
-            const formData = new FormData();
-            formData.append('file', avatarFile);
-            formData.append('context', 'avatar');
+            const safeName = avatarFile.name.replace(/[^a-zA-Z0-9._-]/g, '_');
+            const fileName = `${Date.now()}_${safeName}`;
+            const storageRef = ref(storage, `avatars/${fileName}`);
 
-            const res = await fetch('/api/upload', {
-                method: 'POST',
-                body: formData,
-            });
-
-            const data = await res.json();
-
-            if (!res.ok || !data.success) {
-                throw new Error(data.error || 'Avatar upload failed');
-            }
+            const uploadTask = await uploadBytesResumable(storageRef, avatarFile);
+            const downloadURL = await getDownloadURL(uploadTask.ref);
 
             setUploadingAvatar(false);
-            return data.fileURL;
+            return downloadURL;
         } catch (err) {
             console.error('Avatar upload failed:', err);
             setUploadingAvatar(false);
@@ -682,51 +689,52 @@ export default function DashboardPage() {
         e.preventDefault();
         if (!submissionFile) return;
         setSubmittingAssignment(deadline.id);
+        setSubmissionProgress(0);
         
         try {
-            const formData = new FormData();
-            formData.append('file', submissionFile);
-            formData.append('context', 'submission');
+            const safeName = submissionFile.name.replace(/[^a-zA-Z0-9._-]/g, '_');
+            const fileName = `${Date.now()}_${safeName}`;
+            const storageRef = ref(storage, `submissions/${fileName}`);
 
-            // Simulate progress while uploading
-            let simulatedProgress = 0;
-            const progressInterval = setInterval(() => {
-                simulatedProgress = Math.min(simulatedProgress + Math.random() * 15, 85);
-                setSubmissionProgress(Math.round(simulatedProgress));
-            }, 400);
+            const uploadTask = uploadBytesResumable(storageRef, submissionFile);
 
-            const res = await fetch('/api/upload', {
-                method: 'POST',
-                body: formData,
-            });
+            uploadTask.on(
+                'state_changed',
+                (snapshot) => {
+                    const pct = Math.round((snapshot.bytesTransferred / snapshot.totalBytes) * 100);
+                    setSubmissionProgress(pct);
+                },
+                (err) => {
+                    console.error('Submission upload error:', err);
+                    setSubmittingAssignment(null);
+                    setSubmissionProgress(0);
+                },
+                async () => {
+                    try {
+                        const downloadURL = await getDownloadURL(uploadTask.snapshot.ref);
 
-            clearInterval(progressInterval);
-            setSubmissionProgress(95);
-
-            const data = await res.json();
-
-            if (!res.ok || !data.success) {
-                throw new Error(data.error || 'Submission upload failed');
-            }
-
-            setSubmissionProgress(100);
-
-            const newSub = {
-                deadlineId: deadline.id,
-                studentEmail: user.email,
-                studentName: user.name || 'Anonymous',
-                studentPhone: user.studentPhone || '',
-                parentPhone: user.parentPhone || '',
-                fileUrl: data.fileURL,
-                submittedAt: new Date().toISOString()
-            };
-            
-            const docRef = await addDoc(collection(db, 'submissions'), newSub);
-            setMySubmissions(prev => [...prev, { id: docRef.id, ...newSub }]);
-            
-            setSubmittingAssignment(null);
-            setSubmissionFile(null);
-            setSubmissionProgress(0);
+                        const newSub = {
+                            deadlineId: deadline.id,
+                            studentEmail: user.email,
+                            studentName: user.name || 'Anonymous',
+                            studentPhone: user.studentPhone || '',
+                            parentPhone: user.parentPhone || '',
+                            fileUrl: downloadURL, // Public HTTPS Firebase Storage URL!
+                            submittedAt: new Date().toISOString()
+                        };
+                        
+                        const docRef = await addDoc(collection(db, 'submissions'), newSub);
+                        setMySubmissions(prev => [...prev, { id: docRef.id, ...newSub }]);
+                        
+                        setSubmittingAssignment(null);
+                        setSubmissionFile(null);
+                        setSubmissionProgress(0);
+                    } catch (err) {
+                        console.error('Firestore save error:', err);
+                        setSubmittingAssignment(null);
+                    }
+                }
+            );
         } catch(e) {
             console.error(e);
             setSubmittingAssignment(null);
@@ -850,23 +858,20 @@ export default function DashboardPage() {
                         </div>
                     </div>
 
-                    {/* ── Stats Strip ── */}
+                    {/* ── Stats Cards ── */}
                     <div className={styles.heroStats}>
                         <div className={styles.heroStatItem}>
                             <span className={styles.heroStatNum}>{uploads.length}</span>
                             <span className={styles.heroStatLabel}>Uploads</span>
                         </div>
-                        <div className={styles.heroStatDivider}></div>
                         <div className={styles.heroStatItem}>
                             <span className={styles.heroStatNum}>{totalDownloads}</span>
                             <span className={styles.heroStatLabel}>Downloads</span>
                         </div>
-                        <div className={styles.heroStatDivider}></div>
                         <div className={styles.heroStatItem}>
                             <span className={styles.heroStatNum}>{userPoints}</span>
                             <span className={styles.heroStatLabel}>Total XP</span>
                         </div>
-                        <div className={styles.heroStatDivider}></div>
                         <div className={styles.heroStatItem}>
                             <span className={styles.heroStatNum}>{earnedBadges.length}</span>
                             <span className={styles.heroStatLabel}>Badges</span>
@@ -874,24 +879,36 @@ export default function DashboardPage() {
                     </div>
                 </section>
 
-                {/* ═══ QUICK ACCESS DOCK ═══ */}
+                {/* ═══ QUICK ACCESS DOCK (Collapsible on Mobile) ═══ */}
                 <section className={styles.dockSection}>
-                    <div className={styles.dockGrid}>
-                        {[
-                            { href: '/community', emoji: '💬', label: 'Community', color: '#b91c1c' },
-                            { href: '/leaderboard', emoji: '🏆', label: 'Leaderboard', color: '#FFD700' },
-                            { href: '/subjects', emoji: '📚', label: 'Subjects', color: '#dc2626' },
-                            { href: '/pyqs', emoji: '📄', label: 'PYQs', color: '#16a34a' },
-                            { href: '/assistant', emoji: '🤖', label: 'AI Tutor', color: '#166534' },
-                            { href: `/profile/${user.uid}`, emoji: '👤', label: 'Public Profile', color: '#22c55e' },
-                        ].map(item => (
-                            <Link key={item.href} href={item.href} className={styles.dockItem}>
-                                <div className={styles.dockIcon} style={{ background: `${item.color}15`, color: item.color }}>
-                                    <span>{item.emoji}</span>
-                                </div>
-                                <span className={styles.dockLabel}>{item.label}</span>
-                            </Link>
-                        ))}
+                    <button 
+                        className={styles.dockToggle} 
+                        onClick={() => setDockOpen(prev => !prev)}
+                    >
+                        <span className={styles.dockToggleLeft}>
+                            <span className={styles.dockToggleEmoji}>⚡</span>
+                            Quick Access
+                        </span>
+                        <span className={`${styles.dockToggleArrow} ${dockOpen ? styles.dockToggleArrowOpen : ''}`}>▼</span>
+                    </button>
+                    <div className={`${styles.dockCollapsible} ${dockOpen ? styles.dockCollapsibleOpen : ''}`}>
+                        <div className={styles.dockGrid}>
+                            {[
+                                { href: '/community', emoji: '💬', label: 'Community', color: '#b91c1c' },
+                                { href: '/leaderboard', emoji: '🏆', label: 'Leaderboard', color: '#FFD700' },
+                                { href: '/subjects', emoji: '📚', label: 'Subjects', color: '#dc2626' },
+                                { href: '/pyqs', emoji: '📄', label: 'PYQs', color: '#16a34a' },
+                                { href: '/assistant', emoji: '🤖', label: 'AI Tutor', color: '#166534' },
+                                { href: `/profile/${user.uid}`, emoji: '👤', label: 'Public Profile', color: '#22c55e' },
+                            ].map(item => (
+                                <Link key={item.href} href={item.href} className={styles.dockItem}>
+                                    <div className={styles.dockIcon} style={{ background: `${item.color}15`, color: item.color }}>
+                                        <span>{item.emoji}</span>
+                                    </div>
+                                    <span className={styles.dockLabel}>{item.label}</span>
+                                </Link>
+                            ))}
+                        </div>
                     </div>
                 </section>
 
@@ -1254,16 +1271,60 @@ export default function DashboardPage() {
                                     <button className={styles.editBtn} onClick={startEditing}>Configure</button>
                                 </div>
                                 {user.branch ? (
-                                    <div className={styles.profileGrid}>
-                                        <div className={styles.profileField}><span className={styles.fieldLabel}>Display Name</span><span className={styles.fieldValue}>{user.name || 'Not set'}</span></div>
-                                        <div className={styles.profileField}><span className={styles.fieldLabel}>College</span><span className={styles.fieldValue}>{user.college || 'Not set'}</span></div>
-                                        <div className={styles.profileField}><span className={styles.fieldLabel}>Branch</span><span className={styles.fieldValue}>{user.branch}</span></div>
-                                        <div className={styles.profileField}><span className={styles.fieldLabel}>Year</span><span className={styles.fieldValue}>{user.year}</span></div>
-                                        <div className={styles.profileField}><span className={styles.fieldLabel}>Semester</span><span className={styles.fieldValue}>{user.semester}</span></div>
+                                    <div className={styles.premiumGrid}>
+                                        <div className={styles.premiumFieldCard}>
+                                            <span className={styles.fieldTitle}>Display Name</span>
+                                            <span className={styles.fieldValueMain}>{user.name || 'Not set'}</span>
+                                        </div>
+                                        <div className={styles.premiumFieldCard}>
+                                            <span className={styles.fieldTitle}>College</span>
+                                            <span className={styles.fieldValueMain}>{user.college || 'Not set'}</span>
+                                        </div>
+                                        <div className={styles.premiumFieldCard}>
+                                            <span className={styles.fieldTitle}>Branch</span>
+                                            <span className={styles.fieldValueMain}>{user.branch}</span>
+                                        </div>
+                                        <div className={styles.premiumFieldCard}>
+                                            <span className={styles.fieldTitle}>Year</span>
+                                            <span className={styles.fieldValueMain}>{user.year}</span>
+                                        </div>
+                                        <div className={styles.premiumFieldCard}>
+                                            <span className={styles.fieldTitle}>Semester</span>
+                                            <span className={styles.fieldValueMain}>{user.semester}</span>
+                                        </div>
                                     </div>
                                 ) : (
-                                    <div className={styles.noProfile}>
-                                        <p>No academic profile set. <button onClick={startEditing} className={styles.link}>Set it up now →</button></p>
+                                    <div className={styles.profileSetupCard}>
+                                        <span className={styles.setupIcon}>🎯</span>
+                                        <h3 className={styles.setupTitle}>Complete Your Profile</h3>
+                                        <p className={styles.setupDesc}>
+                                            Set up your academic profile to unlock personalized notes, exam prep, and class features.
+                                        </p>
+                                        <div className={styles.setupProgressWrap}>
+                                            <div className={styles.setupProgressLabel}>
+                                                <span>Progress</span>
+                                                <span>{Math.round(([user.name, user.college, user.branch, user.year, user.semester].filter(Boolean).length / 5) * 100)}%</span>
+                                            </div>
+                                            <div className={styles.setupProgressTrack}>
+                                                <div className={styles.setupProgressFill} style={{ width: `${Math.round(([user.name, user.college, user.branch, user.year, user.semester].filter(Boolean).length / 5) * 100)}%` }}></div>
+                                            </div>
+                                        </div>
+                                        <div className={styles.setupChecklist}>
+                                            {[
+                                                { label: 'Name', done: !!user.name },
+                                                { label: 'College', done: !!user.college },
+                                                { label: 'Branch', done: !!user.branch },
+                                                { label: 'Year', done: !!user.year },
+                                                { label: 'Semester', done: !!user.semester },
+                                            ].map(c => (
+                                                <span key={c.label} className={`${styles.setupCheckItem} ${c.done ? styles.setupCheckDone : styles.setupCheckPending}`}>
+                                                    {c.done ? '✓' : '○'} {c.label}
+                                                </span>
+                                            ))}
+                                        </div>
+                                        <button className={styles.setupBtn} onClick={startEditing}>
+                                            ⚙️ Set Up Now
+                                        </button>
                                     </div>
                                 )}
                                 {user.subjects && user.subjects.length > 0 && (
@@ -1308,51 +1369,56 @@ export default function DashboardPage() {
                                     </div>
                                 </div>
 
-                                <div className={styles.editGrid}>
-                                    <div className={styles.editField} style={{ gridColumn: '1 / -1' }}>
-                                        <label>Display Name</label>
-                                        <input type="text" maxLength={40} value={editName} onChange={(e) => setEditName(e.target.value)} placeholder="Your name" />
+                                <div className={styles.glassForm}>
+                                    <div className={styles.modernInputWrap}>
+                                        <label className={styles.modernLabel}>Display Name</label>
+                                        <input type="text" maxLength={40} className={styles.premiumInput} value={editName} onChange={(e) => setEditName(e.target.value)} placeholder="Your name" />
                                     </div>
-                                    <div className={styles.editField} style={{ gridColumn: '1 / -1' }}>
-                                        <label>Short Bio</label>
-                                        <input type="text" maxLength={60} value={editBio} onChange={(e) => setEditBio(e.target.value)} placeholder="e.g. Code wizard & coffee consumer" />
+                                    <div className={styles.modernInputWrap}>
+                                        <label className={styles.modernLabel}>Short Bio</label>
+                                        <input type="text" maxLength={60} className={styles.premiumInput} value={editBio} onChange={(e) => setEditBio(e.target.value)} placeholder="e.g. Code wizard & coffee consumer" />
                                     </div>
-                                    <div className={styles.editField}>
-                                        <label>Student Phone</label>
-                                        <input type="tel" value={editStudentPhone} onChange={(e) => setEditStudentPhone(e.target.value)} placeholder="+1234567890" />
+                                    <div className={styles.formGroupRow}>
+                                        <div className={styles.modernInputWrap}>
+                                            <label className={styles.modernLabel}>Student Phone</label>
+                                            <input type="tel" className={styles.premiumInput} value={editStudentPhone} onChange={(e) => setEditStudentPhone(e.target.value)} placeholder="+1234567890" />
+                                        </div>
+                                        <div className={styles.modernInputWrap}>
+                                            <label className={styles.modernLabel}>Parent Phone</label>
+                                            <input type="tel" className={styles.premiumInput} value={editParentPhone} onChange={(e) => setEditParentPhone(e.target.value)} placeholder="+1987654321" />
+                                        </div>
                                     </div>
-                                    <div className={styles.editField}>
-                                        <label>Parent Phone</label>
-                                        <input type="tel" value={editParentPhone} onChange={(e) => setEditParentPhone(e.target.value)} placeholder="+1987654321" />
+                                    <div className={styles.formGroupRow}>
+                                        <div className={styles.modernInputWrap}>
+                                            <label className={styles.modernLabel}>College</label>
+                                            <select className={`${styles.premiumInput} ${styles.premiumSelect}`} value={editCollege} onChange={(e) => setEditCollege(e.target.value)}>
+                                                <option value="">Select</option>
+                                                {COLLEGES.map(c => <option key={c} value={c}>{c}</option>)}
+                                            </select>
+                                        </div>
+                                        <div className={styles.modernInputWrap}>
+                                            <label className={styles.modernLabel}>Branch</label>
+                                            <select className={`${styles.premiumInput} ${styles.premiumSelect}`} value={editBranch} onChange={(e) => { setEditBranch(e.target.value); setEditSemester(''); }}>
+                                                <option value="">Select</option>
+                                                {BRANCHES.map(b => <option key={b} value={b}>{b}</option>)}
+                                            </select>
+                                        </div>
                                     </div>
-
-                                    <div className={styles.editField}>
-                                        <label>College</label>
-                                        <select value={editCollege} onChange={(e) => setEditCollege(e.target.value)}>
-                                            <option value="">Select</option>
-                                            {COLLEGES.map(c => <option key={c} value={c}>{c}</option>)}
-                                        </select>
-                                    </div>
-                                    <div className={styles.editField}>
-                                        <label>Branch</label>
-                                        <select value={editBranch} onChange={(e) => { setEditBranch(e.target.value); setEditSemester(''); }}>
-                                            <option value="">Select</option>
-                                            {BRANCHES.map(b => <option key={b} value={b}>{b}</option>)}
-                                        </select>
-                                    </div>
-                                    <div className={styles.editField}>
-                                        <label>Year</label>
-                                        <select value={editYear} onChange={(e) => { setEditYear(e.target.value); setEditSemester(''); }}>
-                                            <option value="">Select</option>
-                                            {YEARS.map(y => <option key={y} value={y}>{y}</option>)}
-                                        </select>
-                                    </div>
-                                    <div className={styles.editField}>
-                                        <label>Semester</label>
-                                        <select value={editSemester} onChange={(e) => setEditSemester(e.target.value)} disabled={!editYear}>
-                                            <option value="">Select</option>
-                                            {availableSemesters.map(s => <option key={s} value={s}>{s}</option>)}
-                                        </select>
+                                    <div className={styles.formGroupRow}>
+                                        <div className={styles.modernInputWrap}>
+                                            <label className={styles.modernLabel}>Year</label>
+                                            <select className={`${styles.premiumInput} ${styles.premiumSelect}`} value={editYear} onChange={(e) => { setEditYear(e.target.value); setEditSemester(''); }}>
+                                                <option value="">Select</option>
+                                                {YEARS.map(y => <option key={y} value={y}>{y}</option>)}
+                                            </select>
+                                        </div>
+                                        <div className={styles.modernInputWrap}>
+                                            <label className={styles.modernLabel}>Semester</label>
+                                            <select className={`${styles.premiumInput} ${styles.premiumSelect}`} value={editSemester} onChange={(e) => setEditSemester(e.target.value)} disabled={!editYear}>
+                                                <option value="">Select</option>
+                                                {availableSemesters.map(s => <option key={s} value={s}>{s}</option>)}
+                                            </select>
+                                        </div>
                                     </div>
                                 </div>
 
@@ -1415,35 +1481,46 @@ export default function DashboardPage() {
                                     )}
                                 </div>
                             
-                            <div className={styles.formGroup} style={{ marginTop: '24px', borderTop: '1px solid rgba(255,255,255,0.1)', paddingTop: '20px' }}>
-                                <h3>Secure Biometrics</h3>
-                                <p style={{fontSize: '0.85rem', color: 'var(--text-secondary)', marginBottom: '16px'}}>
-                                    Provide a baseline geometric scan of your face. This mathematical data is required for ultra-fast Live Radar Check-Ins. We extract 128 coordinate points.
-                                </p>
+                            <div className={styles.formGroup} style={{ marginTop: '32px', padding: '24px', background: 'var(--bg-subtle)', borderRadius: '24px', border: '1px solid var(--border-subtle)' }}>
+                                <div style={{display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:'24px'}}>
+                                    <div>
+                                        <h3 style={{margin:0, fontSize:'1.2rem', color:'var(--text-primary)'}}>Secure Biometrics</h3>
+                                        <p style={{margin:'4px 0 0', fontSize:'0.85rem', color:'var(--text-secondary)'}}>Live Radar Check-In Facial Topography</p>
+                                    </div>
+                                    <div className={`${styles.bioStatusOrb} ${user.faceDescriptor && enrollmentStatus === '' ? '' : styles.inactive}`}>
+                                        {user.faceDescriptor && enrollmentStatus === '' ? '🛡️' : '⚠️'}
+                                    </div>
+                                </div>
                                 
                                 {user.faceDescriptor && enrollmentStatus === '' ? (
-                                    <div style={{color:'var(--success)', fontWeight:'bold', display:'flex', alignItems:'center', gap:'8px'}}>
-                                        ✅ Biometrics Active
-                                        <button type="button" onClick={() => setEnrollmentStatus('restart')} className={styles.btnSecondary} style={{padding:'4px 8px', fontSize:'0.8rem'}}>Re-Enroll</button>
+                                    <div style={{display:'flex', justifyContent:'space-between', alignItems:'center', background:'rgba(34, 197, 94, 0.05)', padding:'16px', borderRadius:'16px', border:'1px solid var(--success)'}}>
+                                        <div>
+                                            <div style={{color:'var(--success)', fontWeight:'bold', fontSize:'1rem'}}>Active & Secured</div>
+                                            <div style={{color:'var(--text-secondary)', fontSize:'0.8rem'}}>128-point math embedded</div>
+                                        </div>
+                                        <button type="button" onClick={() => setEnrollmentStatus('restart')} className={styles.btnSecondary} style={{padding:'8px 16px', borderRadius:'12px', fontSize:'0.85rem'}}>Recalibrate</button>
                                     </div>
                                 ) : (
-                                    <div style={{display:'flex', flexDirection:'column', gap:'12px', background:'rgba(0,0,0,0.3)', padding:'16px', borderRadius:'12px', border:'1px solid rgba(22, 163, 74, 0.3)'}}>
+                                    <div style={{display:'flex', flexDirection:'column', gap:'16px', background:'var(--bg-elevated)', padding:'24px', borderRadius:'16px', border:'1px solid var(--primary-glow)'}}>
                                         {(enrollmentStatus === 'loading' || enrollmentStatus === 'acquiring' || enrollmentStatus === 'restart') && (
-                                            <div style={{width:'100%', height:'200px', borderRadius:'8px', overflow:'hidden', position:'relative'}}>
+                                            <div style={{width:'100%', height:'240px', borderRadius:'12px', overflow:'hidden', position:'relative', boxShadow:'0 0 20px var(--primary-glow)'}}>
                                                 <Webcam audio={false} ref={enrollWebcamRef} screenshotFormat="image/jpeg" videoConstraints={{ facingMode: "user" }} style={{width:'100%', height:'100%', objectFit:'cover'}} />
+                                                {enrollmentStatus === 'acquiring' && (
+                                                    <div style={{position:'absolute', top:0, left:0, right:0, bottom:0, background:'linear-gradient(to bottom, var(--primary-glow), transparent)', border:'2px solid var(--primary)', animation:'scan 2s infinite linear'}} />
+                                                )}
                                             </div>
                                         )}
                                         
                                         {enrollmentStatus === '' || enrollmentStatus === 'restart' ? (
-                                            <button type="button" onClick={enrollBiometrics} className={styles.btnVerifyGeo} style={{width:'100%', margin:0}}>Initialize ML Scanner</button>
+                                            <button type="button" onClick={enrollBiometrics} className={styles.btnVerifyGeo} style={{width:'100%', padding:'16px', borderRadius:'12px', fontSize:'1rem', fontWeight:'bold', letterSpacing:'1px', textTransform:'uppercase'}}>Initialize ML Scanner</button>
                                         ) : enrollmentStatus === 'loading' ? (
-                                            <div style={{textAlign:'center', color:'var(--neo)'}}>Downloading AI Math Models (Wait)...</div>
+                                            <div style={{textAlign:'center', color:'var(--neo)', padding:'12px', background:'rgba(99,102,241,0.1)', borderRadius:'12px'}}>Downloading AI Math Models (Wait)...</div>
                                         ) : enrollmentStatus === 'acquiring' ? (
-                                            <div style={{textAlign:'center', color:'var(--warning)'}}>Extracting 128-point face topography... Hold still.</div>
+                                            <div style={{textAlign:'center', color:'var(--warning)', padding:'12px', background:'rgba(245,158,11,0.1)', borderRadius:'12px'}}>Extracting 128-point face topography... Hold still.</div>
                                         ) : enrollmentStatus === 'success' ? (
-                                            <div style={{textAlign:'center', color:'var(--success)', fontWeight:'bold'}}>✅ Registration Complete! Math embedded.</div>
+                                            <div style={{textAlign:'center', color:'var(--success)', fontWeight:'bold', padding:'12px', background:'rgba(34,197,94,0.1)', borderRadius:'12px'}}>✅ Registration Complete! Math embedded.</div>
                                         ) : (
-                                            <div style={{textAlign:'center', color:'var(--error)'}}>❌ {enrollmentStatus.split('error: ')[1]} <br/><span style={{cursor:'pointer', textDecoration:'underline'}} onClick={() => setEnrollmentStatus('restart')}>Try Again</span></div>
+                                            <div style={{textAlign:'center', color:'var(--error)', padding:'12px', background:'rgba(239,68,68,0.1)', borderRadius:'12px'}}>❌ {enrollmentStatus.split('error: ')[1]} <br/><span style={{cursor:'pointer', textDecoration:'underline', display:'inline-block', marginTop:'8px', fontWeight:'bold'}} onClick={() => setEnrollmentStatus('restart')}>Try Again</span></div>
                                         )}
                                     </div>
                                 )}
@@ -1460,36 +1537,37 @@ export default function DashboardPage() {
                     </div>
 
                     {/* Tile 2: Stats */}
-                    <div className={`${styles.bentoTile} glass-panel`} style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-                        <h2 className={styles.sectionTitle} style={{ margin: 0 }}>Metrics</h2>
-                        <div className={styles.bentoStats}>
-                            <div className={styles.bentoStatCard}>
-                                <div className={styles.statIcon}><IconUpload size={20} /></div>
-                                <div>
-                                    <div className={styles.bentoStatNum}>{uploads.length}</div>
-                                    <div className={styles.bentoStatLabel}>Uploads</div>
-                                </div>
+                    <div className={`${styles.bentoTile} glass-panel`} style={{ padding: '24px' }}>
+                        <div style={{display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '8px'}}>
+                            <div style={{width: '8px', height: '32px', background: 'var(--primary)', borderRadius: '4px'}}></div>
+                            <h2 className={styles.sectionTitle} style={{ margin: 0, fontSize: '1.5rem', letterSpacing: '0.05em' }}>Metrics Engine</h2>
+                        </div>
+                        <p style={{color: 'var(--text-secondary)', marginBottom: '24px', fontSize: '0.9rem'}}>Live statistics of your contributions and academic power.</p>
+                        
+                        <div className={styles.premiumMetricGrid}>
+                            <div className={styles.premiumMetricCard}>
+                                <div className={styles.metricGlow}></div>
+                                <IconUpload size={28} color="var(--primary-light)" />
+                                <div className={styles.metricValueBig}>{uploads.length}</div>
+                                <div className={styles.metricLabelBig}>Total Uploads</div>
                             </div>
-                            <div className={styles.bentoStatCard}>
-                                <div className={styles.statIcon}><IconDownload size={20} /></div>
-                                <div>
-                                    <div className={styles.bentoStatNum}>{totalDownloads}</div>
-                                    <div className={styles.bentoStatLabel}>Downloads</div>
-                                </div>
+                            <div className={styles.premiumMetricCard}>
+                                <div className={styles.metricGlow}></div>
+                                <IconDownload size={28} color="#22c55e" />
+                                <div className={styles.metricValueBig}>{totalDownloads}</div>
+                                <div className={styles.metricLabelBig}>Downloads</div>
                             </div>
-                            <div className={styles.bentoStatCard}>
-                                <div className={styles.statIcon}><span style={{ fontSize: '1.2rem' }}>⭐</span></div>
-                                <div>
-                                    <div className={styles.bentoStatNum}>{userPoints}</div>
-                                    <div className={styles.bentoStatLabel}>Total XP</div>
-                                </div>
+                            <div className={styles.premiumMetricCard}>
+                                <div className={styles.metricGlow}></div>
+                                <span style={{ fontSize: '1.8rem' }}>⭐</span>
+                                <div className={styles.metricValueBig}>{userPoints}</div>
+                                <div className={styles.metricLabelBig}>Total XP</div>
                             </div>
-                            <div className={styles.bentoStatCard}>
-                                <div className={styles.statIcon}><span style={{ fontSize: '1.2rem' }}>{currentBadge?.icon || '🌱'}</span></div>
-                                <div>
-                                    <div className={styles.bentoStatNum}>Lvl {userLevel}</div>
-                                    <div className={styles.bentoStatLabel}>{currentBadge?.name}</div>
-                                </div>
+                            <div className={styles.premiumMetricCard}>
+                                <div className={styles.metricGlow}></div>
+                                <span style={{ fontSize: '1.8rem' }}>{currentBadge?.icon || '🌱'}</span>
+                                <div className={styles.metricValueBig} style={{fontSize: '1.8rem', marginTop: '18px'}}>Lvl {userLevel}</div>
+                                <div className={styles.metricLabelBig} style={{marginTop: '8px'}}>{currentBadge?.name}</div>
                             </div>
                         </div>
                     </div>
@@ -1667,6 +1745,48 @@ export default function DashboardPage() {
                                 {scanStatus === 'verifying' ? 'Extracting Bio-Data...' : 'Extract Bio-Data'}
                             </button>
                         </div>
+                    </div>
+                </div>
+            )}
+
+            {/* ═══ ONBOARDING POPUP (Mobile, First Visit) ═══ */}
+            {showOnboarding && (
+                <div className={styles.onboardingOverlay} onClick={() => { setShowOnboarding(false); localStorage.setItem('dashboard_onboarding_seen', 'true'); }}>
+                    <div className={styles.onboardingCard} onClick={(e) => e.stopPropagation()}>
+                        <div className={styles.onboardingHeader}>
+                            <span className={styles.onboardingEmoji}>👋</span>
+                            <h3 className={styles.onboardingTitle}>Welcome to Your Dashboard!</h3>
+                            <p className={styles.onboardingSubtitle}>Here&apos;s how to navigate</p>
+                        </div>
+                        <div className={styles.onboardingTips}>
+                            <div className={styles.onboardingTip}>
+                                <div className={styles.onboardingTipIcon}>⚡</div>
+                                <div className={styles.onboardingTipText}>
+                                    <span className={styles.onboardingTipTitle}>Quick Access Dock</span>
+                                    <span className={styles.onboardingTipDesc}>Tap &quot;Quick Access&quot; to jump to any page instantly</span>
+                                </div>
+                            </div>
+                            <div className={styles.onboardingTip}>
+                                <div className={styles.onboardingTipIcon}>🧭</div>
+                                <div className={styles.onboardingTipText}>
+                                    <span className={styles.onboardingTipTitle}>Bottom Navigation</span>
+                                    <span className={styles.onboardingTipDesc}>Use the bottom bar for Home, Subjects, Upload, AI &amp; Community</span>
+                                </div>
+                            </div>
+                            <div className={styles.onboardingTip}>
+                                <div className={styles.onboardingTipIcon}>🏠</div>
+                                <div className={styles.onboardingTipText}>
+                                    <span className={styles.onboardingTipTitle}>Your Hub Lives Here</span>
+                                    <span className={styles.onboardingTipDesc}>Profile, class data, grades &amp; attendance — all in one place</span>
+                                </div>
+                            </div>
+                        </div>
+                        <button 
+                            className={styles.onboardingBtn} 
+                            onClick={() => { setShowOnboarding(false); localStorage.setItem('dashboard_onboarding_seen', 'true'); }}
+                        >
+                            Got it! 🚀
+                        </button>
                     </div>
                 </div>
             )}

@@ -106,6 +106,7 @@ export default function ClubDetailPage({ params: paramsPromise }) {
     const [editBannerGradient, setEditBannerGradient] = useState('');
     const [editSupervisorName, setEditSupervisorName] = useState('');
     const [editSupervisorEmail, setEditSupervisorEmail] = useState('');
+    const [recruitmentActive, setRecruitmentActive] = useState(false);
     const [screeningQuestions, setScreeningQuestions] = useState('');
     const [saving, setSaving] = useState(false);
 
