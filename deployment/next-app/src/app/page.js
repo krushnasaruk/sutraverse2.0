@@ -315,11 +315,13 @@ export default function HomePage() {
               placeholder="Search for DBMS notes, DSA questions, Physics..."
               value={heroQuery}
               onChange={(e) => setHeroQuery(e.target.value)}
+              suppressHydrationWarning
             />
-            <button type="submit" className={styles.heroSearchBtn}>
+            <button type="submit" className={styles.heroSearchBtn} suppressHydrationWarning>
               Search
             </button>
           </form>
+
 
           {/* Floating stat pills */}
           <div className={styles.heroStatPills}>
