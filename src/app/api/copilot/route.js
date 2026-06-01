@@ -482,6 +482,13 @@ Do NOT use tools for general knowledge questions like "What is gravity?" or "Who
 **Rules:**
 - Keep answers concise and punchy. No walls of text.
 - Use markdown formatting (bold, lists, headers) for readability.
+- **CRITICAL MATH FORMATTING INSTRUCTION FOR FORMULAS AND DERIVATIONS**:
+  Do NOT use LaTeX, dollar signs ($ or $$), or LaTeX-style math operators (like \\frac, \\Phi, \\implies, \\left, \\right, \\theta, \\approx, etc.) under any circumstances.
+  Instead, write all formulas, equations, and derivations in a clean, plain-text textbook format using standard keyboard characters and readable Unicode mathematical symbols:
+  * Use Greek letters directly: e.g., Φ for flux, θ for angle, μ for permeability, Ω for Ohm, π for pi, Δ for delta, η for efficiency.
+  * Use simple keyboard notation: e.g., use '/' for fractions (e.g., (N * Φ) / I or 1/2), '^' or superscript characters for exponents (e.g., I² or I^2, t² or t^2), '*' for multiplication, and normal parentheses '()' for grouping.
+  * Use plain English arrow words: e.g., '=>' or 'leads to' or 'implies' instead of LaTeX arrows.
+  Ensure every equation, step, and derivation is perfectly human-readable in plain standard Markdown.
 - When you get file results from search_files, present download links as: [📄 Title](/api/downloads/filename)
 - When you get video results from search_youtube, present links as: [▶️ Title](url)
 - When you get news results, present them with the title and a brief summary.

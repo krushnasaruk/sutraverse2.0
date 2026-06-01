@@ -15,7 +15,7 @@ import styles from './page.module.css';
 // Normalize subject names from different sources
 export function normalizeSubjectName(name) {
   if (!name) return '';
-  const n = name.trim().toLowerCase();
+  const n = String(name).trim().toLowerCase();
   
   if (n === 'bee' || n === 'basic electrical engineering' || n === 'be') return 'BEE';
   if (n === 'physics' || n === 'engineering physics') return 'Physics';
@@ -75,7 +75,7 @@ function getSubjectMeta(subjectName, index = 0) {
 
   const color = SUBJECT_COLORS[index % SUBJECT_COLORS.length];
   let emoji = '📖';
-  const nameL = subjectName.toLowerCase();
+  const nameL = String(subjectName || '').toLowerCase();
   for (const [kw, em] of Object.entries(SUBJECT_EMOJIS)) {
     if (nameL.includes(kw)) {
       emoji = em;
@@ -95,13 +95,15 @@ function getSubjectMeta(subjectName, index = 0) {
 
 // Extract readable period from filename
 function parsePeriod(title) {
-  const match = title.match(/(\d{4})/);
+  if (!title) return 'Unknown';
+  const match = String(title).match(/(\d{4})/);
   return match ? match[1] : 'Unknown';
 }
 
 // Extract readable exam month from title
 function parseExamWindow(title) {
-  const t = title.toLowerCase();
+  if (!title) return '';
+  const t = String(title).toLowerCase();
   if (t.includes('nov') || t.includes('dec')) return 'Nov/Dec';
   if (t.includes('may') || t.includes('jun')) return 'May/Jun';
   if (t.includes('march') || t.includes('mar')) return 'March';
@@ -205,8 +207,8 @@ export default function PyqsPage() {
 
   const filtered = useMemo(() => {
     return subjectPyqs.filter(p => {
-      if (yearFilter !== 'All' && !p.title.includes(yearFilter)) return false;
-      if (search && !p.title.toLowerCase().includes(search.toLowerCase())) return false;
+      if (yearFilter !== 'All' && !(p.title || '').includes(yearFilter)) return false;
+      if (search && !(p.title || '').toLowerCase().includes(search.toLowerCase())) return false;
       return true;
     });
   }, [subjectPyqs, yearFilter, search]);
@@ -249,6 +251,12 @@ export default function PyqsPage() {
     window.open(url, '_blank');
   };
 
+  const activeMeta = useMemo(() => {
+    if (!activeSubject) return null;
+    const idx = activeBranchSubjects.indexOf(activeSubject);
+    return getSubjectMeta(activeSubject, idx >= 0 ? idx : 0);
+  }, [activeSubject, activeBranchSubjects]);
+
   // ── Auth gate ──────────────────────────────────────────────────────────────
   if (authLoading) return (
     <div style={{ paddingTop: '200px', textAlign: 'center', color: 'var(--text-muted)' }}>Authenticating...</div>
@@ -265,11 +273,7 @@ export default function PyqsPage() {
     </div>
   );
 
-  const activeMeta = useMemo(() => {
-    if (!activeSubject) return null;
-    const idx = activeBranchSubjects.indexOf(activeSubject);
-    return getSubjectMeta(activeSubject, idx >= 0 ? idx : 0);
-  }, [activeSubject, activeBranchSubjects]);
+
 
   return (
     <div className={styles.pageWrapper}>

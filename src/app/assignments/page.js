@@ -52,12 +52,12 @@ const SUBJECT_EMOJIS = {
 };
 
 function getSubjectTabMeta(subjectName, index = 0) {
-  const existing = SUBJECT_TABS.find(t => t.key.toLowerCase() === subjectName.toLowerCase());
+  const existing = SUBJECT_TABS.find(t => t.key.toLowerCase() === String(subjectName || '').toLowerCase());
   if (existing) return existing;
 
   const color = SUBJECT_COLORS[index % SUBJECT_COLORS.length];
   let emoji = '✏️';
-  const nameL = subjectName.toLowerCase();
+  const nameL = String(subjectName || '').toLowerCase();
   for (const [kw, em] of Object.entries(SUBJECT_EMOJIS)) {
     if (nameL.includes(kw)) {
       emoji = em;
@@ -137,7 +137,7 @@ export default function AssignmentsPage() {
 
   const countBySubject = useMemo(() => {
     const map = { All: assignments.length };
-    assignments.forEach(a => { const k = a.subject?.trim() || 'Other'; map[k] = (map[k] || 0) + 1; });
+    assignments.forEach(a => { const k = String(a.subject || '').trim() || 'Other'; map[k] = (map[k] || 0) + 1; });
     return map;
   }, [assignments]);
 
@@ -145,11 +145,11 @@ export default function AssignmentsPage() {
     let r = assignments;
     if (activeTab !== 'All') {
       r = r.filter(a => {
-        const s = a.subject?.trim() || '';
+        const s = String(a.subject || '').trim() || '';
         return s === activeTab || s.toLowerCase().includes(activeTab.toLowerCase());
       });
     }
-    if (search) r = r.filter(a => a.title.toLowerCase().includes(search.toLowerCase()));
+    if (search) r = r.filter(a => String(a.title || '').toLowerCase().includes(search.toLowerCase()));
     return r;
   }, [assignments, activeTab, search]);
 
@@ -192,6 +192,10 @@ export default function AssignmentsPage() {
     try { await updateDoc(doc(db, 'files', item.id), { isReported: true, reportCount: increment(1) }); alert('Flagged for review.'); } catch (e) { alert('Failed.'); }
   };
 
+  const activeMeta = useMemo(() => {
+    return activeTabsList.find(t => t.key === activeTab) || activeTabsList[0];
+  }, [activeTab, activeTabsList]);
+
   if (authLoading) return <div style={{ paddingTop: '200px', textAlign: 'center', color: 'var(--text-muted)' }}>Authenticating...</div>;
 
   if (!user) return (
@@ -205,9 +209,7 @@ export default function AssignmentsPage() {
     </div>
   );
 
-  const activeMeta = useMemo(() => {
-    return activeTabsList.find(t => t.key === activeTab) || activeTabsList[0];
-  }, [activeTab, activeTabsList]);
+
 
   return (
     <div className={styles.pageWrapper}>

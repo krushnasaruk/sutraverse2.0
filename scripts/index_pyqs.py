@@ -12,7 +12,7 @@ ssl._create_default_https_context = ssl._create_unverified_context
 
 
 # Configuration
-API_KEY = "AIzaSyDb_UPP8QRthZsJ583sRRwmhQv2x8btiaw"
+API_KEY = "AIzaSyC6HneAB2u2aj5ayvkMilH-otqTo542SQU"
 API_URL = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key={API_KEY}"
 WORKSPACE_DIR = "/Users/shrikantsaruk/Documents/college project"
 PYQS_DIR = os.path.join(WORKSPACE_DIR, "public", "pyqs")
@@ -105,24 +105,39 @@ def call_gemini_api(prompt):
         headers={'Content-Type': 'application/json'}
     )
     
-    try:
-        with urllib.request.urlopen(req) as response:
-            res_data = response.read().decode('utf-8')
-            res_json = json.loads(res_data)
-            
-            candidate = res_json['candidates'][0]
-            finish_reason = candidate.get('finishReason', 'UNKNOWN')
-            
-            if finish_reason != 'STOP' and finish_reason != 'MAX_TOKENS':
-                print(f"    [WARNING] Gemini finishReason is: {finish_reason}")
+    max_retries = 3
+    for attempt in range(max_retries):
+        try:
+            with urllib.request.urlopen(req) as response:
+                res_data = response.read().decode('utf-8')
+                res_json = json.loads(res_data)
                 
-            text = candidate['content']['parts'][0]['text']
-            return text
-    except Exception as e:
-        print(f"API Call Error: {e}")
-        if hasattr(e, 'read'):
-            print(e.read().decode('utf-8'))
-        return None
+                candidate = res_json['candidates'][0]
+                finish_reason = candidate.get('finishReason', 'UNKNOWN')
+                
+                if finish_reason != 'STOP' and finish_reason != 'MAX_TOKENS':
+                    print(f"    [WARNING] Gemini finishReason is: {finish_reason}")
+                    
+                text = candidate['content']['parts'][0]['text']
+                return text
+        except Exception as e:
+            print(f"API Call Error (Attempt {attempt+1}/{max_retries}): {e}")
+            is_429 = False
+            if hasattr(e, 'read'):
+                try:
+                    err_content = e.read().decode('utf-8')
+                    print(err_content[:500])
+                    if "429" in err_content or "RESOURCE_EXHAUSTED" in err_content:
+                        is_429 = True
+                except Exception:
+                    pass
+            
+            if attempt < max_retries - 1:
+                sleep_time = 65 if is_429 else 5
+                print(f"Waiting {sleep_time} seconds before retrying...")
+                time.sleep(sleep_time)
+            else:
+                return None
 
 def build_subject_prompt(subject_name, full_name, papers_data, syllabus_text):
     # Formulate a structured prompt that passes the raw text of the question papers
@@ -152,9 +167,16 @@ Using the raw question paper text provided above, complete the following analysi
 1. **Cluster and Group Questions**: Identify identical or highly similar core questions that appear repeatedly across different years.
 2. **Calculate Frequency**: For each unique question, determine exactly which past papers it appeared in, and sum the frequency.
 3. **Syllabus Unit Assignment**: Group each question into its syllabus unit (Unit 1 to Unit 5).
-4. **Ideal Exam Answer**: Write the absolute perfect textbook answer that would secure full marks in a university exam. Write it step-by-step, with bullet points, definitions, and formulas where applicable.
+4. **Ideal Exam Answer**: Write a concise, highly-structured textbook answer that would secure full marks in a university exam. Focus on key bullet points, essential definitions, and critical formulas. Keep the answer highly informative yet compact (around 150-250 words per question) to avoid wordiness.
    *CRITICAL: Paraphrase all explanations and write the answer in your own original academic words. Do NOT copy large sections verbatim from the source papers. This ensures high-quality synthesis and prevents recitation blocks.*
-5. **Sort by Frequency**: Return the questions sorted in descending order of frequency (most frequent first). Limit to the top 20 highest-frequency questions.
+   *CRITICAL MATH FORMATTING INSTRUCTION FOR FORMULAS AND DERIVATIONS*:
+   Do NOT use LaTeX, dollar signs ($ or $$), or LaTeX-style math operators (like \\frac, \\Phi, \\implies, \\left, \\right, \\theta, \\approx, etc.) under any circumstances.
+   Instead, write all formulas, equations, and derivations in a clean, plain-text textbook format using standard keyboard characters and readable Unicode mathematical symbols:
+   - Use Greek letters directly: e.g., Φ for flux, θ for angle, μ for permeability, Ω for Ohm, π for pi, Δ for delta, η for efficiency.
+   - Use simple keyboard notation: e.g., use '/' for fractions (e.g., (N * Φ) / I or 1/2), '^' or superscript characters for exponents (e.g., I² or I^2, t² or t^2), '*' for multiplication, and normal parentheses '()' for grouping.
+   - Use plain English arrow words: e.g., '=>' or 'leads to' or 'implies' instead of LaTeX arrows.
+   Ensure every equation, step, and derivation is perfectly human-readable in plain standard Markdown.
+5. **Sort by Frequency**: Return the questions sorted in descending order of frequency (most frequent first). Limit to the top 8 highest-frequency questions.
 6. **Generate 5 Unit Summaries**: Provide a brief summary of the top critical concepts for each of the 5 Units.
 7. **Generate 5 Rapid Flashcards**: Provide 5 key definitions and terms for rapid revision.
 
@@ -194,6 +216,101 @@ Strict Schema:
 """
     return prompt
 
+def clean_json_string(s):
+    # Escape single backslashes that are not followed by valid JSON escape characters
+    result = []
+    i = 0
+    while i < len(s):
+        if s[i] == '\\':
+            if i + 1 < len(s):
+                next_char = s[i+1]
+                if next_char in ['"', '\\', '/', 'b', 'f', 'n', 'r', 't']:
+                    result.append('\\')
+                    result.append(next_char)
+                    i += 2
+                    continue
+                elif next_char == 'u' and i + 5 < len(s) and all(c in '0123456789abcdefABCDEF' for c in s[i+2:i+6]):
+                    result.append('\\')
+                    result.append(s[i+1:i+6])
+                    i += 6
+                    continue
+            result.append('\\\\')
+            i += 1
+        else:
+            result.append(s[i])
+            i += 1
+    return "".join(result)
+
+def repair_truncated_json(s):
+    s = s.strip()
+    try:
+        return json.loads(s)
+    except Exception:
+        pass
+        
+    in_string = False
+    escaped = False
+    reconstructed = []
+    brackets = []
+    
+    i = 0
+    while i < len(s):
+        c = s[i]
+        if in_string:
+            if escaped:
+                escaped = False
+                reconstructed.append(c)
+            elif c == '\\':
+                escaped = True
+                reconstructed.append(c)
+            elif c == '"':
+                in_string = False
+                reconstructed.append(c)
+            else:
+                reconstructed.append(c)
+        else:
+            if c == '"':
+                in_string = True
+                reconstructed.append(c)
+            elif c == '{':
+                brackets.append('{')
+                reconstructed.append(c)
+            elif c == '[':
+                brackets.append('[')
+                reconstructed.append(c)
+            elif c == '}':
+                if brackets and brackets[-1] == '{':
+                    brackets.pop()
+                reconstructed.append(c)
+            elif c == ']':
+                if brackets and brackets[-1] == '[':
+                    brackets.pop()
+                reconstructed.append(c)
+            else:
+                reconstructed.append(c)
+        i += 1
+        
+    if in_string:
+        if escaped:
+            reconstructed.pop()
+        reconstructed.append('"')
+        
+    while brackets:
+        open_bracket = brackets.pop()
+        if open_bracket == '{':
+            reconstructed.append('}')
+        elif open_bracket == '[':
+            reconstructed.append(']')
+            
+    reconstructed_str = "".join(reconstructed)
+    try:
+        return json.loads(reconstructed_str)
+    except Exception:
+        # If it still fails, try to find the last complete question object
+        # and truncate the questions list there.
+        # This is a fallback to save whatever parsed successfully.
+        return None
+
 def main():
     print("=== STARTING PYQ PARSING AND CLUSTERING ===")
     
@@ -222,6 +339,14 @@ def main():
     
     # Process subject-by-subject
     for folder, meta in SUBJECT_MAP.items():
+        # Check if subject is already in final_index and is fully processed and valid
+        # (Must contain 'questions', 'summaries', 'flashcards' and at least 3 questions)
+        if meta['subject'] in final_index:
+            sub_data = final_index[meta['subject']]
+            if isinstance(sub_data, dict) and len(sub_data.get('questions', [])) >= 3:
+                print(f"\n>>> Subject {meta['fullName']} ({meta['subject']}) is ALREADY INDEXED successfully. Skipping.")
+                continue
+
         subject_path = os.path.join(PYQS_DIR, folder)
         if not os.path.exists(subject_path):
             print(f"Skipping {folder} (directory not found)")
@@ -284,7 +409,11 @@ def main():
             if cleaned_response.startswith("```"):
                 cleaned_response = cleaned_response[3:]
                 
-            parsed_data = json.loads(cleaned_response.strip())
+            cleaned_response = clean_json_string(cleaned_response.strip())
+            parsed_data = repair_truncated_json(cleaned_response)
+            
+            if not parsed_data:
+                raise ValueError("JSON repair returned None (completely unparseable truncated JSON)")
             
             # Save into final index
             final_index[meta['subject']] = parsed_data
@@ -296,7 +425,7 @@ def main():
             print(ai_response[:500])
             
         # Avoid hitting API rate limits
-        time.sleep(2)
+        time.sleep(10)
         
     # Write full index
     print(f"\n>>> Saving final index to {OUTPUT_FILE}...")

@@ -336,8 +336,7 @@
     position: absolute;
     top: 0; left: 0; right: 0; bottom: 0;
     border-radius: inherit;
-    border: 2px solid transparent;
-    background: var(--primary) border-box;
+    border: 2px solid var(--primary);
     opacity: 0;
     transition: opacity 0.5s ease;
     pointer-events: none;

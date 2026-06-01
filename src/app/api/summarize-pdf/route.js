@@ -6,7 +6,20 @@ import path from 'path';
 // Initialize Gemini API
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || '');
 
+const SUBJECT_MAP = {
+    'bee': 'Basic Electrical Engineering',
+    'physics': 'Engineering Physics',
+    'chemistry': 'Engineering Chemistry',
+    'maths1': 'Engineering Mathematics I',
+    'maths2': 'Engineering Mathematics II',
+    'engineering-mechanics': 'Engineering Mechanics',
+    'electronics': 'Basic Electronics Engineering',
+    'pps': 'Programming & Problem Solving',
+    'engineering-graphics': 'Engineering Graphics'
+};
+
 export async function POST(req) {
+    let pdfPath = null;
     try {
         let base64Data;
         let fileName = 'unknown.pdf';
@@ -19,15 +32,23 @@ export async function POST(req) {
         if (contentType.includes('application/json')) {
             // ── Library Selection Mode: Read PDF from local filesystem ──
             const body = await req.json();
-            const pdfPath = body.pdfPath;
+            pdfPath = body.pdfPath;
             
             if (!pdfPath) {
                 return NextResponse.json({ error: 'No pdfPath provided.' }, { status: 400 });
             }
 
-            // Security: only allow paths inside public/pyqs
-            const safePath = path.join(process.cwd(), 'public', pdfPath.replace(/\.\./g, ''));
-            if (!safePath.startsWith(path.join(process.cwd(), 'public', 'pyqs'))) {
+            const cleanPdfPath = pdfPath.replace(/\.\./g, '');
+            let safePath = path.join(process.cwd(), 'public', cleanPdfPath);
+            if (!fs.existsSync(safePath)) {
+                safePath = path.join(process.cwd(), cleanPdfPath);
+            }
+
+            // Security: only allow paths inside pyqs
+            let pyqsRoot = path.join(process.cwd(), 'public', 'pyqs');
+            if (!fs.existsSync(pyqsRoot)) pyqsRoot = path.join(process.cwd(), 'pyqs');
+
+            if (!safePath.startsWith(pyqsRoot)) {
                 return NextResponse.json({ error: 'Invalid file path.' }, { status: 400 });
             }
 
@@ -60,8 +81,11 @@ export async function POST(req) {
             const bytes = await file.arrayBuffer();
             const buffer = Buffer.from(bytes);
             
-            // Save the uploaded PDF to public/pyqs/uploads so the chat API can access it
-            const uploadsDir = path.join(process.cwd(), 'public', 'pyqs', 'uploads');
+            // Save the uploaded PDF to uploads so the chat API can access it
+            let uploadsDir = path.join(process.cwd(), 'public', 'pyqs', 'uploads');
+            if (!fs.existsSync(path.join(process.cwd(), 'public', 'pyqs')) && fs.existsSync(path.join(process.cwd(), 'pyqs'))) {
+                uploadsDir = path.join(process.cwd(), 'pyqs', 'uploads');
+            }
             if (!fs.existsSync(uploadsDir)) {
                 fs.mkdirSync(uploadsDir, { recursive: true });
             }
@@ -187,8 +211,21 @@ export async function POST(req) {
 
         // Graceful handling of Gemini API 429 Quota Exceeded error
         if (error.message && (error.message.includes('429') || error.message.includes('quota'))) {
+            let subjectName = "Basic Electrical Engineering";
+            let subjectFolder = "bee";
+            if (pdfPath) {
+                const parts = pdfPath.split('/');
+                // pdfPath is e.g. "pyqs/engineering-mechanics/Oct_2022.pdf"
+                // Or "bee/Nov_Dec_2025"
+                const folder = parts.find(p => SUBJECT_MAP[p.toLowerCase()]);
+                if (folder && SUBJECT_MAP[folder.toLowerCase()]) {
+                    subjectName = SUBJECT_MAP[folder.toLowerCase()];
+                    subjectFolder = folder.toLowerCase();
+                }
+            }
+            
             return NextResponse.json({ 
-                summary: `# 📋 Question Paper Analysis: AI Limits Active\n\n### ⚠️ Live AI Connection Rate-Limited\nThe server is experiencing very high academic traffic, and the **Gemini AI Free-Tier daily limit** has been temporarily exceeded.\n\n### 💡 Smart Offline Solution\nWe pre-computed and cached verified, high-quality question paper summaries for this course in the local database to save the day!\n\n*   **To study predicted high-frequency questions:** Go to the **📚 AI Study Guide** tab, select **1st Year** -> **Computer** -> **Basic Electrical Engineering**, and click **Generate AI Master Plan** to instantly view 100% pre-computed questions and complete textbook derivations without requiring live AI connections!\n*   **Alternative:** Please try uploading this paper again in a few minutes once the API rate limits reset.` 
+                summary: `# 📋 Question Paper Analysis: AI Limits Active\n\n### ⚠️ Live AI Connection Rate-Limited\nThe server is experiencing very high academic traffic, and the **Gemini AI Free-Tier daily limit** has been temporarily exceeded.\n\n### 💡 Smart Offline Solution\nWe pre-computed and cached verified, high-quality question paper summaries for this course in the local database to save the day!\n\n*   **To study predicted high-frequency questions:** Go to the **📚 AI Study Guide** tab, select **1st Year** -> **Computer** -> **${subjectName}**, and click **Generate AI Master Plan** to instantly view 100% pre-computed questions and complete textbook derivations without requiring live AI connections!\n*   **Alternative:** Please try uploading this paper again in a few minutes once the API rate limits reset.` 
             });
         }
 

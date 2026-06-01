@@ -21,30 +21,137 @@ const CATEGORY_META = {
     Social: { emoji: '🤝', color: '#f97316' },
 };
 
+const QUIZ_QUESTIONS = [
+    {
+        question: "What's your ultimate weekend activity?",
+        options: [
+            { text: "💻 Diving into a hackathon or coding custom scripts", weights: { Tech: 3, Engineering: 2 } },
+            { text: "🎨 Visiting art galleries, photography, or practicing an instrument", weights: { 'Arts & Media': 3 } },
+            { text: "⚽ Hiking, cycling, or playing outdoor sports with a crew", weights: { Sports: 3, Social: 2 } },
+            { text: "📚 Curling up with an insightful book or research paper", weights: { Academic: 3, 'Arts & Media': 1 } }
+        ]
+    },
+    {
+        question: "If you could master any superpower, what would it be?",
+        options: [
+            { text: "⚡ Manipulating technology and networks directly", weights: { Tech: 3, Engineering: 3 } },
+            { text: "👁️ Mind-reading and absolute persuasion", weights: { Business: 3, Social: 2 } },
+            { text: "⏳ Time-travel to explore deep history and future sciences", weights: { Academic: 3 } },
+            { text: "✨ Creating anything out of pure imagination", weights: { 'Arts & Media': 3 } }
+        ]
+    },
+    {
+        question: "What is your primary goal this academic semester?",
+        options: [
+            { text: "🚀 Building cool applications and a solid tech portfolio", weights: { Tech: 3, Engineering: 3 } },
+            { text: "🤝 Networking and forming unforgettable lifelong bonds", weights: { Social: 3, Business: 2 } },
+            { text: "📖 Excelling in coursework and theoretical projects", weights: { Academic: 3 } },
+            { text: "🏃 Maintaining peak physical health and energy levels", weights: { Sports: 3 } }
+        ]
+    },
+    {
+        question: "Which workspace aesthetic inspires you most?",
+        options: [
+            { text: "🖥️ Quad-monitor desk setup in complete dark mode with RGB", weights: { Tech: 3, Engineering: 2 } },
+            { text: "🌿 Sunlit studio overflowing with canvases and instruments", weights: { 'Arts & Media': 3 } },
+            { text: "🏛️ Quiet library alcove lined with vintage leather encyclopedias", weights: { Academic: 3 } },
+            { text: "☕ A busy glass-walled board room or active coffee house", weights: { Business: 3, Social: 2 } }
+        ]
+    },
+    {
+        question: "How do you naturally contribute in team projects?",
+        options: [
+            { text: "📣 Managing timelines, pitching slides, and leading the team", weights: { Business: 3, Social: 3 } },
+            { text: "🛠️ Coding the core system, database, or mechanical blueprint", weights: { Tech: 3, Engineering: 3 } },
+            { text: "🎨 Creating eye-catching visuals, editing media, and layouts", weights: { 'Arts & Media': 3 } },
+            { text: "🔍 Fact-checking, structural reviews, and editing references", weights: { Academic: 3 } }
+        ]
+    }
+];
+
 export default function ClubsPage() {
     const { user } = useAuth();
     const [clubs, setClubs] = useState([]);
     const [loading, setLoading] = useState(true);
     const [activeCategory, setActiveCategory] = useState('All');
     const [searchQuery, setSearchQuery] = useState('');
+    const [spotlightEvents, setSpotlightEvents] = useState([]);
+
+    // Matchmaker states
+    const [showQuiz, setShowQuiz] = useState(false);
+    const [quizStep, setQuizStep] = useState(0);
+    const [quizScores, setQuizScores] = useState({
+        Tech: 0, Engineering: 0, 'Arts & Media': 0, Academic: 0, Business: 0, Sports: 0, Social: 0
+    });
+    const [quizRecommendations, setQuizRecommendations] = useState([]);
+
+    const handleQuizAnswer = (weights) => {
+        const updatedScores = { ...quizScores };
+        Object.entries(weights).forEach(([cat, val]) => {
+            updatedScores[cat] = (updatedScores[cat] || 0) + val;
+        });
+        setQuizScores(updatedScores);
+
+        if (quizStep < QUIZ_QUESTIONS.length - 1) {
+            setQuizStep(prev => prev + 1);
+        } else {
+            const recommendations = clubs.map(club => {
+                const clubCat = club.category || 'General';
+                const rawScore = updatedScores[clubCat] || 0;
+                const matchPct = Math.min(98, Math.max(45, Math.round((rawScore / 12) * 100)));
+                return {
+                    ...club,
+                    matchPercentage: matchPct
+                };
+            });
+            recommendations.sort((a, b) => b.matchPercentage - a.matchPercentage);
+            setQuizRecommendations(recommendations.slice(0, 3));
+            setQuizStep(QUIZ_QUESTIONS.length);
+        }
+    };
+
+    const resetQuiz = () => {
+        setQuizStep(0);
+        setQuizScores({
+            Tech: 0, Engineering: 0, 'Arts & Media': 0, Academic: 0, Business: 0, Sports: 0, Social: 0
+        });
+        setQuizRecommendations([]);
+        setShowQuiz(false);
+    };
 
     useEffect(() => {
-        const fetchClubs = async () => {
+        const fetchData = async () => {
             try {
+                // Fetch Clubs
                 const snapshot = await getDocs(collection(db, 'clubs'));
                 let clubsData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-                // Filter out pending clubs unless the current user is the creator
                 clubsData = clubsData.filter(c => c.status === 'approved' || !c.status || c.adminId === user?.uid);
                 setClubs(clubsData);
+
+                // Fetch Events
+                const now = new Date();
+                const eventsSnap = await getDocs(collection(db, 'clubEvents'));
+                const evts = eventsSnap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                const upcoming = evts.filter(e => {
+                    const dateObj = e.date?.toDate ? e.date.toDate() : new Date(e.date);
+                    return dateObj >= now;
+                });
+                upcoming.sort((a, b) => {
+                    const dateA = a.date?.toDate ? a.date.toDate().getTime() : new Date(a.date).getTime();
+                    const dateB = b.date?.toDate ? b.date.toDate().getTime() : new Date(b.date).getTime();
+                    return dateA - dateB;
+                });
+                setSpotlightEvents(upcoming.slice(0, 5));
             } catch (error) {
-                console.error('Error fetching clubs', error);
+                console.error('Error fetching clubs/events', error);
                 setClubs([]);
+                setSpotlightEvents([]);
             } finally {
                 setLoading(false);
             }
         };
-        fetchClubs();
-    }, []);
+        fetchData();
+    }, [user]);
 
     const filteredClubs = useMemo(() => {
         let result = clubs;
@@ -120,6 +227,51 @@ export default function ClubsPage() {
                         </div>
                     </div>
                 </ScrollReveal>
+
+                {/* ── CAMPUS SPOTLIGHT: UPCOMING EVENTS ── */}
+                {spotlightEvents.length > 0 && (
+                    <ScrollReveal delay={120}>
+                        <div className={styles.spotlightSection}>
+                            <div className={styles.sectionLabel}>⚡ Campus Spotlight: Upcoming Events</div>
+                            <div className={styles.spotlightTrack}>
+                                {spotlightEvents.map((evt, i) => {
+                                    const eventDateStr = evt.date?.toDate
+                                        ? evt.date.toDate().toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })
+                                        : new Date(evt.date).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
+                                    
+                                    const eventTimeStr = evt.date?.toDate
+                                        ? evt.date.toDate().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })
+                                        : new Date(evt.date).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+
+                                    return (
+                                        <Link
+                                            key={evt.id}
+                                            href={`/clubs/${evt.clubId}?tab=events`}
+                                            className={styles.spotlightCard}
+                                            style={{ '--accent-gradient': evt.coverGradient || 'var(--gradient-brand)' }}
+                                        >
+                                            <div className={styles.spotlightCardHeader} style={{ background: evt.coverGradient }}>
+                                                <span className={styles.spotlightClubEmoji}>{evt.clubEmoji || '🎓'}</span>
+                                                <span className={styles.spotlightDatePill}>{eventDateStr}</span>
+                                            </div>
+                                            <div className={styles.spotlightCardBody}>
+                                                <div className={styles.spotlightClubName}>{evt.clubName}</div>
+                                                <h3 className={styles.spotlightEventTitle}>{evt.title}</h3>
+                                                <div className={styles.spotlightMetaRow}>
+                                                    <span>🕒 {eventTimeStr}</span>
+                                                    <span>📍 {evt.venue}</span>
+                                                </div>
+                                                <div className={styles.spotlightRSVPBadge}>
+                                                    🔥 {evt.attendeeCount || 0} attending
+                                                </div>
+                                            </div>
+                                        </Link>
+                                    );
+                                })}
+                            </div>
+                        </div>
+                    </ScrollReveal>
+                )}
 
                 {/* ── FEATURED CLUBS SPOTLIGHT ── */}
                 {featuredClubs.length > 0 && (
@@ -291,6 +443,108 @@ export default function ClubsPage() {
                     </div>
                 )}
             </div>
+
+            {/* ── MATCHMAKER FLOATING ORB ── */}
+            <button
+                className={styles.matchmakerOrb}
+                onClick={() => setShowQuiz(true)}
+                title="Find Your Tribe: Matchmaker Quiz"
+            >
+                🎯 Find Your Tribe
+            </button>
+
+            {/* ── MATCHMAKER FULLSCREEN MODAL OVERLAY ── */}
+            {showQuiz && (
+                <div className={styles.quizOverlay}>
+                    <div className={styles.quizCard}>
+                        {/* Quiz Header */}
+                        <div className={styles.quizHeader}>
+                            <h2>🎯 Club Matchmaker Quiz</h2>
+                            <button className={styles.quizCloseBtn} onClick={resetQuiz}>✕</button>
+                        </div>
+
+                        {/* Steps / Progress */}
+                        {quizStep < QUIZ_QUESTIONS.length ? (
+                            <>
+                                <div className={styles.quizProgressBar}>
+                                    <div
+                                        className={styles.quizProgressFill}
+                                        style={{ width: `${((quizStep + 1) / QUIZ_QUESTIONS.length) * 100}%` }}
+                                    />
+                                </div>
+                                <div className={styles.quizStepIndicator}>
+                                    Question {quizStep + 1} of {QUIZ_QUESTIONS.length}
+                                </div>
+
+                                {/* Active Question Card */}
+                                <div className={styles.quizQuestionContainer}>
+                                    <h3 className={styles.quizQuestionText}>
+                                        {QUIZ_QUESTIONS[quizStep].question}
+                                    </h3>
+                                    <div className={styles.quizOptionsGrid}>
+                                        {QUIZ_QUESTIONS[quizStep].options.map((opt, i) => (
+                                            <button
+                                                key={opt.text}
+                                                className={styles.quizOptionCard}
+                                                onClick={() => handleQuizAnswer(opt.weights)}
+                                                style={{ animationDelay: `${i * 80}ms` }}
+                                            >
+                                                {opt.text}
+                                            </button>
+                                        ))}
+                                    </div>
+                                </div>
+                            </>
+                        ) : (
+                            /* Recommendations Results page */
+                            <div className={styles.quizResults}>
+                                <div className={styles.celebrationIcon}>🎉</div>
+                                <h3 className={styles.resultsTitle}>We found your Tribe!</h3>
+                                <p className={styles.resultsSubtitle}>
+                                    Based on your answers, these top 3 campus clubs align perfectly with your interests and personality.
+                                </p>
+
+                                <div className={styles.quizResultsGrid}>
+                                    {quizRecommendations.map((rec, i) => (
+                                        <Link
+                                            key={rec.id}
+                                            href={`/clubs/${rec.id}`}
+                                            className={styles.recClubCard}
+                                            style={{ animationDelay: `${i * 120}ms` }}
+                                            onClick={resetQuiz}
+                                        >
+                                            <div className={styles.recBadgeRow}>
+                                                <span className={styles.recMatchPct}>
+                                                    🔥 {rec.matchPercentage}% Match
+                                                </span>
+                                                <span className={styles.recClubCategory}>
+                                                    {rec.category}
+                                                </span>
+                                            </div>
+                                            <div className={styles.recClubInfo}>
+                                                <span className={styles.recClubEmoji}>
+                                                    {rec.emoji || '🎓'}
+                                                </span>
+                                                <div style={{ flex: 1 }}>
+                                                    <h4 className={styles.recClubName}>{rec.name}</h4>
+                                                    <p className={styles.recClubDesc}>{rec.description}</p>
+                                                </div>
+                                            </div>
+                                            <div className={styles.recClubCTA}>
+                                                Explore Club Community →
+                                            </div>
+                                        </Link>
+                                    ))}
+                                </div>
+
+                                <button className={styles.quizRetryBtn} onClick={resetQuiz}>
+                                    🔄 Retake Quiz
+                                </button>
+                            </div>
+                        )}
+                    </div>
+                </div>
+            )}
         </div>
     );
 }

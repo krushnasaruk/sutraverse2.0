@@ -117,7 +117,7 @@ const spotlightLinks = [
     { href: '/leaderboard', label: 'Leaderboard', icon: '🏆', section: 'Social' },
     { href: '/upload', label: 'Upload Material', icon: '📤', section: 'Tools' },
     { href: '/assistant', label: 'AI Tutor', icon: '🤖', section: 'Tools' },
-    { href: '/dashboard', label: 'Dashboard', icon: '📊', section: 'Tools' },
+    { href: '/dashboard', label: 'My Profile', icon: '👤', section: 'Tools' },
 ];
 
 export default function Navbar() {
@@ -249,8 +249,7 @@ export default function Navbar() {
     const menuGroups = [
         {
             items: [
-                { href: `/profile/${user?.uid}`, label: 'My Profile', icon: <Icons.User /> },
-                { href: '/dashboard', label: 'Dashboard', icon: <Icons.BarChart /> },
+                { href: '/dashboard', label: 'My Profile', icon: <Icons.User /> },
                 ...(user?.role === 'teacher' ? [{ href: '/teacher', label: 'Teacher Dashboard', icon: <Icons.GraduationCap />, accent: true }] : []),
             ]
         },
@@ -286,7 +285,7 @@ export default function Navbar() {
         { section: 'Tools', items: [
             { href: '/upload', label: 'Upload', icon: '📤' },
             { href: '/assistant', label: 'AI Tutor', icon: '🤖' },
-            { href: '/dashboard', label: 'Dashboard', icon: '📊' },
+            { href: '/dashboard', label: 'My Profile', icon: '👤' },
         ]},
     ];
 
@@ -388,7 +387,7 @@ export default function Navbar() {
                                         <div className={styles.avatarTooltipContent}>
                                             <span className={styles.avatarTooltipEmoji}>💡</span>
                                             <p className={styles.avatarTooltipText}>
-                                                Tap your <strong>profile picture</strong> to access Dashboard, Community, Clubs, News & more!
+                                                Tap your <strong>profile picture</strong> to access My Profile, Community, Clubs, News & more!
                                             </p>
                                             <button className={styles.avatarTooltipBtn} onClick={dismissAvatarTip}>
                                                 Got it!

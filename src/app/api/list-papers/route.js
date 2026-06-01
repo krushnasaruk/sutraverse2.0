@@ -17,7 +17,10 @@ const SUBJECT_MAP = {
 
 export async function GET() {
     try {
-        const pyqsDir = path.join(process.cwd(), 'public', 'pyqs');
+        let pyqsDir = path.join(process.cwd(), 'public', 'pyqs');
+        if (!fs.existsSync(pyqsDir)) {
+            pyqsDir = path.join(process.cwd(), 'pyqs');
+        }
 
         if (!fs.existsSync(pyqsDir)) {
             return NextResponse.json({ papers: [], total: 0 });
@@ -47,8 +50,8 @@ export async function GET() {
                     subject: SUBJECT_MAP[folder] || folder,
                     session: cleanSession,
                     label: `${SUBJECT_MAP[folder] || folder} — ${cleanSession}`,
-                    // URL path relative to /public so the frontend can fetch it
-                    pdfUrl: `/pyqs/${encodeURIComponent(folder)}/${encodeURIComponent(file)}`
+                    // Direct, robust endpoint routing for all static files
+                    pdfUrl: `/api/downloads/pyqs/${encodeURIComponent(folder)}/${encodeURIComponent(file)}`
                 });
             }
         }

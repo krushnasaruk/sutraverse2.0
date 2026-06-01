@@ -203,10 +203,18 @@ ${dbContext}
 ---
 
 Your response MUST be extremely accurate, beautifully formatted in Markdown, and use step-by-step logic for any numericals. Do NOT hallucinate equations or solutions. If the question requires a diagram, use bold text to describe what the diagram should look like.
+
+*CRITICAL MATH FORMATTING INSTRUCTION FOR FORMULAS AND DERIVATIONS*:
+Do NOT use LaTeX, dollar signs ($ or $$), or LaTeX-style math operators (like \\frac, \\Phi, \\implies, \\left, \\right, \\theta, \\approx, etc.) under any circumstances.
+Instead, write all formulas, equations, and derivations in a clean, plain-text textbook format using standard keyboard characters and readable Unicode mathematical symbols:
+- Use Greek letters directly: e.g., Φ for flux, θ for angle, μ for permeability, Ω for Ohm, π for pi, Δ for delta, η for efficiency.
+- Use simple keyboard notation: e.g., use '/' for fractions (e.g., (N * Φ) / I or 1/2), '^' or superscript characters for exponents (e.g., I² or I^2, t² or t^2), '*' for multiplication, and normal parentheses '()' for grouping.
+- Use plain English arrow words: e.g., '=>' or 'leads to' or 'implies' instead of LaTeX arrows.
+Ensure every equation, step, and derivation is perfectly human-readable in plain standard Markdown.
 `;
 
             const model = genAI.getGenerativeModel({
-                model: "gemini-2.0-flash",
+                model: "gemini-2.5-flash",
                 systemInstruction
             });
 
@@ -229,12 +237,18 @@ Your response MUST be extremely accurate, beautifully formatted in Markdown, and
             const lastMessageText = messages[messages.length - 1].content;
             let lastMessageParts = [{ text: lastMessageText }];
 
-            const pdfPath = body.pdfPath || null;
+            let pdfPath = body.pdfPath || null;
             if (pdfPath) {
+                if (!pdfPath.toLowerCase().endsWith('.pdf')) {
+                    pdfPath = pdfPath + '.pdf';
+                }
                 try {
                     const fs = require('fs');
                     const path = require('path');
-                    const safePath = path.join(process.cwd(), 'public', 'pyqs', pdfPath.replace(/\.\./g, ''));
+                    let safePath = path.join(process.cwd(), 'public', 'pyqs', pdfPath.replace(/\.\./g, ''));
+                    if (!fs.existsSync(safePath)) {
+                        safePath = path.join(process.cwd(), 'pyqs', pdfPath.replace(/\.\./g, ''));
+                    }
                     if (fs.existsSync(safePath)) {
                         const buffer = fs.readFileSync(safePath);
                         const base64Data = buffer.toString('base64');
