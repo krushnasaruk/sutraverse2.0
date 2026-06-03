@@ -303,7 +303,7 @@ export default function SubjectsPage() {
                   const assignCount = content.filter(f => f.type === 'Assignment').length;
 
                   return (
-                    <ScrollReveal key={subj} delay={i * 60} style={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
+                    <ScrollReveal key={subj} delay={i * 60} style={{ height: '100%', display: 'flex', flexDirection: 'column', minWidth: 0, width: '100%' }}>
                       <button
                         className={styles.subjectCard}
                         style={{ '--accent-color': accent }}
@@ -411,7 +411,7 @@ export default function SubjectsPage() {
                 {drillFiles.map((item, i) => {
                   const chipMeta = TYPE_CHIPS.find(t => t.key === item.type) || TYPE_CHIPS[0];
                   return (
-                    <ScrollReveal key={item.id} delay={i * 35} style={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
+                    <ScrollReveal key={item.id} delay={i * 35} style={{ height: '100%', display: 'flex', flexDirection: 'column', minWidth: 0, width: '100%' }}>
                       <div className={styles.materialCard} style={{ '--accent-color': activeColor }}>
                         {/* Shimmer stripe */}
                         <div className={styles.materialShimmer} style={{ background: `${activeColor}10` }}></div>

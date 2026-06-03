@@ -629,12 +629,11 @@
 /* ═══════════════════════════════════════════════════════════════════════════ */
 
 @media (max-width:768px){
-  .pageWrapper{padding:calc(var(--navbar-height) + 20px) 0 100px;overflow-x:hidden}
+  .pageWrapper{padding:calc(var(--navbar-height) + 20px) 16px 100px}
   .heroTitle{font-size:2.2rem}
   .heroSub{font-size:.95rem}
   .hero{padding:20px 16px 24px}
-  .paperGrid{grid-template-columns:1fr;gap:16px;max-width:calc(100% + 32px);padding:16px;margin:-16px}
-  .pageWrapper{overflow-x:hidden}
+  .paperGrid{grid-template-columns:1fr;gap:16px;max-width:100%;padding:0;margin:0}
   .filterBar{flex-direction:column;align-items:stretch;gap:12px}
   .searchBox{width:100%}
   .yearChips{overflow-x:auto;flex-wrap:nowrap;-webkit-overflow-scrolling:touch}

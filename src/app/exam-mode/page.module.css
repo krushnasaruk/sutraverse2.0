@@ -30,7 +30,8 @@
 }
 
 .examTitleAccent {
-    background: var(--gradient-brand);text-shadow: none;
+    color: var(--gradient-brand);
+    text-shadow: none;
 }
 
 .examDesc {

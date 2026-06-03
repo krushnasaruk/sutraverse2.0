@@ -242,7 +242,7 @@ export default function YouTubePage() {
                   const unitSet = [...new Set(content.map(c => c.unit))];
 
                   return (
-                    <ScrollReveal key={subj} delay={i * 60}>
+                    <ScrollReveal key={subj} delay={i * 60} style={{ minWidth: 0, width: '100%' }}>
                       <button
                         className={styles.subjectCard}
                         style={{ '--accent-color': accent }}
@@ -338,7 +338,7 @@ export default function YouTubePage() {
 
                     <div className={styles.lectureGrid}>
                       {unitLectures.map((lecture, idx) => (
-                        <ScrollReveal key={lecture.id} delay={idx * 50}>
+                        <ScrollReveal key={lecture.id} delay={idx * 50} style={{ minWidth: 0, width: '100%' }}>
                           <a
                             href={lecture.url}
                             target="_blank"

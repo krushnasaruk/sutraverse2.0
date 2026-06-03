@@ -23,7 +23,7 @@
   }
 
   /* === Kill decorative animations only (keep functional ones) === */
-  [class*="shimmer"]:not([class*="setup"]),
+  [class*="shimmer"]:not([class*="setup"]):not(.text-shimmer),
   [class*="Shimmer"],
   [class*="cardGlow"] {
     animation: none !important;
@@ -72,7 +72,6 @@
   .container {
     padding: 0 16px;
     max-width: 100%;
-    overflow-x: hidden;
   }
 
   /* === Force overflow hidden globally === */

@@ -1585,7 +1585,7 @@
   .campusCountLabel { font-size: 0.55rem !important; }
   .campusCard { box-shadow: none !important; }
   .uploadsSection { padding: 32px 16px; }
-  .uploadsGrid { grid-template-columns: 1fr; gap: 16px; }
+  .uploadsGrid { grid-template-columns: 1fr; gap: 16px; max-width: 100%; padding: 0; margin: 0; }
   /* Hide verbose marketing sections on mobile */
   .whySection { display: none; }
   .processBar { display: none; }

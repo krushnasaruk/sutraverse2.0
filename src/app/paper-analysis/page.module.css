@@ -46,7 +46,7 @@
 }
 
 .heroTitleAccent {
-    background: var(--gradient-brand);
+    color: var(--gradient-brand);
     text-shadow: none;
 }
 
@@ -796,8 +796,7 @@
 
 @media (max-width: 768px) {
     .pageWrapper {
-        padding: 20px 0 100px;
-        overflow-x: hidden;
+        padding: 20px 16px 100px;
     }
 
     .heroTitle { font-size: 2.2rem; }
@@ -812,12 +811,30 @@
         flex-direction: column;
         align-items: stretch;
         gap: 12px;
+        background: transparent;
+        border: none;
+        box-shadow: none;
+        padding: 0;
+    }
+
+    .workspace {
+        padding: 0;
+        background: transparent;
+        border: none;
+        box-shadow: none;
+    }
+
+    .panel {
+        padding: 16px;
+        border-radius: 16px;
     }
 
     .filterChips {
         overflow-x: auto;
         flex-wrap: nowrap;
         -webkit-overflow-scrolling: touch;
+        margin: 0 -16px;
+        padding: 0 16px;
     }
 
     .filterChips::-webkit-scrollbar { display: none; }

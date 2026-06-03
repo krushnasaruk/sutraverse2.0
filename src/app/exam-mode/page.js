@@ -205,7 +205,8 @@ export default function ExamModePage() {
                     <div className={styles.examHeader}>
                         <span className={styles.examIcon}><IconSparkles size={48} /></span>
                         <h1 className={styles.examTitle}>
-                            <span className={`${styles.examTitleAccent} text-shimmer`}>AI Last Night</span> Prep
+                            {/* Force HMR */}
+                            <span className={styles.examTitleAccent}>AI Last Night</span> Prep
                         </h1>
                         <p className={styles.examDesc}>
                             Configure your syllabus or upload a past question paper. Our intelligence engine will instantly analyze frequencies, generate unit-wise summaries, and predict perfect exam-ready answers.

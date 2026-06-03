@@ -258,7 +258,8 @@ export default function PaperAnalysisPage() {
                     <div className={styles.hero}>
                         <span className={styles.heroIcon}><IconSparkles size={48} /></span>
                         <h1 className={styles.heroTitle}>
-                            <span className={`${styles.heroTitleAccent} text-shimmer`}>Paper Analysis</span> Dashboard
+                            {/* Force HMR */}
+                            <span className={styles.heroTitleAccent}>Paper Analysis</span> Dashboard
                         </h1>
                         <p className={styles.heroSub}>
                             Select any of our {totalCount}+ question papers or upload your own. The AI will read the full PDF and generate a comprehensive strategic breakdown.

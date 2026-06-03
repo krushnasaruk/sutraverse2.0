@@ -302,11 +302,14 @@ const styles = StyleSheet.create({
 
   catGrid: {
     flexDirection: 'row', flexWrap: 'wrap',
-    paddingHorizontal: 16, justifyContent: 'space-between',
+    paddingHorizontal: 16, justifyContent: 'center',
     marginTop: 10,
+    gap: 12,
   },
   catTile: {
-    width: (SW - 64) / 4,
+    flex: 1,
+    minWidth: 70,
+    maxWidth: (SW - 56) / 2, // If it wraps, don't let it be larger than half the screen
     borderRadius: 16, borderWidth: 0,
     paddingVertical: 12, alignItems: 'center', gap: 8,
   },
