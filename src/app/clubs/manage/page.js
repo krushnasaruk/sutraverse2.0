@@ -417,9 +417,7 @@ export default function ClubManagementPage() {
                     <h1 className={styles.heroTitle}>
                         Manage Your <span className={styles.heroGradientText}>Clubs</span>
                     </h1>
-                    <p className={styles.heroSubtitle}>
-                        Assign positions, broadcast updates, and keep your community thriving.
-                    </p>
+
                 </div>
 
                 {/* ── Club Selector ── */}

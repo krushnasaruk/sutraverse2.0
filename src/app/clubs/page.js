@@ -204,9 +204,7 @@ export default function ClubsPage() {
                         <h1 className={styles.heroTitle}>
                             Find Your <span className={styles.heroAccent}>Tribe.</span>
                         </h1>
-                        <p className={styles.heroSubtitle}>
-                            Discover student clubs, join communities, attend events, and build friendships that last beyond graduation.
-                        </p>
+
 
                         {/* Stats strip */}
                         <div className={styles.statsStrip}>
