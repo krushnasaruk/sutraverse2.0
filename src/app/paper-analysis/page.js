@@ -261,9 +261,7 @@ export default function PaperAnalysisPage() {
                             {/* Force HMR */}
                             <span className={styles.heroTitleAccent}>Paper Analysis</span> Dashboard
                         </h1>
-                        <p className={styles.heroSub}>
-                            Select any of our {totalCount}+ question papers or upload your own. The AI will read the full PDF and generate a comprehensive strategic breakdown.
-                        </p>
+
 
                         <div className={styles.statsBanner}>
                             <div className={styles.statBubble}>
