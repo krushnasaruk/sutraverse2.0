@@ -60,7 +60,7 @@ export default function YouTubePage() {
         if (!db) throw new Error('Firestore not initialized');
         const snap = await Promise.race([
           getDocs(collection(db, 'youtube_lectures')),
-          new Promise((_, r) => setTimeout(() => r(new Error('Timeout')), 8000)),
+          new Promise((_, r) => setTimeout(() => r(new Error('Timeout')), 15000)),
         ]);
         if (cancelled) return;
         const data = snap.docs.map(d => ({ id: d.id, ...d.data() }));
@@ -79,7 +79,7 @@ export default function YouTubePage() {
           setAllLectures(data);
         }
       } catch (e) {
-        console.error(e);
+        console.warn('Fetch error:', e.message);
         if (!cancelled) setAllLectures([]);
       }
       if (!cancelled) setLoading(false);
@@ -170,11 +170,7 @@ export default function YouTubePage() {
                 ? <><span className={styles.heroEmoji}>📖</span> {activeSubject}</>
                 : 'Lecture Hall'}
             </h1>
-            <p className={styles.heroSub}>
-              {activeSubject
-                ? `${activeSubjectLectures.length} video lectures • Organized by unit`
-                : 'Curated unit-wise video lectures for every subject'}
-            </p>
+
           </ScrollReveal>
 
           {/* Stats Banner on landing only */}

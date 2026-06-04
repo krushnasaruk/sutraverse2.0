@@ -218,6 +218,7 @@
   cursor: pointer;
   text-align: left;
   width: 100%;
+  height: 100%;
   transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
   position: relative;
   overflow: hidden;
@@ -442,6 +443,7 @@
   border-radius: var(--radius-xl);
   overflow: hidden;
   text-decoration: none;
+  height: 100%;
   transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
   position: relative;
   box-shadow: var(--shadow-glass);
