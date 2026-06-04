@@ -252,9 +252,7 @@ export default function UploadPage() {
                         <h1 className={styles.heroTitle}>
                             <span className={styles.heroEmoji}>📤</span> Upload
                         </h1>
-                        <p className={styles.heroSub}>
-                            Share your notes, PYQs, and assignments. Earn 50 XP for every contribution!
-                        </p>
+
                     </ScrollReveal>
                 </div>
             </div>
