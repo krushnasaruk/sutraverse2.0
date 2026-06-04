@@ -242,7 +242,7 @@ export default function Navbar() {
         { href: '/pyqs', label: 'PYQs' },
         { href: '/assignments', label: 'Assignments' },
         { href: '/exam-mode', label: 'Exam Mode' },
-        { href: '/paper-analysis', label: 'Paper Analysis' },
+        { href: '/paper-analysis', label: 'Analysis' },
     ];
 
     /* ── Dropdown menu config ── */
@@ -295,10 +295,8 @@ export default function Navbar() {
                 <div className={styles.navInner}>
                     {/* Logo */}
                     <Link href="/" className={styles.logo}>
-                        <span className={styles.logoIcon}>
-                            <Icons.Book />
-                        </span>
-                        <span className={styles.logoText}>Sutras</span>
+                        <img src="/logo.png" alt="SutraVerse Logo" className={styles.logoImage} />
+                        <span className={styles.logoText}>SutraVerse</span>
                     </Link>
 
                     {/* Search Trigger — opens Spotlight */}

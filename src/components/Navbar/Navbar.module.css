@@ -95,39 +95,15 @@
     transform: scale(1.03);
 }
 
-.logo:hover .logoIcon {
-    transform: rotate(-8deg) scale(1.1);
-    box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+.logo:hover .logoImage {
+    transform: scale(1.1);
 }
 
-.logoIcon {
-    width: 36px;
+.logoImage {
     height: 36px;
-    background: var(--gradient-brand);
-    border-radius: 11px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: white;
+    width: auto;
+    object-fit: contain;
     transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-    box-shadow: 0 2px 8px rgba(0,0,0,0.15);
-    position: relative;
-}
-
-/* Subtle highlight behind logo */
-.logoIcon::after {
-    content: '';
-    position: absolute;
-    inset: -4px;
-    border-radius: 14px;
-    background: var(--primary);
-    opacity: 0.1;
-    z-index: -1;
-    transition: opacity 0.3s ease;
-}
-
-.logo:hover .logoIcon::after {
-    opacity: 0.3;
 }
 
 .logoText {
@@ -988,10 +964,13 @@
    RESPONSIVE — LAPTOP / TABLET
    ═══════════════════════════════════════════════════ */
 @media (max-width: 1250px) and (min-width: 769px) {
-    .navInner { padding: 0 10px; gap: 4px; }
+    .navInner { padding: 0 6px; gap: 4px; }
     .searchPlaceholder, .searchKbd { display: none; }
-    .searchTrigger { max-width: 40px; padding: 8px; justify-content: center; }
-    .navLink { padding: 5px 8px; font-size: 0.72rem; }
+    .searchTrigger { max-width: 36px; padding: 6px; margin: 0 4px; justify-content: center; }
+    .navLinks { gap: 0; padding: 2px; }
+    .navLink { padding: 5px 6px; font-size: 0.68rem; }
+    .navActions { gap: 4px; margin-left: 2px; }
+    .uploadBtn { padding: 6px 10px; font-size: 0.7rem; gap: 4px; }
     .logoText { display: none; }
     .logo { gap: 0; }
     .themeToggle { width: 30px; height: 30px; }
