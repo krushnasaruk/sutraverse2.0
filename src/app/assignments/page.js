@@ -120,7 +120,7 @@ export default function AssignmentsPage() {
         );
         const snap = await Promise.race([
           getDocs(assignQ),
-          new Promise((_, r) => setTimeout(() => r(new Error('Timeout')), 6000)),
+          new Promise((_, r) => setTimeout(() => r(new Error('Timeout')), 15000)),
         ]);
         if (cancelled) return;
         const data = snap.docs
@@ -219,7 +219,7 @@ export default function AssignmentsPage() {
           <ScrollReveal>
             <span className={styles.heroBadge}>📝 Assignments</span>
             <h1 className={styles.heroTitle}>Assignment Archive</h1>
-            <p className={styles.heroSub}>Ready-to-submit solutions, lab manuals & reference work</p>
+
           </ScrollReveal>
         </div>
       </div>
