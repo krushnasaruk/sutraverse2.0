@@ -303,9 +303,7 @@ export default function HomePage() {
             </span>
           </h1>
 
-          <p className={styles.heroSubtitle}>
-            {branding.heroSubtitle}
-          </p>
+
 
           <form className={styles.heroSearchBar} onSubmit={handleHeroSearch}>
             <span className={styles.heroSearchIcon}>🔍</span>
@@ -651,7 +649,12 @@ export default function HomePage() {
             </div>
           </div>
           <div className={styles.footerBottom}>
-            <span>© 2026 Sutraverse. All rights reserved. (Deployed via Automated CI/CD Pipeline 🚀)</span>
+            <span>© 2026 Sutraverse. All rights reserved.</span>
+            <div style={{ marginTop: '12px', display: 'flex', flexDirection: 'column', gap: '4px', alignItems: 'center' }}>
+              <a href="https://krushnasaruk.in" target="_blank" rel="noopener noreferrer" style={{ color: 'var(--text-primary)', fontWeight: '700', textDecoration: 'none' }}>Developed by Krushna Saruk</a>
+              <span style={{ color: 'var(--text-muted)' }}>Contact: +91 9834514884</span>
+              <span style={{ color: 'var(--text-muted)' }}>Email: sutraverse@11gmail.com</span>
+            </div>
           </div>
         </div>
       </footer>
