@@ -75,7 +75,7 @@ export default function SubjectsPage() {
         if (!db) throw new Error('Firestore not initialized');
         const snap = await Promise.race([
           getDocs(collection(db, 'files')),
-          new Promise((_, r) => setTimeout(() => r(new Error('Timeout')), 8000)),
+          new Promise((_, r) => setTimeout(() => r(new Error('Timeout')), 15000)),
         ]);
         if (cancelled) return;
         const data = snap.docs
@@ -83,7 +83,7 @@ export default function SubjectsPage() {
           .filter(f => f.status === 'approved');
         data.sort((a, b) => (b.createdAt || '').localeCompare(a.createdAt || ''));
         if (!cancelled) setAllFiles(data);
-      } catch (e) { console.error(e); if (!cancelled) setAllFiles([]); }
+      } catch (e) { console.warn('Fetch error:', e.message); if (!cancelled) setAllFiles([]); }
       if (!cancelled) setLoading(false);
     })();
     return () => { cancelled = true; };
@@ -229,11 +229,7 @@ export default function SubjectsPage() {
                 ? <><span className={styles.heroEmoji}>📖</span> {activeSubject}</>
                 : 'Subject Hub'}
             </h1>
-            <p className={styles.heroSub}>
-              {activeSubject
-                ? `${drillTotal} materials available • Browse notes, PYQs & assignments`
-                : 'All your study materials — beautifully organized by subject'}
-            </p>
+
           </ScrollReveal>
 
           {/* Stats Banner on landing only */}
