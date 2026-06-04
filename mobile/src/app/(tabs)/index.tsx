@@ -104,8 +104,8 @@ export default function HomeScreen() {
           >
             <View style={styles.topNav}>
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
-                <Image source={require('../../../assets/images/icon.png')} style={{ width: 34, height: 34, borderRadius: 10 }} />
-                <Text style={[styles.brand, { color: colors.textPrimary }]}>Sutras</Text>
+                <Image source={require('../../../assets/images/logo.png')} style={{ width: 34, height: 34, resizeMode: 'contain' }} />
+                <Text style={[styles.brand, { color: colors.textPrimary }]}>SutraVerse</Text>
               </View>
               <View style={styles.topRight}>
                 <TouchableOpacity
