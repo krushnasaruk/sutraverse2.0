@@ -151,9 +151,7 @@ export default function NewsPage() {
                         <h1 className={styles.heroTitle}>
                             Stay <span className={styles.heroAccent}>Informed.</span>
                         </h1>
-                        <p className={styles.heroSubtitle}>
-                            Official campus announcements, upcoming events, and important updates — all in one place.
-                        </p>
+
 
                         {/* Stats strip */}
                         <div className={styles.statsStrip}>
