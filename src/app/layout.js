@@ -11,9 +11,9 @@ import CookieConsent from '@/components/CookieConsent';
 import GlobalBot from '@/components/GlobalBot/GlobalBot';
 
 export const metadata = {
-  title: 'Sutras — The Student OS',
+  title: 'SutraVerse — Digital Notes Hub',
   description: 'Find notes, PYQs, assignments, and ace your exams with a sleek platform built for modern students.',
-  keywords: 'notes, pyqs, assignments, college, exam prep, study material, sutras, futuristic',
+  keywords: 'notes, pyqs, assignments, college, exam prep, study material, sutraverse, futuristic',
 };
 
 export default function RootLayout({ children }) {
