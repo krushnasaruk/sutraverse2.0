@@ -153,7 +153,7 @@ export default function PyqsPage() {
         );
         const snap = await Promise.race([
           getDocs(pyqQ),
-          new Promise((_, r) => setTimeout(() => r(new Error('Timeout')), 6000)),
+          new Promise((_, r) => setTimeout(() => r(new Error('Timeout')), 15000)),
         ]);
         if (cancelled) return;
         const data = snap.docs
@@ -163,10 +163,7 @@ export default function PyqsPage() {
             return { id: d.id, ...f };
           });
         if (!cancelled) setPyqs(data);
-      } catch (error) {
-        console.warn('Error fetching pyqs:', error);
-        if (!cancelled) setPyqs([]);
-      }
+      } catch (e) { console.warn('Fetch error:', e.message); if (!cancelled) setPyqs([]); }
       if (!cancelled) setLoading(false);
     })();
     return () => { cancelled = true; };
@@ -299,11 +296,7 @@ export default function PyqsPage() {
                 ? <><span className={styles.heroEmoji}>{activeMeta?.emoji}</span> {activeMeta?.label}</>
                 : 'PYQ Vault'}
             </h1>
-            <p className={styles.heroSub}>
-              {activeSubject
-                ? `${subjectPyqs.length} question papers available • 2019 Pattern`
-                : 'Your one-stop collection for past year question papers'}
-            </p>
+
           </ScrollReveal>
 
           {/* Stats Banner on landing only */}
