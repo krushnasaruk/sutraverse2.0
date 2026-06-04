@@ -365,35 +365,13 @@
     position: relative;
     overflow: visible;
     z-index: 1;
-    animation: cardIn 0.5s cubic-bezier(0.16, 1, 0.3, 1) both;
-}
-@keyframes cardIn {
-    from { opacity: 0; transform: translateY(20px) scale(0.98); }
-    to { opacity: 1; transform: translateY(0) scale(1); }
-}
-/* Hover glow */
-.postCard::before {
-    content: '';
-    position: absolute;
-    inset: -4px;
-    border-radius: inherit;
-    background: linear-gradient(135deg, #b91c1c, #dc2626);
-    opacity: 0;
-    z-index: -1;
-    filter: blur(20px);
-    transition: opacity 0.5s ease;
-    pointer-events: none;
-}
-.postCard:hover::before {
-    opacity: 0.2;
 }
 .postCard:hover {
     border-color: rgba(139, 92, 246, 0.3);
     transform: translateY(-4px);
     box-shadow:
         0 12px 40px rgba(0,0,0,0.08),
-        0 0 0 1px rgba(139, 92, 246, 0.15),
-        0 0 30px rgba(139, 92, 246, 0.1);
+        0 0 0 1px rgba(139, 92, 246, 0.15);
 }
 
 .postHeader {

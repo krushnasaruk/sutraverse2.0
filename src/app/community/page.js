@@ -203,7 +203,7 @@ export default function CommunityPage() {
                                     const likeCount = post.likes?.length || 0;
                                     
                                     return (
-                                        <div key={post.id} className={styles.postCard} style={{ animationDelay: `${(i % 8) * 60}ms` }}>
+                                        <div key={post.id} className={styles.postCard}>
                                             <div className={styles.postHeader}>
                                                 <Link href={`/profile/${post.authorId}`} className={styles.authorInfo}>
                                                     {post.authorAvatar ? (
