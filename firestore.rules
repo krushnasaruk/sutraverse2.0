@@ -1,70 +1,88 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    // Public read for most collections, write for authenticated users
+    
+    // Helper function to check if user is admin
+    function isAdmin() {
+      return request.auth != null && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.isAdmin == true;
+    }
+
     match /files/{fileId} {
       allow read: if true;
       allow create: if request.auth != null;
       allow delete: if request.auth != null && (
-        request.auth.uid == resource.data.uploaderUID ||
-        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.isAdmin == true
+        request.auth.uid == resource.data.uploaderUID || isAdmin()
       );
       allow update: if request.auth != null && (
-        request.auth.uid == resource.data.uploaderUID ||
-        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.isAdmin == true ||
+        request.auth.uid == resource.data.uploaderUID || isAdmin() ||
         request.resource.data.diff(resource.data).affectedKeys().hasOnly(['downloads', 'reported', 'reportsCount'])
       );
     }
 
     match /users/{userId} {
       allow read: if true;
-      allow write: if request.auth != null && request.auth.uid == userId;
+      // Users can only write their own document, or admins can write any document
+      allow write: if request.auth != null && (request.auth.uid == userId || isAdmin());
     }
 
     match /branding/{doc} {
       allow read: if true;
-      allow write: if request.auth != null;
+      allow write: if isAdmin();
     }
 
-    match /community/{postId} {
+    match /posts/{postId} {
       allow read: if true;
-      allow write: if request.auth != null;
+      allow create: if request.auth != null;
+      allow update: if request.auth != null && (
+        request.auth.uid == resource.data.authorId || 
+        isAdmin() ||
+        request.resource.data.diff(resource.data).affectedKeys().hasOnly(['likes', 'commentsCount'])
+      );
+      allow delete: if request.auth != null && (request.auth.uid == resource.data.authorId || isAdmin());
     }
 
-    match /community/{postId}/replies/{replyId} {
+    match /comments/{commentId} {
       allow read: if true;
-      allow write: if request.auth != null;
+      allow create: if request.auth != null;
+      allow update, delete: if request.auth != null && (request.auth.uid == resource.data.authorId || isAdmin());
     }
 
     match /clubs/{clubId} {
       allow read: if true;
-      allow write: if request.auth != null;
+      allow create: if request.auth != null;
+      allow update, delete: if request.auth != null && (request.auth.uid == resource.data.adminId || isAdmin());
     }
 
     match /news/{newsId} {
       allow read: if true;
-      allow write: if request.auth != null;
+      allow write: if isAdmin();
     }
 
     match /subjects/{subjectId} {
       allow read: if true;
-      allow write: if request.auth != null;
+      allow write: if isAdmin();
     }
 
     match /youtube/{videoId} {
       allow read: if true;
-      allow write: if request.auth != null;
+      allow write: if isAdmin();
     }
 
     match /roster/{email} {
       allow read: if request.auth != null;
-      allow write: if request.auth != null;
+      allow write: if isAdmin();
+    }
+    
+    match /notifications/{notificationId} {
+      allow read: if request.auth != null;
+      allow create: if request.auth != null;
+      allow update, delete: if request.auth != null && (request.auth.uid == resource.data.recipientId || isAdmin());
     }
 
-    // Catch-all: allow reads for any other collection
+    // Catch-all: allow reads for any other collection, strictly block generic writes
     match /{document=**} {
       allow read: if true;
-      allow write: if request.auth != null;
+      allow write: if false; 
     }
   }
 }

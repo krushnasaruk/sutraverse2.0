@@ -1,4 +1,5 @@
 import { initializeApp, getApps } from 'firebase/app';
+import { initializeAppCheck, ReCaptchaV3Provider } from 'firebase/app-check';
 import { getAuth, GoogleAuthProvider, browserLocalPersistence, setPersistence } from 'firebase/auth';
 import { initializeFirestore, persistentLocalCache, persistentMultipleTabManager } from 'firebase/firestore';
 import { getStorage } from 'firebase/storage';
@@ -12,8 +13,6 @@ const firebaseConfig = {
   appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID || "1:666020084296:web:0dd52b77ce6a245253b67d",
 };
 
-console.log("FIREBASE CONFIG DETECTED API KEY:", firebaseConfig.apiKey.substring(0, 5) + "...");
-
 let app;
 let auth;
 let googleProvider;
@@ -22,6 +21,21 @@ let storage;
 
 try {
   app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApps()[0];
+
+  // Initialize App Check (Only in browser)
+  if (typeof window !== 'undefined') {
+    try {
+      const recaptchaKey = process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY;
+      if (recaptchaKey) {
+        initializeAppCheck(app, {
+          provider: new ReCaptchaV3Provider(recaptchaKey),
+          isTokenAutoRefreshEnabled: true
+        });
+      }
+    } catch (e) {
+      console.warn("Failed to initialize App Check", e);
+    }
+  }
   auth = getAuth(app);
   // Ensure auth state persists across page refreshes
   if (typeof window !== 'undefined') {

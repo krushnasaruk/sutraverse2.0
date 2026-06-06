@@ -1,7 +1,7 @@
 'use client';
 
 import { createContext, useContext, useEffect, useState } from 'react';
-import { onAuthStateChanged, signInWithPopup, signOut, createUserWithEmailAndPassword, signInWithEmailAndPassword } from 'firebase/auth';
+import { onAuthStateChanged, signInWithPopup, signOut, createUserWithEmailAndPassword, signInWithEmailAndPassword, sendEmailVerification } from 'firebase/auth';
 import { doc, setDoc, getDoc, onSnapshot } from 'firebase/firestore';
 import { auth, googleProvider, db } from '@/lib/firebase';
 
@@ -55,12 +55,20 @@ export function AuthProvider({ children }) {
                         // Set the enriched + live-updated user
                         setUser(prev => ({ ...prev, uid: firebaseUser.uid, ...userData }));
                         
-                        // Handle onboarding redirect
-                        if (userData && userData.profileComplete === false && 
-                            window.location.pathname !== '/onboarding' && 
-                            window.location.pathname !== '/login' && 
-                            window.location.pathname !== '/signup' &&
-                            !window.location.pathname.startsWith('/mobile-auth')) {
+                        const isEmailUser = firebaseUser.providerData.some(p => p.providerId === 'password');
+                        const isVerified = firebaseUser.emailVerified;
+
+                        // Handle redirects
+                        const path = window.location.pathname;
+                        const isAuthRoute = path === '/login' || path === '/signup' || path.startsWith('/mobile-auth');
+                        const isVerifyRoute = path === '/verify-email';
+
+                        if (isEmailUser && !isVerified && !isAuthRoute && !isVerifyRoute) {
+                            window.location.href = '/verify-email';
+                        } else if (userData && userData.profileComplete === false && 
+                            path !== '/onboarding' && 
+                            !isAuthRoute && 
+                            !isVerifyRoute) {
                             window.location.href = '/onboarding';
                         }
                     }, (e) => {
@@ -144,6 +152,14 @@ export function AuthProvider({ children }) {
             // ------------------------------
 
             await setDoc(doc(db, 'users', firebaseUser.uid), userData);
+            
+            // Send Email Verification
+            try {
+                await sendEmailVerification(firebaseUser);
+            } catch (verifErr) {
+                console.warn('Could not send verification email:', verifErr);
+            }
+
             setUser({ uid: firebaseUser.uid, ...userData });
         } catch (error) {
             console.error('Signup failed:', error);
