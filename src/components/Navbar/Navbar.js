@@ -2,6 +2,7 @@
 
 import { useState, useRef, useEffect, useCallback } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { usePathname, useRouter } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
 import { useTheme } from '@/context/ThemeContext';
@@ -295,7 +296,7 @@ export default function Navbar() {
                 <div className={styles.navInner}>
                     {/* Logo */}
                     <Link href="/" className={styles.logo}>
-                        <img src="/logo.png" alt="SutraVerse Logo" className={styles.logoImage} />
+                        <Image src="/logo.png" alt="SutraVerse Logo" width={32} height={32} className={styles.logoImage} priority={true} />
                         <span className={styles.logoText}>SutraVerse</span>
                     </Link>
 
