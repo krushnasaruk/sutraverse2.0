@@ -73,6 +73,24 @@ export async function GET(request, { params }) {
         return new NextResponse("File not found", { status: 404 });
     }
 
+    // Secure boundary check to prevent directory traversal
+    const { resolve } = require('path');
+    const resolvedPath = resolve(foundPath);
+    const resolvedUploadsDir = resolve(uploadsDir);
+    const resolvedAppRoot = resolve(appRoot);
+    const resolvedHome = resolve(os.homedir());
+
+    const isAllowed = resolvedPath.startsWith(resolvedUploadsDir) || 
+                      resolvedPath.startsWith(join(resolvedAppRoot, 'public')) ||
+                      (resolvedPath.startsWith(join(resolvedHome, 'public_html')) && 
+                       !resolvedPath.includes('.env') && 
+                       !resolvedPath.includes('config') && 
+                       !resolvedPath.includes('node_modules'));
+
+    if (!isAllowed) {
+        return new NextResponse("Forbidden: Access denied", { status: 403 });
+    }
+
     return serveFile(foundPath, relativePath);
 }
 

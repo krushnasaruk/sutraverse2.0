@@ -5,6 +5,7 @@ import { pipeline } from 'stream/promises';
 import { Readable } from 'stream';
 import path from 'path';
 import { getUploadsDir } from '@/lib/uploadsDir';
+import { adminAuth } from '@/lib/firebaseAdmin';
 
 /**
  * POST /api/upload
@@ -18,6 +19,20 @@ export const maxDuration = 300;
 
 export async function POST(request) {
     try {
+        // Enforce Authentication Check via Firebase Admin SDK
+        const authHeader = request.headers.get('Authorization');
+        if (!authHeader || !authHeader.startsWith('Bearer ')) {
+            return NextResponse.json({ error: 'Unauthorized: Authentication required' }, { status: 401 });
+        }
+
+        const idToken = authHeader.split('Bearer ')[1];
+        try {
+            await adminAuth.verifyIdToken(idToken);
+        } catch (authErr) {
+            console.error('Upload verification failed:', authErr.message);
+            return NextResponse.json({ error: 'Unauthorized: Invalid authentication token' }, { status: 401 });
+        }
+
         const formData = await request.formData();
         const file = formData.get('file');
 
