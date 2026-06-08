@@ -62,7 +62,7 @@
   }
 
   body {
-    padding-bottom: 16px;
+    padding-bottom: 120px;
     padding-top: 52px;
     overflow-x: hidden;
     background-image: none !important;
@@ -267,3 +267,82 @@
     padding: 0 10px;
   }
 }
+
+/* ── Mobile performance enhancements ── */
+@media (max-width: 768px) {
+  *, *::before, *::after {
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+  }
+}
+
+/* ── Mobile Spaciousness & Decluttering Overrides ── */
+@media (max-width: 768px) {
+  /* Increase card and bento padding for breathing room */
+  [class*="Card"], [class*="card"], [class*="bentoTile"], .glass-panel {
+    padding: 20px 18px !important;
+    border-radius: 16px !important;
+  }
+
+  /* Increase spacing and gaps in list layouts and flex containers */
+  [class*="Grid"], [class*="grid"] {
+    gap: 16px !important;
+  }
+
+  /* Soften headers and increase line-height of copy */
+  p, [class*="desc"], [class*="Desc"], [class*="subtitle"], [class*="Subtitle"], [class*="bio"], [class*="Bio"] {
+    line-height: 1.62 !important;
+    font-size: 0.9rem !important;
+    letter-spacing: 0.01em !important;
+  }
+
+  /* Softer dividers with comfortable margins */
+  hr, [class*="divider"], [class*="Divider"] {
+    opacity: 0.04 !important;
+    margin: 24px 0 !important;
+  }
+
+  /* Form input field heights and inner paddings */
+  input, select, textarea {
+    padding: 12px 14px !important;
+    font-size: 0.92rem !important;
+  }
+
+  /* === Explicit card resets to fix mobile layout & color bars === */
+  [class*="cardStripe"], [class*="CardStripe"] {
+    padding: 0 !important;
+    border-radius: 0 !important;
+    height: 4px !important;
+  }
+  [class*="uploadCardAccent"] {
+    padding: 0 !important;
+    border-radius: 0 !important;
+    height: 3px !important;
+  }
+  [class*="cardBody"] {
+    padding: 20px !important;
+  }
+  [class*="cardTitle"] {
+    padding: 0 !important;
+    font-size: 1.15rem !important;
+  }
+  [class*="cardIconWrap"], [class*="cardIcon"] {
+    padding: 0 !important;
+    border-radius: 14px !important;
+  }
+  [class*="cardRow"] {
+    padding: 0 !important;
+  }
+  [class*="cardFooter"] {
+    padding: 12px 0 0 !important;
+    margin-top: auto !important;
+  }
+  [class*="cardActions"] {
+    padding: 0 !important;
+  }
+  [class*="cardStats"] {
+    padding: 0 !important;
+  }
+}
+
+

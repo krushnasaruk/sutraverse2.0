@@ -61,21 +61,21 @@
 /* ── MOBILE & TABLET (≤768px): Strip EVERYTHING heavy ────────────────────── */
 @media (max-width: 768px) {
 
-  /* Kill ALL backdrop-filter — biggest mobile perf killer */
+  /* Kill ALL backdrop-filter, filters, and shadows — biggest mobile perf killer */
   * {
     backdrop-filter: none !important;
     -webkit-backdrop-filter: none !important;
+    filter: none !important;
+    box-shadow: none !important;
+    text-shadow: none !important;
   }
 
-  /* Kill all animations (exclude html/body to preserve native scroll) */
+  /* Kill all animations and transitions (exclude html/body to preserve native scroll) */
   *:not(html):not(body):not(main),
   *::before,
   *::after {
     animation: none !important;
-    animation-delay: 0s !important;
-    animation-duration: 0s !important;
-    transition-duration: 0.1s !important;
-    transition-delay: 0s !important;
+    transition: none !important;
   }
 
   /* Kill all hover transforms (useless on touch) */
@@ -83,23 +83,69 @@
     transform: none !important;
   }
 
-  /* Kill shimmer effects */
+  /* Kill shimmer and card glow effects */
   [class*="shimmer"],
   [class*="Shimmer"],
   [class*="cardGlow"],
-  [class*="Glow"]:not(button):not(a) {
+  [class*="Glow"] {
+    display: none !important;
     opacity: 0 !important;
   }
 
   /* ScrollReveal — show immediately */
   .sr-init,
-  .sr-up, .sr-down, .sr-left, .sr-right, .sr-scale {
+  .sr-up, .sr-down, .sr-left, .sr-right, .sr-scale,
+  .scroll-reveal {
     opacity: 1 !important;
     transform: none !important;
+    transition: none !important;
+    will-change: auto !important;
   }
 
   /* Kill grid background pattern */
   body {
     background-image: none !important;
   }
+
+
+  /* Prevent rendering trails and clear GPU layers */
 }
+
+/* ── ULTRA-PERFORMANCE MODE: Triggered by .low-performance on html/body ── */
+.low-performance *, 
+.low-performance *::before, 
+.low-performance *::after {
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  filter: none !important;
+  box-shadow: none !important;
+  text-shadow: none !important;
+  animation: none !important;
+  transition: none !important;
+}
+
+.low-performance [class*="Orb"],
+.low-performance [class*="heroOrb"],
+.low-performance [class*="bgOrb"],
+.low-performance [class*="blob"],
+.low-performance [class*="Blob"] {
+  display: none !important;
+}
+
+.low-performance [class*="shimmer"],
+.low-performance [class*="Shimmer"],
+.low-performance [class*="cardGlow"],
+.low-performance [class*="Glow"],
+.low-performance [class*="bannerParticles"] {
+  display: none !important;
+  opacity: 0 !important;
+}
+
+.low-performance body {
+  background-image: none !important;
+}
+
+.low-performance *:hover {
+  transform: none !important;
+}
+
