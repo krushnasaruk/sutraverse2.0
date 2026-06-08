@@ -6,6 +6,8 @@ import { AuthProvider } from '@/context/AuthContext';
 import { ThemeProvider } from '@/context/ThemeContext';
 import { CollegeProvider } from '@/context/CollegeContext';
 import Navbar from '@/components/Navbar/Navbar';
+import AnnouncementBanner from '@/components/AnnouncementBanner/AnnouncementBanner';
+import MaintenanceGuard from '@/components/MaintenanceGuard/MaintenanceGuard';
 import MobileNav from '@/components/MobileNav/MobileNav';
 import CookieConsent from '@/components/CookieConsent';
 import GlobalBot from '@/components/GlobalBot/GlobalBot';
@@ -52,11 +54,14 @@ export default function RootLayout({ children }) {
         <ThemeProvider>
           <CollegeProvider>
             <AuthProvider>
-              <Navbar />
-              <main>{children}</main>
-              <MobileNav />
-              <CookieConsent />
-              <GlobalBot />
+              <MaintenanceGuard>
+                <Navbar />
+                <AnnouncementBanner />
+                <main>{children}</main>
+                <MobileNav />
+                <CookieConsent />
+                <GlobalBot />
+              </MaintenanceGuard>
             </AuthProvider>
           </CollegeProvider>
         </ThemeProvider>

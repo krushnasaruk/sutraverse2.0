@@ -3,6 +3,7 @@
 import { usePathname } from 'next/navigation';
 import Link from 'next/link';
 import { useAuth } from '@/context/AuthContext';
+import { useCollege } from '@/context/CollegeContext';
 import styles from './MobileNav.module.css';
 
 /* ── SVG Icons for Mobile Nav ── */
@@ -44,13 +45,14 @@ const navItems = [
   { href: '/', label: 'Home', Icon: HomeIcon },
   { href: '/subjects', label: 'Subjects', Icon: PlayIcon },
   { href: '/upload', label: 'Upload', Icon: UploadIcon, special: true },
-  { href: '/assistant', label: 'AI Tutor', Icon: AIIcon },
-  { href: '/community', label: 'Community', Icon: CommunityIcon },
+  { href: '/assistant', label: 'AI Tutor', Icon: AIIcon, feature: 'aiTutor' },
+  { href: '/community', label: 'Community', Icon: CommunityIcon, feature: 'community' },
 ];
 
 export default function MobileNav() {
   const pathname = usePathname();
   const { user } = useAuth();
+  const { featureToggles } = useCollege();
 
   // Don't show on login/signup/mobile-auth pages
   if (pathname === '/login' || pathname === '/signup' || (pathname && pathname.startsWith('/mobile-auth'))) return null;
@@ -62,10 +64,17 @@ export default function MobileNav() {
     return pathname.startsWith(href);
   };
 
+  const filteredNavItems = navItems.filter(item => {
+    if (item.feature && featureToggles && featureToggles[item.feature] === false) {
+      return false;
+    }
+    return true;
+  });
+
   return (
     <nav className={styles.mobileNav}>
       <div className={styles.mobileNavInner}>
-        {navItems.map((item) => {
+        {filteredNavItems.map((item) => {
           const active = isActive(item.href);
           const { Icon } = item;
           return (
