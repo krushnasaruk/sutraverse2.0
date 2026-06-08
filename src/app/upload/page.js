@@ -4,7 +4,7 @@ import { useState, useRef, useMemo } from 'react';
 import Link from 'next/link';
 import { collection, doc, setDoc } from 'firebase/firestore';
 import { ref, uploadBytesResumable, getDownloadURL } from 'firebase/storage';
-import { db, storage } from '@/lib/firebase';
+import { db, storage, auth } from '@/lib/firebase';
 import { useAuth } from '@/context/AuthContext';
 import { awardUploadPoints } from '@/lib/points';
 import { BRANCHES, YEARS, getSubjects, getAllSubjects } from '@/lib/subjectMap';
@@ -218,7 +218,16 @@ export default function UploadPage() {
                 setUploading(false);
             };
 
+            // Retrieve Firebase Auth ID Token for security validation
+            const idToken = await auth.currentUser?.getIdToken(true);
+            if (!idToken) {
+                setError('Authentication error. Please sign in again.');
+                setUploading(false);
+                return;
+            }
+
             xhr.open('POST', '/api/upload');
+            xhr.setRequestHeader('Authorization', `Bearer ${idToken}`);
             xhr.send(formData);
         } catch (err) {
             console.error('Initiation error:', err);

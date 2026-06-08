@@ -199,7 +199,7 @@
 
 .questionCard {
     display: flex;
-    align-items: center;
+    align-items: flex-start;
     gap: var(--space-lg);
     padding: var(--space-lg) var(--space-2xl);
     background: var(--bg-card);
@@ -445,21 +445,23 @@
 
 /* RESPONSIVE */
 @media(max-width:768px) {
-    .pageWrapper { padding: 20px 16px 100px; }
-    .examHeader { margin-bottom: 24px; }
+    .pageWrapper { padding: 24px 16px 100px; }
+    .examHeader { margin-bottom: 32px; }
     .examTitle { font-size: 2.2rem; }
-    .examDesc { font-size: 1rem; }
-    .subjectSelector { gap: 8px; margin-bottom: 24px; }
+    .examDesc { font-size: 1.02rem; }
+    .subjectSelector { gap: 12px; margin-bottom: 32px; }
     .subjectChip { padding: 10px 20px; font-size: 0.9rem; }
-    .tipCard { padding: 16px; }
+    .tipCard { padding: 20px 18px; }
     .sectionTitle { font-size: 1.4rem; }
-    .summaryGrid { gap: 16px; }
-    .summaryCard { padding: 16px; }
+    .configGrid { grid-template-columns: 1fr; gap: 20px; }
+    .summaryGrid { grid-template-columns: 1fr; gap: 20px; }
+    .summaryCard { padding: 20px 18px; }
     .summaryTitle { font-size: 1.15rem; }
-    .questionCard { padding: 14px 16px; gap: 12px; }
-    .questionNum { font-size: 1.8rem; min-width: 36px; }
+    .questionCard { padding: 18px 16px; gap: 16px; align-items: flex-start; }
+    .questionNum { font-size: 1.5rem; min-width: 28px; text-align: left; }
     .questionText { font-size: 1rem; }
     .flashcardContainer { height: 200px; }
+    .sectionContainer { margin-top: 36px; margin-bottom: 36px; }
 }
 @media(max-width:480px) {
     .pageWrapper { padding: 16px 12px 100px; }
@@ -467,6 +469,10 @@
     .subjectChip { padding: 8px 16px; font-size: 0.82rem; }
     .summaryCard { padding: 14px; }
     .aiConfigCard { padding: 16px; }
+    .flashcardGrid { grid-template-columns: 1fr; gap: 16px; }
+    .flashcardContainer { height: 180px; }
+    .flashcardTerm { font-size: 1.25rem; }
+    .flashcardDef { font-size: 0.9rem; }
 }
 @media(max-width:360px) {
     .examTitle { font-size: 1.5rem; }
@@ -938,22 +944,38 @@
 
 @media(max-width: 768px) {
     .tabSelector {
-        flex-direction: column;
-        gap: 4px;
+        display: flex;
+        flex-direction: row;
+        gap: 6px;
+        background: rgba(15, 15, 15, 0.95);
+        border-radius: 12px;
+        padding: 4px;
+        margin-bottom: 20px;
         border-bottom: none;
+    }
+    :global(.light) .tabSelector {
+        background: rgba(240, 240, 245, 0.95) !important;
     }
     
     .tabBtn {
+        flex: 1;
         border-bottom: none;
-        border-left: 2px solid transparent;
-        border-radius: var(--radius-md);
-        padding: 10px 16px;
-        text-align: left;
+        border-left: none;
+        border-radius: 8px;
+        padding: 8px 12px;
+        font-size: 0.8rem;
+        text-align: center;
     }
     
     .activeTab {
-        border-left-color: var(--primary);
-        background: rgba(255, 255, 255, 0.03);
+        background: rgba(99, 102, 241, 0.15) !important;
+        box-shadow: 0 4px 15px rgba(99, 102, 241, 0.15) !important;
+        color: var(--text-primary) !important;
+    }
+    :global(.light) .activeTab {
+        background: var(--primary) !important;
+        color: #ffffff !important;
+        box-shadow: 0 4px 12px rgba(59, 130, 246, 0.25) !important;
     }
     
     .summaryContainer {
