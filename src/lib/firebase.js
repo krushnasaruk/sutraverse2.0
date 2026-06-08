@@ -1,7 +1,7 @@
 import { initializeApp, getApps } from 'firebase/app';
 import { initializeAppCheck, ReCaptchaV3Provider } from 'firebase/app-check';
 import { getAuth, GoogleAuthProvider, browserLocalPersistence, setPersistence } from 'firebase/auth';
-import { initializeFirestore, persistentLocalCache, persistentMultipleTabManager } from 'firebase/firestore';
+import { initializeFirestore, persistentLocalCache, persistentMultipleTabManager, setLogLevel } from 'firebase/firestore';
 import { getStorage } from 'firebase/storage';
 
 const firebaseConfig = {
@@ -50,6 +50,13 @@ try {
       tabManager: persistentMultipleTabManager()
     })
   });
+
+  // Suppress Firebase SDK internal connection warning logs (errors will still log)
+  try {
+    setLogLevel('error');
+  } catch (e) {
+    // Silently ignore if setLogLevel fails or is not available
+  }
 
   storage = getStorage(app);
 } catch (error) {
