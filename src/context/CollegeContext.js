@@ -27,6 +27,43 @@ const DEFAULT_BRANDING = {
     
     logoUrl: '',
     applyColorsGlobally: true,
+    featureToggles: {
+        youtube: true,
+        community: true,
+        clubs: true,
+        news: true,
+        examMode: true,
+        paperAnalysis: true,
+        assignments: true,
+        leaderboard: true,
+        aiTutor: true,
+        pyqs: true
+    },
+    announcement: {
+        enabled: false,
+        text: '',
+        link: '',
+        color: '#3b82f6',
+        expiresAt: null
+    },
+    heroPlaceholder: 'Search for DBMS notes, DSA questions, Physics...',
+    showHeroOrbs: true,
+    ctaPilotText: 'Pilot Implementation',
+    ctaPilotLink: '',
+    ctaFacultyText: 'Faculty Onboarding',
+    ctaFacultyLink: '/about',
+    developedByName: 'Krushna Saruk',
+    developedByLink: 'https://krushnasaruk.in',
+    supportPhone: '+91 9834514884',
+    supportEmail: 'sutraverse11@gmail.com',
+    socials: {
+        instagram: '',
+        linkedin: '',
+        github: '',
+        youtube: ''
+    },
+    maintenanceMode: false,
+    maintenanceMessage: 'We are performing scheduled maintenance. We will be back shortly!'
 };
 
 // Restore cached branding text instantly so the college name doesn't flash blank
@@ -36,7 +73,22 @@ function getCachedBranding() {
         const cached = localStorage.getItem('sutra_college_branding_text');
         if (cached) {
             const parsed = JSON.parse(cached);
-            return { ...DEFAULT_BRANDING, ...parsed };
+            return {
+                ...DEFAULT_BRANDING,
+                ...parsed,
+                featureToggles: {
+                    ...DEFAULT_BRANDING.featureToggles,
+                    ...(parsed.featureToggles || {})
+                },
+                announcement: {
+                    ...DEFAULT_BRANDING.announcement,
+                    ...(parsed.announcement || {})
+                },
+                socials: {
+                    ...DEFAULT_BRANDING.socials,
+                    ...(parsed.socials || {})
+                }
+            };
         }
     } catch (e) {}
     return DEFAULT_BRANDING;
@@ -67,6 +119,18 @@ export function CollegeProvider({ children }) {
                         ...data,
                         letterColors: data.letterColors || {},
                         letterColorsLight: data.letterColorsLight || {},
+                        featureToggles: {
+                            ...DEFAULT_BRANDING.featureToggles,
+                            ...(data.featureToggles || {})
+                        },
+                        announcement: {
+                            ...DEFAULT_BRANDING.announcement,
+                            ...(data.announcement || {})
+                        },
+                        socials: {
+                            ...DEFAULT_BRANDING.socials,
+                            ...(data.socials || {})
+                        }
                     };
                     setBranding(newBranding);
                     // Cache text fields so they load instantly on next visit
@@ -78,6 +142,21 @@ export function CollegeProvider({ children }) {
                             heroSubtitle: newBranding.heroSubtitle,
                             letterColors: newBranding.letterColors,
                             letterColorsLight: newBranding.letterColorsLight,
+                            featureToggles: newBranding.featureToggles,
+                            announcement: newBranding.announcement,
+                            heroPlaceholder: newBranding.heroPlaceholder,
+                            showHeroOrbs: newBranding.showHeroOrbs,
+                            ctaPilotText: newBranding.ctaPilotText,
+                            ctaPilotLink: newBranding.ctaPilotLink,
+                            ctaFacultyText: newBranding.ctaFacultyText,
+                            ctaFacultyLink: newBranding.ctaFacultyLink,
+                            developedByName: newBranding.developedByName,
+                            developedByLink: newBranding.developedByLink,
+                            supportPhone: newBranding.supportPhone,
+                            supportEmail: newBranding.supportEmail,
+                            socials: newBranding.socials,
+                            maintenanceMode: newBranding.maintenanceMode,
+                            maintenanceMessage: newBranding.maintenanceMessage,
                         }));
                     } catch (e) {}
                 }
@@ -121,7 +200,12 @@ export function CollegeProvider({ children }) {
     }, [branding, loaded, theme]);
 
     return (
-        <CollegeContext.Provider value={{ branding, loaded }}>
+        <CollegeContext.Provider value={{
+            branding,
+            loaded,
+            featureToggles: branding.featureToggles,
+            announcement: branding.announcement
+        }}>
             {children}
         </CollegeContext.Provider>
     );
