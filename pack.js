@@ -33,12 +33,32 @@ archive.pipe(output);
 // append files from a sub-directory, putting its contents at the root of archive
 archive.glob('**/*', {
   cwd: __dirname,
-  ignore: ['node_modules/**', '.git/**', '.next/cache/**', 'pack.js', '.github/**']
+  ignore: [
+    '**/node_modules/**',
+    '**/.git/**',
+    '**/.next/**',
+    'pack*.js',
+    '**/.github/**',
+    '**/*.zip',
+    '**/*.pdf',
+    '**/*.docx',
+    '**/*.doc',
+    '**/*.pptx',
+    '**/*.ppt',
+    '**/sutraverse-deployment/**',
+    '**/_deploy/**',
+    '**/bee_temp_extract/**',
+    '**/fwdengineeringphysicsnotesandppt/**'
+  ]
 });
 
 archive.glob('.*', {
   cwd: __dirname,
-  ignore: ['.git/**', '.github/**']
+  ignore: [
+    '**/.git/**',
+    '**/.github/**',
+    '**/.next/**'
+  ]
 });
 
 archive.finalize();

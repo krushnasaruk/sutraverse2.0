@@ -4,14 +4,22 @@ import { NextResponse } from 'next/server';
 const rateLimit = new Map();
 
 // Configuration
-const RATE_LIMIT_MAX = 60; // Max requests
+const RATE_LIMIT_MAX = 500; // 500 requests per minute
 const RATE_LIMIT_WINDOW_MS = 60 * 1000; // 1 minute
 
 export function proxy(request) {
-    // 1. IP Ban check (Placeholder for future database integration)
-    const ip = request.headers.get('x-forwarded-for') || request.ip || 'unknown';
+    const { pathname } = request.nextUrl;
     
-    // 2. Rate Limiting Logic
+    // Only rate limit API routes and sensitive paths (like login/signup)
+    // Do not rate limit static assets, images, or general page navigation
+    const isApi = pathname.startsWith('/api');
+    const isSensitive = pathname.startsWith('/login') || pathname.startsWith('/signup');
+    
+    if (!isApi && !isSensitive) {
+        return NextResponse.next();
+    }
+
+    const ip = request.headers.get('x-forwarded-for') || request.ip || 'unknown';
     const now = Date.now();
     
     if (!rateLimit.has(ip)) {
@@ -45,7 +53,6 @@ export const config = {
     matcher: [
         /*
          * Match all request paths except for the ones starting with:
-         * - api (API routes) -> We might want to rate limit APIs actually, so let's include them.
          * - _next/static (static files)
          * - _next/image (image optimization files)
          * - favicon.ico (favicon file)

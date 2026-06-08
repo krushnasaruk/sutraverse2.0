@@ -74,6 +74,40 @@ jobs:
           find deployment/next-app -maxdepth 1 -type f \( -name "*.zip" -o -name "*.pdf" -o -name "*.docx" -o -name "*.doc" -o -name "*.ppt" -o -name "*.pptx" -o -name "*.txt" -o -name "*.js" -o -name "*.mjs" \) ! -name "server.js" ! -name "check-case.js" -delete
           find deployment/next-app -maxdepth 1 -type d \( -name "*pyq*" -o -name "*pattern*" -o -name "*physics*" -o -name "*bee*" -o -name "sutraverse-deployment" -o -name "_deploy" \) -exec rm -rf {} +
 
+          # =========================================================================
+          # STATIC ASSET BYPASS OPTIMIZATION (Offload serving static assets to Apache)
+          # =========================================================================
+          mkdir -p deployment/public/_next
+          
+          # Copy public files and static chunks directly to the root public/ directory
+          rsync -av --exclude='*.pdf' --exclude='*.zip' --exclude='uploads/' --exclude='pyqs/' public/ deployment/public/
+          cp -r .next/static deployment/public/_next/static
+          
+          # Create root .htaccess file for gzip compression, caching headers, and Passenger rules
+          cat << 'EOF' > deployment/.htaccess
+          # Enable Compression
+          <IfModule mod_deflate.c>
+            AddOutputFilterByType DEFLATE text/html text/plain text/xml text/css application/javascript application/json
+          </IfModule>
+
+          # Enable Caching Headers
+          <IfModule mod_expires.c>
+            ExpiresActive On
+            ExpiresDefault "access plus 1 month"
+            ExpiresByType text/css "access plus 1 year"
+            ExpiresByType application/javascript "access plus 1 year"
+            ExpiresByType image/png "access plus 1 year"
+            ExpiresByType image/jpeg "access plus 1 year"
+            ExpiresByType image/gif "access plus 1 year"
+            ExpiresByType image/x-icon "access plus 1 year"
+            ExpiresByType image/svg+xml "access plus 1 year"
+          </IfModule>
+          EOF
+          
+          # Force Passenger reload by touching tmp/restart.txt in the deployment root
+          mkdir -p deployment/tmp
+          touch deployment/tmp/restart.txt
+
           
           # Create root server.js for cPanel Passenger
           cat << 'EOF' > deployment/server.js

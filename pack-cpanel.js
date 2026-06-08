@@ -39,7 +39,41 @@ async function packStandaloneCPanel() {
   const staticDest = path.join(standaloneDir, '.next', 'static');
   if (fs.existsSync(staticSrc)) {
     await fs.copy(staticSrc, staticDest);
+    
+    // Copy for Apache static bypass: public/_next/static
+    const publicStaticDest = path.join(standaloneDir, 'public', '_next', 'static');
+    await fs.copy(staticSrc, publicStaticDest);
+    console.log("  ✓ Configured Apache Static Asset Bypassing");
   }
+
+  // ── 2.3 Create .htaccess for gzip compression & caching ──
+  const htaccessPath = path.join(standaloneDir, '.htaccess');
+  const htaccessContent = `# Enable Compression
+<IfModule mod_deflate.c>
+  AddOutputFilterByType DEFLATE text/html text/plain text/xml text/css application/javascript application/json
+</IfModule>
+
+# Enable Caching Headers
+<IfModule mod_expires.c>
+  ExpiresActive On
+  ExpiresDefault "access plus 1 month"
+  ExpiresByType text/css "access plus 1 year"
+  ExpiresByType application/javascript "access plus 1 year"
+  ExpiresByType image/png "access plus 1 year"
+  ExpiresByType image/jpeg "access plus 1 year"
+  ExpiresByType image/gif "access plus 1 year"
+  ExpiresByType image/x-icon "access plus 1 year"
+  ExpiresByType image/svg+xml "access plus 1 year"
+</IfModule>
+`;
+  await fs.writeFile(htaccessPath, htaccessContent);
+  console.log("  ✓ Generated root .htaccess");
+
+  // ── 2.4 Create Passenger auto-restart trigger file ──
+  const restartPath = path.join(standaloneDir, 'tmp', 'restart.txt');
+  await fs.ensureDir(path.dirname(restartPath));
+  await fs.writeFile(restartPath, '');
+  console.log("  ✓ Created Passenger reload trigger");
 
   // ── 2.5 Copy .env.local to standalone ──
   const envSrc = path.join(rootDir, '.env.local');
