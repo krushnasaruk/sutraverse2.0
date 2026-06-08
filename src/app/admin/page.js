@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { collection, getDocs, doc, updateDoc, deleteDoc, query, where, setDoc, getDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { useAuth } from '@/context/AuthContext';
@@ -17,6 +18,19 @@ const TYPES = ['Notes', 'PYQ', 'Assignment'];
 const BRANCHES = ['Computer', 'IT', 'Mechanical', 'Civil', 'Electrical', 'Electronics'];
 const YEARS = ['1st Year', '2nd Year', '3rd Year', '4th Year'];
 const DIVISIONS = ['A', 'B', 'C', 'D', 'E'];
+
+const FEATURE_DESCRIPTIONS = {
+    youtube: { label: 'YouTube Lectures', desc: 'Video lecture library' },
+    community: { label: 'Community', desc: 'Discussion forum & student interaction' },
+    clubs: { label: 'Clubs', desc: 'Student clubs & organizations' },
+    news: { label: 'College News', desc: 'News feed & notices' },
+    examMode: { label: 'Exam Mode', desc: 'Timed practice tests' },
+    paperAnalysis: { label: 'Paper Analysis', desc: 'Past paper analysis tools' },
+    assignments: { label: 'Assignments', desc: 'Assignment tracking & management' },
+    leaderboard: { label: 'Leaderboard', desc: 'Contributor rankings' },
+    aiTutor: { label: 'AI Tutor', desc: 'AI-powered study assistant' },
+    pyqs: { label: 'Previous Year Questions', desc: 'PYQ archive' }
+};
 
 export default function AdminPage() {
     const { user } = useAuth();
@@ -45,9 +59,52 @@ export default function AdminPage() {
     const [brandingLoaded, setBrandingLoaded] = useState(false);
     const [editingTheme, setEditingTheme] = useState('dark');
 
+    // Customization State
+    const [customForm, setCustomForm] = useState({
+        featureToggles: {
+            youtube: true,
+            community: true,
+            clubs: true,
+            news: true,
+            examMode: true,
+            paperAnalysis: true,
+            assignments: true,
+            leaderboard: true,
+            aiTutor: true,
+            pyqs: true
+        },
+        announcement: {
+            enabled: false,
+            text: '',
+            link: '',
+            color: '#3b82f6',
+            expiresAt: ''
+        },
+        heroPlaceholder: 'Search for DBMS notes, DSA questions, Physics...',
+        showHeroOrbs: true,
+        ctaPilotText: 'Pilot Implementation',
+        ctaPilotLink: '',
+        ctaFacultyText: 'Faculty Onboarding',
+        ctaFacultyLink: '/about',
+        developedByName: 'Krushna Saruk',
+        developedByLink: 'https://krushnasaruk.in',
+        supportPhone: '+91 9834514884',
+        supportEmail: 'sutraverse11@gmail.com',
+        socials: {
+            instagram: '',
+            linkedin: '',
+            github: '',
+            youtube: ''
+        },
+        maintenanceMode: false,
+        maintenanceMessage: 'We are performing scheduled maintenance. We will be back shortly!'
+    });
+    const [customSaving, setCustomSaving] = useState(false);
+    const [customLoaded, setCustomLoaded] = useState(false);
+
     // Modal State
     const [editingFile, setEditingFile] = useState(null);
-    const [editForm, setEditForm] = useState({ type: '', subject: '', branch: '', year: '' });
+    const [editForm, setEditForm] = useState({ title: '', type: '', subject: '', branch: '', year: '' });
 
     const [editingUser, setEditingUser] = useState(null);
     const [userForm, setUserForm] = useState({ 
@@ -93,7 +150,9 @@ export default function AdminPage() {
                 fetchClubs();
             } else if (tab === 'branding' && !brandingLoaded) {
                 loadBranding();
-            } else {
+            } else if (tab === 'customize' && !customLoaded) {
+                loadCustomize();
+            } else if (tab !== 'youtube' && tab !== 'system') {
                 fetchFiles();
             }
         } else {
@@ -142,12 +201,86 @@ export default function AdminPage() {
                 applyColorsGlobally: brandingForm.applyColorsGlobally,
                 updatedAt: new Date().toISOString(),
                 updatedBy: user?.email || 'admin',
-            });
+            }, { merge: true });
             alert('Branding saved successfully! Changes will appear across the platform.');
         } catch (e) {
             alert('Error saving branding: ' + e.message);
         }
         setBrandingSaving(false);
+    };
+
+    const loadCustomize = async () => {
+        try {
+            const snap = await getDoc(doc(db, 'settings', 'college'));
+            if (snap.exists()) {
+                const data = snap.data();
+                setCustomForm({
+                    featureToggles: {
+                        ...customForm.featureToggles,
+                        ...(data.featureToggles || {})
+                    },
+                    announcement: {
+                        ...customForm.announcement,
+                        ...(data.announcement || {}),
+                        expiresAt: data.announcement?.expiresAt || ''
+                    },
+                    heroPlaceholder: data.heroPlaceholder ?? 'Search for DBMS notes, DSA questions, Physics...',
+                    showHeroOrbs: data.showHeroOrbs ?? true,
+                    ctaPilotText: data.ctaPilotText ?? 'Pilot Implementation',
+                    ctaPilotLink: data.ctaPilotLink ?? '',
+                    ctaFacultyText: data.ctaFacultyText ?? 'Faculty Onboarding',
+                    ctaFacultyLink: data.ctaFacultyLink ?? '/about',
+                    developedByName: data.developedByName ?? 'Krushna Saruk',
+                    developedByLink: data.developedByLink ?? 'https://krushnasaruk.in',
+                    supportPhone: data.supportPhone ?? '+91 9834514884',
+                    supportEmail: data.supportEmail ?? 'sutraverse11@gmail.com',
+                    socials: {
+                        instagram: data.socials?.instagram ?? '',
+                        linkedin: data.socials?.linkedin ?? '',
+                        github: data.socials?.github ?? '',
+                        youtube: data.socials?.youtube ?? ''
+                    },
+                    maintenanceMode: data.maintenanceMode ?? false,
+                    maintenanceMessage: data.maintenanceMessage ?? 'We are performing scheduled maintenance. We will be back shortly!'
+                });
+            }
+            setCustomLoaded(true);
+        } catch (e) {
+            console.warn('Error loading custom settings:', e);
+            setCustomLoaded(true);
+        }
+    };
+
+    const saveCustomize = async () => {
+        setCustomSaving(true);
+        try {
+            await setDoc(doc(db, 'settings', 'college'), {
+                featureToggles: customForm.featureToggles,
+                announcement: {
+                    ...customForm.announcement,
+                    expiresAt: customForm.announcement.expiresAt || null
+                },
+                heroPlaceholder: customForm.heroPlaceholder || 'Search for DBMS notes, DSA questions, Physics...',
+                showHeroOrbs: customForm.showHeroOrbs,
+                ctaPilotText: customForm.ctaPilotText || 'Pilot Implementation',
+                ctaPilotLink: customForm.ctaPilotLink || '',
+                ctaFacultyText: customForm.ctaFacultyText || 'Faculty Onboarding',
+                ctaFacultyLink: customForm.ctaFacultyLink || '/about',
+                developedByName: customForm.developedByName || 'Krushna Saruk',
+                developedByLink: customForm.developedByLink || 'https://krushnasaruk.in',
+                supportPhone: customForm.supportPhone || '+91 9834514884',
+                supportEmail: customForm.supportEmail || 'sutraverse11@gmail.com',
+                socials: customForm.socials || {},
+                maintenanceMode: customForm.maintenanceMode ?? false,
+                maintenanceMessage: customForm.maintenanceMessage || 'We are performing scheduled maintenance. We will be back shortly!',
+                updatedAt: new Date().toISOString(),
+                updatedBy: user?.email || 'admin',
+            }, { merge: true });
+            alert('Custom settings saved successfully!');
+        } catch (e) {
+            alert('Error saving custom settings: ' + e.message);
+        }
+        setCustomSaving(false);
     };
 
     const setLetterColor = (index, color) => {
@@ -489,6 +622,7 @@ export default function AdminPage() {
     const openEditModal = (file) => {
         setEditingFile(file);
         setEditForm({
+            title: file.title || '',
             type: file.type || 'Notes',
             subject: file.subject || '',
             branch: file.branch || 'Computer',
@@ -500,20 +634,29 @@ export default function AdminPage() {
         if (!editingFile) return;
         setActionLoading(editingFile.id);
         try {
-            await updateDoc(doc(db, 'files', editingFile.id), {
+            const updatedData = {
+                title: editForm.title || editingFile.title,
                 type: editForm.type,
                 subject: editForm.subject,
                 branch: editForm.branch,
                 year: editForm.year,
                 isReported: false,
                 reportCount: 0
-            });
-            alert('Metadata corrected successfully! Report has been cleared.');
-            setFiles(prev => prev.filter(f => f.id !== editingFile.id));
+            };
+            await updateDoc(doc(db, 'files', editingFile.id), updatedData);
+            
+            alert('Metadata updated successfully!');
+            
+            if (tab === 'reported') {
+                setFiles(prev => prev.filter(f => f.id !== editingFile.id));
+            } else {
+                setFiles(prev => prev.map(f => f.id === editingFile.id ? { ...f, ...updatedData } : f));
+            }
+            
             setEditingFile(null);
         } catch (error) {
             console.error('Error saving path:', error);
-            alert('Failed to update file path.');
+            alert('Failed to update file metadata.');
         }
         setActionLoading('');
     };
@@ -685,6 +828,9 @@ export default function AdminPage() {
                     </button>
                     <button className={`${styles.tab} ${tab === 'branding' ? styles.tabActive : ''}`} onClick={() => setTab('branding')} style={{background: tab === 'branding' ? 'rgba(59, 130, 246, 0.1)' : 'transparent'}}>
                         🎨 Branding
+                    </button>
+                    <button className={`${styles.tab} ${tab === 'customize' ? styles.tabActive : ''}`} onClick={() => setTab('customize')} style={{background: tab === 'customize' ? 'rgba(16, 185, 129, 0.1)' : 'transparent'}}>
+                        🔧 Customize
                     </button>
                 </div>
 
@@ -1061,6 +1207,424 @@ export default function AdminPage() {
                             </button>
                         </div>
                     </div>
+                ) : tab === 'customize' ? (
+                    <div className={styles.brandingContainer}>
+                        <div className={styles.brandingHeader}>
+                            <h2>🔧 Customize Site Features & Alerts</h2>
+                            <p>Control feature availability and publish urgent announcements sitewide.</p>
+                        </div>
+                        
+                        <div className={styles.brandingGrid}>
+                            <div className={styles.brandingCard}>
+                                <h3>Feature Toggles</h3>
+                                <p style={{color: 'var(--text-secondary)', fontSize: '0.9rem', marginBottom: '20px'}}>
+                                    Enable or disable modules across the platform. Disabled features will be hidden from navigation.
+                                </p>
+                                
+                                <div className={styles.toggleGrid}>
+                                    {Object.entries(FEATURE_DESCRIPTIONS).map(([key, info]) => (
+                                        <div key={key} className={styles.toggleCard}>
+                                            <div className={styles.toggleInfo}>
+                                                <div className={styles.toggleLabel}>{info.label}</div>
+                                                <div className={styles.toggleDesc}>{info.desc}</div>
+                                            </div>
+                                            <label className={styles.switch}>
+                                                <input 
+                                                    type="checkbox"
+                                                    checked={customForm.featureToggles[key] ?? true}
+                                                    onChange={e => {
+                                                        const newVal = e.target.checked;
+                                                        setCustomForm(prev => ({
+                                                            ...prev,
+                                                            featureToggles: {
+                                                                ...prev.featureToggles,
+                                                                [key]: newVal
+                                                            }
+                                                        }));
+                                                    }}
+                                                />
+                                                <span className={styles.slider}></span>
+                                            </label>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                            
+                            <div className={styles.brandingCard}>
+                                <h3>Sitewide Announcement Banner</h3>
+                                <p style={{color: 'var(--text-secondary)', fontSize: '0.9rem', marginBottom: '20px'}}>
+                                    Display a prominent notice banner at the very top of every page.
+                                </p>
+                                
+                                <div className={styles.checkboxGroup} style={{marginBottom: '20px'}}>
+                                    <input 
+                                        type="checkbox" 
+                                        id="bannerEnabled" 
+                                        checked={customForm.announcement.enabled} 
+                                        onChange={e => setCustomForm({
+                                            ...customForm,
+                                            announcement: {
+                                                ...customForm.announcement,
+                                                enabled: e.target.checked
+                                            }
+                                        })} 
+                                    />
+                                    <label htmlFor="bannerEnabled" style={{fontWeight: 'bold', fontSize: '1rem'}}>Enable Announcement Banner</label>
+                                </div>
+                                
+                                <div className={styles.formGroup}>
+                                    <label>Banner Message Text</label>
+                                    <input 
+                                        type="text" 
+                                        className={styles.modalInput}
+                                        value={customForm.announcement.text} 
+                                        onChange={e => setCustomForm({
+                                            ...customForm,
+                                            announcement: {
+                                                ...customForm.announcement,
+                                                text: e.target.value
+                                            }
+                                        })}
+                                        placeholder="e.g. 📢 End Sem Exam schedule has been released! Check dates now."
+                                        disabled={!customForm.announcement.enabled}
+                                    />
+                                </div>
+                                
+                                <div className={styles.formGroup}>
+                                    <label>Action Link URL (Optional)</label>
+                                    <input 
+                                        type="text" 
+                                        className={styles.modalInput}
+                                        value={customForm.announcement.link} 
+                                        onChange={e => setCustomForm({
+                                            ...customForm,
+                                            announcement: {
+                                                ...customForm.announcement,
+                                                link: e.target.value
+                                            }
+                                        })}
+                                        placeholder="e.g. /news or https://college.edu/schedule.pdf"
+                                        disabled={!customForm.announcement.enabled}
+                                    />
+                                </div>
+                                
+                                <div className={styles.formRow} style={{display: 'flex', gap: '15px'}}>
+                                    <div className={styles.formGroup} style={{flex: 1}}>
+                                        <label>Banner Color</label>
+                                        <div style={{display: 'flex', gap: '10px', alignItems: 'center'}}>
+                                            <input 
+                                                type="color" 
+                                                className={styles.colorPicker}
+                                                value={customForm.announcement.color || '#3b82f6'} 
+                                                onChange={e => setCustomForm({
+                                                    ...customForm,
+                                                    announcement: {
+                                                        ...customForm.announcement,
+                                                        color: e.target.value
+                                                    }
+                                                })}
+                                                disabled={!customForm.announcement.enabled}
+                                            />
+                                            <input 
+                                                type="text" 
+                                                className={styles.modalInput}
+                                                value={customForm.announcement.color || '#3b82f6'} 
+                                                onChange={e => setCustomForm({
+                                                    ...customForm,
+                                                    announcement: {
+                                                        ...customForm.announcement,
+                                                        color: e.target.value
+                                                    }
+                                                })}
+                                                style={{flex: 1}}
+                                                disabled={!customForm.announcement.enabled}
+                                            />
+                                        </div>
+                                    </div>
+                                    
+                                    <div className={styles.formGroup} style={{flex: 1}}>
+                                        <label>Auto-Expiry Date & Time (Optional)</label>
+                                        <input 
+                                            type="datetime-local" 
+                                            className={styles.modalInput}
+                                            value={customForm.announcement.expiresAt || ''} 
+                                            onChange={e => setCustomForm({
+                                                ...customForm,
+                                                announcement: {
+                                                    ...customForm.announcement,
+                                                    expiresAt: e.target.value
+                                                }
+                                            })}
+                                            disabled={!customForm.announcement.enabled}
+                                        />
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            {customForm.announcement.enabled && customForm.announcement.text && (
+                                <div className={`${styles.brandingCard} ${styles.fullWidth}`}>
+                                    <h3>Live Banner Preview</h3>
+                                    <div style={{marginTop: '15px'}}>
+                                        <div style={{
+                                            backgroundColor: customForm.announcement.color || '#3b82f6',
+                                            color: '#ffffff',
+                                            padding: '10px 20px',
+                                            borderRadius: '8px',
+                                            textAlign: 'center',
+                                            fontWeight: 500,
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            justifyContent: 'center',
+                                            gap: '10px',
+                                            fontSize: '0.9rem',
+                                            cursor: customForm.announcement.link ? 'pointer' : 'default',
+                                            boxShadow: '0 4px 12px rgba(0,0,0,0.1)'
+                                        }}>
+                                            <span>{customForm.announcement.text}</span>
+                                            {customForm.announcement.link && (
+                                                <span style={{
+                                                    textDecoration: 'underline',
+                                                    fontSize: '0.8rem',
+                                                    background: 'rgba(255, 255, 255, 0.2)',
+                                                    padding: '2px 6px',
+                                                    borderRadius: '4px'
+                                                }}>Learn more →</span>
+                                            )}
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
+
+                            <div className={styles.brandingCard}>
+                                <h3>Hero Section Customization</h3>
+                                <p style={{color: 'var(--text-secondary)', fontSize: '0.9rem', marginBottom: '20px'}}>
+                                    Customize search inputs, background effects, and calls-to-action on the landing page.
+                                </p>
+                                
+                                <div className={styles.formGroup}>
+                                    <label>Search Bar Placeholder</label>
+                                    <input 
+                                        type="text" 
+                                        className={styles.modalInput}
+                                        value={customForm.heroPlaceholder || ''} 
+                                        onChange={e => setCustomForm({...customForm, heroPlaceholder: e.target.value})}
+                                        placeholder="e.g. Search for DBMS notes, DSA questions, Physics..."
+                                    />
+                                </div>
+                                
+                                <div className={styles.checkboxGroup} style={{marginBottom: '20px'}}>
+                                    <input 
+                                        type="checkbox" 
+                                        id="showHeroOrbs" 
+                                        checked={customForm.showHeroOrbs ?? true} 
+                                        onChange={e => setCustomForm({...customForm, showHeroOrbs: e.target.checked})} 
+                                    />
+                                    <label htmlFor="showHeroOrbs" style={{fontWeight: 'bold'}}>Show Decorative Background Orbs</label>
+                                </div>
+                                
+                                <div className={styles.formRow} style={{display: 'flex', gap: '15px', marginBottom: '15px'}}>
+                                    <div className={styles.formGroup} style={{flex: 1}}>
+                                        <label>Pilot CTA Button Text</label>
+                                        <input 
+                                            type="text" 
+                                            className={styles.modalInput}
+                                            value={customForm.ctaPilotText || ''} 
+                                            onChange={e => setCustomForm({...customForm, ctaPilotText: e.target.value})}
+                                            placeholder="e.g. Pilot Implementation"
+                                        />
+                                    </div>
+                                    <div className={styles.formGroup} style={{flex: 1}}>
+                                        <label>Pilot CTA Link URL</label>
+                                        <input 
+                                            type="text" 
+                                            className={styles.modalInput}
+                                            value={customForm.ctaPilotLink || ''} 
+                                            onChange={e => setCustomForm({...customForm, ctaPilotLink: e.target.value})}
+                                            placeholder="Leave blank to default to institutional mail"
+                                        />
+                                    </div>
+                                </div>
+                                
+                                <div className={styles.formRow} style={{display: 'flex', gap: '15px'}}>
+                                    <div className={styles.formGroup} style={{flex: 1}}>
+                                        <label>Faculty CTA Button Text</label>
+                                        <input 
+                                            type="text" 
+                                            className={styles.modalInput}
+                                            value={customForm.ctaFacultyText || ''} 
+                                            onChange={e => setCustomForm({...customForm, ctaFacultyText: e.target.value})}
+                                            placeholder="e.g. Faculty Onboarding"
+                                        />
+                                    </div>
+                                    <div className={styles.formGroup} style={{flex: 1}}>
+                                        <label>Faculty CTA Link URL</label>
+                                        <input 
+                                            type="text" 
+                                            className={styles.modalInput}
+                                            value={customForm.ctaFacultyLink || ''} 
+                                            onChange={e => setCustomForm({...customForm, ctaFacultyLink: e.target.value})}
+                                            placeholder="e.g. /about"
+                                        />
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div className={styles.brandingCard}>
+                                <h3>Footer & Support Settings</h3>
+                                <p style={{color: 'var(--text-secondary)', fontSize: '0.9rem', marginBottom: '20px'}}>
+                                    Configure institutional contact info, support links, and platform developers.
+                                </p>
+                                
+                                <div className={styles.formRow} style={{display: 'flex', gap: '15px', marginBottom: '15px'}}>
+                                    <div className={styles.formGroup} style={{flex: 1}}>
+                                        <label>Developed By (Name)</label>
+                                        <input 
+                                            type="text" 
+                                            className={styles.modalInput}
+                                            value={customForm.developedByName || ''} 
+                                            onChange={e => setCustomForm({...customForm, developedByName: e.target.value})}
+                                            placeholder="e.g. Krushna Saruk"
+                                        />
+                                    </div>
+                                    <div className={styles.formGroup} style={{flex: 1}}>
+                                        <label>Developer Website Link</label>
+                                        <input 
+                                            type="text" 
+                                            className={styles.modalInput}
+                                            value={customForm.developedByLink || ''} 
+                                            onChange={e => setCustomForm({...customForm, developedByLink: e.target.value})}
+                                            placeholder="e.g. https://krushnasaruk.in"
+                                        />
+                                    </div>
+                                </div>
+                                
+                                <div className={styles.formRow} style={{display: 'flex', gap: '15px'}}>
+                                    <div className={styles.formGroup} style={{flex: 1}}>
+                                        <label>Support Contact Phone</label>
+                                        <input 
+                                            type="text" 
+                                            className={styles.modalInput}
+                                            value={customForm.supportPhone || ''} 
+                                            onChange={e => setCustomForm({...customForm, supportPhone: e.target.value})}
+                                            placeholder="e.g. +91 9834514884"
+                                        />
+                                    </div>
+                                    <div className={styles.formGroup} style={{flex: 1}}>
+                                        <label>Support Email Address</label>
+                                        <input 
+                                            type="email" 
+                                            className={styles.modalInput}
+                                            value={customForm.supportEmail || ''} 
+                                            onChange={e => setCustomForm({...customForm, supportEmail: e.target.value})}
+                                            placeholder="e.g. support@sutraverse.com"
+                                        />
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div className={`${styles.brandingCard} ${styles.fullWidth}`}>
+                                <h3>Social Media Links</h3>
+                                <p style={{color: 'var(--text-secondary)', fontSize: '0.9rem', marginBottom: '15px'}}>
+                                    Configure institutional social pages visible to students and visitors in the footer.
+                                </p>
+                                
+                                <div className={styles.formRow} style={{display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '15px'}}>
+                                    <div className={styles.formGroup}>
+                                        <label>LinkedIn Link</label>
+                                        <input 
+                                            type="text" 
+                                            className={styles.modalInput}
+                                            value={customForm.socials?.linkedin || ''} 
+                                            onChange={e => setCustomForm({
+                                                ...customForm,
+                                                socials: { ...customForm.socials, linkedin: e.target.value }
+                                            })}
+                                            placeholder="https://linkedin.com/in/..."
+                                        />
+                                    </div>
+                                    <div className={styles.formGroup}>
+                                        <label>Instagram Link</label>
+                                        <input 
+                                            type="text" 
+                                            className={styles.modalInput}
+                                            value={customForm.socials?.instagram || ''} 
+                                            onChange={e => setCustomForm({
+                                                ...customForm,
+                                                socials: { ...customForm.socials, instagram: e.target.value }
+                                            })}
+                                            placeholder="https://instagram.com/..."
+                                        />
+                                    </div>
+                                    <div className={styles.formGroup}>
+                                        <label>GitHub Profile Link</label>
+                                        <input 
+                                            type="text" 
+                                            className={styles.modalInput}
+                                            value={customForm.socials?.github || ''} 
+                                            onChange={e => setCustomForm({
+                                                ...customForm,
+                                                socials: { ...customForm.socials, github: e.target.value }
+                                            })}
+                                            placeholder="https://github.com/..."
+                                        />
+                                    </div>
+                                    <div className={styles.formGroup}>
+                                        <label>YouTube Channel Link</label>
+                                        <input 
+                                            type="text" 
+                                            className={styles.modalInput}
+                                            value={customForm.socials?.youtube || ''} 
+                                            onChange={e => setCustomForm({
+                                                ...customForm,
+                                                socials: { ...customForm.socials, youtube: e.target.value }
+                                            })}
+                                            placeholder="https://youtube.com/..."
+                                        />
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div className={`${styles.brandingCard} ${styles.fullWidth}`}>
+                                <h3>System Maintenance Mode</h3>
+                                <p style={{color: 'var(--text-secondary)', fontSize: '0.9rem', marginBottom: '20px'}}>
+                                    Prevent non-admin users from accessing the site during system upgrades or migrations. Admins can still access all features.
+                                </p>
+                                
+                                <div className={styles.checkboxGroup} style={{marginBottom: '20px'}}>
+                                    <input 
+                                        type="checkbox" 
+                                        id="maintenanceMode" 
+                                        checked={customForm.maintenanceMode ?? false} 
+                                        onChange={e => setCustomForm({...customForm, maintenanceMode: e.target.checked})} 
+                                    />
+                                    <label htmlFor="maintenanceMode" style={{fontWeight: 'bold', fontSize: '1rem'}}>Enable Maintenance Mode (Sitewide Alert)</label>
+                                </div>
+                                
+                                <div className={styles.formGroup}>
+                                    <label>Custom Maintenance Message</label>
+                                    <textarea 
+                                        className={styles.modalInput}
+                                        value={customForm.maintenanceMessage || ''} 
+                                        onChange={e => setCustomForm({...customForm, maintenanceMessage: e.target.value})}
+                                        placeholder="e.g. We are performing scheduled upgrades to improve campus database performance. We will be back online shortly!"
+                                        disabled={!customForm.maintenanceMode}
+                                        rows={3}
+                                    />
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div className={styles.brandingActions}>
+                            <button 
+                                className={styles.saveBrandingBtn} 
+                                onClick={saveCustomize}
+                                disabled={customSaving}
+                                style={{background: 'var(--primary)'}}
+                            >
+                                {customSaving ? 'Saving...' : 'Save Customize Settings'}
+                            </button>
+                        </div>
+                    </div>
                 ) : tab === 'system' ? (
                     <div style={{marginTop: '20px'}}>
                         
@@ -1179,11 +1743,34 @@ export default function AdminPage() {
                                                 <IconCheck size={16} /> {actionLoading === file.id ? '...' : 'Approve'}
                                             </button>
                                             <button
+                                                className={`${styles.actionBtn} ${styles.editBtn}`}
+                                                onClick={() => openEditModal(file)}
+                                            >
+                                                <IconPen size={16} /> Edit
+                                            </button>
+                                            <button
                                                 className={`${styles.actionBtn} ${styles.rejectBtn}`}
                                                 onClick={() => handleReject(file)}
                                                 disabled={actionLoading === file.id}
                                             >
                                                 <IconX size={16} /> Reject
+                                            </button>
+                                        </>
+                                    )}
+                                    {tab === 'approved' && (
+                                        <>
+                                            <button
+                                                className={`${styles.actionBtn} ${styles.editBtn}`}
+                                                onClick={() => openEditModal(file)}
+                                            >
+                                                <IconPen size={16} /> Edit
+                                            </button>
+                                            <button
+                                                className={`${styles.actionBtn} ${styles.rejectBtn}`}
+                                                onClick={() => handleReject(file)}
+                                                disabled={actionLoading === file.id}
+                                            >
+                                                <IconX size={16} /> Delete
                                             </button>
                                         </>
                                     )}
@@ -1218,37 +1805,44 @@ export default function AdminPage() {
                 )}
             </div>
 
-            {/* EDIT PATH MODAL */}
-            {editingFile && (
+            {/* EDIT FILE MODAL — rendered via Portal */}
+            {editingFile && createPortal(
                 <div className={styles.modalOverlay}>
-                    <div className={styles.modalContent}>
-                        <h2 className={styles.modalTitle}>Fix Misplaced File</h2>
-                        <p className={styles.modalDesc}>Move <strong>{editingFile.title}</strong> to the correct directory.</p>
+                    <div className={styles.modalContent} style={{ maxWidth: '520px' }}>
+                        <h2 className={styles.modalTitle}>Edit Document Metadata</h2>
+                        <p className={styles.modalDesc}>Update metadata for <strong>{editingFile.title}</strong>.</p>
                         
                         <div className={styles.formGroup}>
-                            <label>File Type</label>
-                            <select className={styles.modalSelect} value={editForm.type} onChange={e => setEditForm({...editForm, type: e.target.value})}>
-                                {TYPES.map(t => <option key={t} value={t}>{t}</option>)}
-                            </select>
+                            <label>Document Title</label>
+                            <input type="text" className={styles.modalInput} value={editForm.title} onChange={e => setEditForm({...editForm, title: e.target.value})} placeholder="e.g. Unit 1 Notes" />
                         </div>
 
-                        <div className={styles.formGroup}>
-                            <label>Subject</label>
-                            <input type="text" className={styles.modalInput} value={editForm.subject} onChange={e => setEditForm({...editForm, subject: e.target.value})} placeholder="e.g. Physics" />
+                        <div className={styles.formRow} style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                            <div className={styles.formGroup}>
+                                <label>File Type</label>
+                                <select className={styles.modalSelect} value={editForm.type} onChange={e => setEditForm({...editForm, type: e.target.value})}>
+                                    {TYPES.map(t => <option key={t} value={t}>{t}</option>)}
+                                </select>
+                            </div>
+                            <div className={styles.formGroup}>
+                                <label>Subject</label>
+                                <input type="text" className={styles.modalInput} value={editForm.subject} onChange={e => setEditForm({...editForm, subject: e.target.value})} placeholder="e.g. Physics" />
+                            </div>
                         </div>
 
-                        <div className={styles.formGroup}>
-                            <label>Branch</label>
-                            <select className={styles.modalSelect} value={editForm.branch} onChange={e => setEditForm({...editForm, branch: e.target.value})}>
-                                {BRANCHES.map(b => <option key={b} value={b}>{b}</option>)}
-                            </select>
-                        </div>
-
-                        <div className={styles.formGroup}>
-                            <label>Year</label>
-                            <select className={styles.modalSelect} value={editForm.year} onChange={e => setEditForm({...editForm, year: e.target.value})}>
-                                {YEARS.map(y => <option key={y} value={y}>{y}</option>)}
-                            </select>
+                        <div className={styles.formRow} style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                            <div className={styles.formGroup}>
+                                <label>Branch</label>
+                                <select className={styles.modalSelect} value={editForm.branch} onChange={e => setEditForm({...editForm, branch: e.target.value})}>
+                                    {BRANCHES.map(b => <option key={b} value={b}>{b}</option>)}
+                                </select>
+                            </div>
+                            <div className={styles.formGroup}>
+                                <label>Year</label>
+                                <select className={styles.modalSelect} value={editForm.year} onChange={e => setEditForm({...editForm, year: e.target.value})}>
+                                    {YEARS.map(y => <option key={y} value={y}>{y}</option>)}
+                                </select>
+                            </div>
                         </div>
 
                         <div className={styles.modalActions}>
@@ -1258,11 +1852,12 @@ export default function AdminPage() {
                             </button>
                         </div>
                     </div>
-                </div>
+                </div>,
+                document.body
             )}
 
-            {/* EDIT USER & ROLES MODAL */}
-            {editingUser && (
+            {/* EDIT USER & ROLES MODAL — rendered via Portal */}
+            {editingUser && createPortal(
                 <div className={styles.modalOverlay}>
                     <div className={`${styles.modalContent} glass-panel`} style={{ maxWidth: '650px', background: 'var(--background-primary)', border: '1px solid var(--border)', boxShadow: '0 20px 40px rgba(0,0,0,0.4)', borderRadius: '16px' }}>
                         <h2 className={styles.modalTitle} style={{color: 'var(--primary)', fontSize: '1.8rem', marginBottom: '8px'}}>Manage Access & Roles</h2>
@@ -1387,7 +1982,8 @@ export default function AdminPage() {
                             </button>
                         </div>
                     </div>
-                </div>
+                </div>,
+                document.body
             )}
         </div>
     );
