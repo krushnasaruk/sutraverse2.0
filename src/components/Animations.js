@@ -12,21 +12,18 @@ export function ScrollReveal({ children, delay = 0, className = '', style = {} }
         const el = ref.current;
         if (!el) return;
 
-        // Skip animation on mobile or reduced-motion
+        // Skip observer on mobile or reduced-motion
         const isMobile = window.innerWidth <= 768;
         const prefersReduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
         if (isMobile || prefersReduced) {
-            el.style.opacity = '1';
-            el.style.transform = 'none';
             return;
         }
 
         const observer = new IntersectionObserver(
             ([entry]) => {
                 if (entry.isIntersecting) {
-                    el.style.opacity = '1';
-                    el.style.transform = 'translateY(0)';
+                    el.classList.add('scroll-reveal-active');
                     observer.unobserve(el);
                 }
             },
@@ -40,12 +37,9 @@ export function ScrollReveal({ children, delay = 0, className = '', style = {} }
     return (
         <div
             ref={ref}
-            className={className}
+            className={`scroll-reveal ${className}`}
             style={{
-                opacity: 0,
-                transform: 'translateY(12px)',
-                transition: `opacity 0.4s ease ${delay}ms, transform 0.4s ease ${delay}ms`,
-                willChange: 'auto',
+                '--reveal-delay': `${delay}ms`,
                 ...style
             }}
         >

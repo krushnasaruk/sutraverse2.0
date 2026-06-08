@@ -273,9 +273,13 @@ export default function HomePage() {
       {/* ══════════════════════════════════════════════════ */}
       <section className={styles.hero} ref={heroRef}>
         {/* Floating orbs */}
-        <div className={styles.heroOrb1}></div>
-        <div className={styles.heroOrb2}></div>
-        <div className={styles.heroOrb3}></div>
+        {(branding.showHeroOrbs ?? true) && (
+          <>
+            <div className={styles.heroOrb1}></div>
+            <div className={styles.heroOrb2}></div>
+            <div className={styles.heroOrb3}></div>
+          </>
+        )}
 
         <div className={styles.heroInner}>
           <div className={styles.heroBadge}>
@@ -310,7 +314,7 @@ export default function HomePage() {
             <input
               type="text"
               className={styles.heroSearchInput}
-              placeholder="Search for DBMS notes, DSA questions, Physics..."
+              placeholder={branding.heroPlaceholder || "Search for DBMS notes, DSA questions, Physics..."}
               value={heroQuery}
               onChange={(e) => setHeroQuery(e.target.value)}
               suppressHydrationWarning
@@ -603,11 +607,11 @@ export default function HomePage() {
                 <strong style={{color: 'var(--primary)', fontWeight: '800'}}>Sutraverse can evolve into {branding.collegeShortName}’s official academic digital platform.</strong>
               </p>
               <div className={styles.ctaActions}>
-                <Link href={`mailto:admin@${branding.collegeShortName.toLowerCase() || 'sutraverse'}.edu`} className={styles.ctaBtnPrimary}>
-                  Pilot Implementation
+                <Link href={branding.ctaPilotLink || `mailto:admin@${branding.collegeShortName?.toLowerCase() || 'sutraverse'}.edu`} className={styles.ctaBtnPrimary}>
+                  {branding.ctaPilotText || 'Pilot Implementation'}
                 </Link>
-                <Link href="/about" className={styles.ctaBtnSecondary}>
-                  Faculty Onboarding
+                <Link href={branding.ctaFacultyLink || '/about'} className={styles.ctaBtnSecondary}>
+                  {branding.ctaFacultyText || 'Faculty Onboarding'}
                 </Link>
               </div>
             </div>
@@ -650,10 +654,34 @@ export default function HomePage() {
           </div>
           <div className={styles.footerBottom}>
             <span>© 2026 Sutraverse. All rights reserved.</span>
+            
+            {branding.socials && Object.values(branding.socials).some(link => link) && (
+              <div style={{ display: 'flex', gap: '15px', justifyContent: 'center', marginTop: '10px', marginBottom: '10px', flexWrap: 'wrap' }}>
+                {branding.socials.linkedin && (
+                  <a href={branding.socials.linkedin} target="_blank" rel="noopener noreferrer" style={{ fontSize: '0.85rem', textDecoration: 'none', color: 'var(--text-secondary)' }} title="LinkedIn">🔗 LinkedIn</a>
+                )}
+                {branding.socials.instagram && (
+                  <a href={branding.socials.instagram} target="_blank" rel="noopener noreferrer" style={{ fontSize: '0.85rem', textDecoration: 'none', color: 'var(--text-secondary)' }} title="Instagram">📸 Instagram</a>
+                )}
+                {branding.socials.github && (
+                  <a href={branding.socials.github} target="_blank" rel="noopener noreferrer" style={{ fontSize: '0.85rem', textDecoration: 'none', color: 'var(--text-secondary)' }} title="GitHub">💻 GitHub</a>
+                )}
+                {branding.socials.youtube && (
+                  <a href={branding.socials.youtube} target="_blank" rel="noopener noreferrer" style={{ fontSize: '0.85rem', textDecoration: 'none', color: 'var(--text-secondary)' }} title="YouTube">▶️ YouTube</a>
+                )}
+              </div>
+            )}
+
             <div style={{ marginTop: '12px', display: 'flex', flexDirection: 'column', gap: '4px', alignItems: 'center' }}>
-              <a href="https://krushnasaruk.in" target="_blank" rel="noopener noreferrer" style={{ color: 'var(--text-primary)', fontWeight: '700', textDecoration: 'none' }}>Developed by Krushna Saruk</a>
-              <span style={{ color: 'var(--text-muted)' }}>Contact: +91 9834514884</span>
-              <span style={{ color: 'var(--text-muted)' }}>Email: sutraverse@11gmail.com</span>
+              <a href={branding.developedByLink || "https://krushnasaruk.in"} target="_blank" rel="noopener noreferrer" style={{ color: 'var(--text-primary)', fontWeight: '700', textDecoration: 'none' }}>
+                Developed by {branding.developedByName || "Krushna Saruk"}
+              </a>
+              {branding.supportPhone && (
+                <span style={{ color: 'var(--text-muted)' }}>Contact: {branding.supportPhone}</span>
+              )}
+              {branding.supportEmail && (
+                <span style={{ color: 'var(--text-muted)' }}>Email: {branding.supportEmail}</span>
+              )}
             </div>
           </div>
         </div>
