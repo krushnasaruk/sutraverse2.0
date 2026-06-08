@@ -1936,12 +1936,12 @@
 .onboardingOverlay {
     position: fixed;
     inset: 0;
-    background: rgba(0, 0, 0, 0.65);
+    background: rgba(0, 0, 0, 0.7);
     backdrop-filter: blur(12px);
     -webkit-backdrop-filter: blur(12px);
     display: flex;
     justify-content: center;
-    align-items: flex-end;
+    align-items: center;
     z-index: 10000;
     padding: 20px;
     animation: onboardFadeIn 0.3s ease-out;
@@ -1959,9 +1959,14 @@
     border: 1px solid var(--border);
     border-radius: 20px;
     padding: var(--space-xl) var(--space-lg);
-    box-shadow: 0 -8px 48px rgba(0, 0, 0, 0.3);
+    box-shadow: 0 10px 48px rgba(0, 0, 0, 0.4);
     animation: onboardSlideUp 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-    margin-bottom: 16px;
+    max-height: calc(100vh - 40px);
+    overflow-y: auto;
+    scrollbar-width: none;
+}
+.onboardingCard::-webkit-scrollbar {
+    display: none;
 }
 
 @keyframes onboardSlideUp {
@@ -2078,7 +2083,7 @@
     .heroAvatarRing { width: 110px; height: 110px; }
     .heroAvatarInner { top: 8px; left: 8px; width: 94px; height: 94px; }
     .heroAvatarFallback { font-size: 2.2rem; }
-    .heroStats { grid-template-columns: repeat(2, 1fr); gap: 8px; }
+    .heroStats { grid-template-columns: repeat(2, 1fr); gap: 12px; }
     .heroProfile { flex-direction: column; text-align: center; gap: 20px; }
     .heroMeta { align-items: center; }
     .heroPills { justify-content: center; }
@@ -2108,10 +2113,10 @@
     .dockToggleArrowOpen { transform: rotate(180deg); }
     .dockCollapsible { max-height: 0; overflow: hidden; opacity: 0; }
     .dockCollapsibleOpen { max-height: 500px; opacity: 1; margin-top: 12px; }
-    .dockGrid { grid-template-columns: repeat(3, 1fr); gap: 8px; }
+    .dockGrid { grid-template-columns: repeat(3, 1fr); gap: 12px; }
 
     .sectionTitle { font-size: 1.05rem; }
-    .bentoTile { padding: 16px; border-radius: 16px; }
+    .bentoTile { padding: 20px 18px; border-radius: 16px; }
     .profileGrid { grid-template-columns: 1fr; }
     .editGrid { grid-template-columns: 1fr; }
     .liveSessionBanner { flex-direction: column; text-align: center; }
@@ -2482,3 +2487,124 @@
     color: var(--text-secondary);
     text-align: center;
 }
+
+/* ======================================================== */
+/* TABS NAVIGATION                                           */
+/* ======================================================== */
+.dashboardTabsNav {
+    display: flex;
+    justify-content: flex-start;
+    align-items: center;
+    gap: 8px;
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    border-radius: 16px;
+    padding: 6px;
+    margin-bottom: 24px;
+    overflow-x: auto;
+    scrollbar-width: none;
+    backdrop-filter: blur(16px);
+}
+
+.dashboardTabsNav::-webkit-scrollbar {
+    display: none;
+}
+
+.dashboardTabBtn {
+    background: transparent;
+    border: 1px solid transparent;
+    color: var(--text-secondary);
+    padding: 10px 20px;
+    border-radius: 12px;
+    font-size: 0.9rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.25s ease;
+    white-space: nowrap;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.dashboardTabBtn:hover {
+    color: #fff;
+    background: rgba(255, 255, 255, 0.05);
+}
+
+:global(.light) .dashboardTabBtn:hover {
+    color: var(--text-primary) !important;
+    background: rgba(0, 0, 0, 0.04) !important;
+}
+
+.dashboardTabBtnActive {
+    color: #fff !important;
+    background: rgba(99, 102, 241, 0.15) !important;
+    border-color: rgba(99, 102, 241, 0.3) !important;
+    box-shadow: 0 4px 15px rgba(99, 102, 241, 0.15);
+}
+
+:global(.light) .dashboardTabBtnActive {
+    color: #ffffff !important;
+    background: var(--primary) !important;
+    border-color: var(--primary-dark) !important;
+    box-shadow: 0 4px 12px rgba(59, 130, 246, 0.25) !important;
+}
+
+.tabContentPanel {
+    animation: tabFadeIn 0.4s ease;
+}
+
+@keyframes tabFadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.tabOverviewLayout {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.tabClassroomLayout {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.tabRepositoryLayout {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.tabSettingsLayout {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+@media (max-width: 768px) {
+    .heroOrb1, .heroOrb2, .heroOrb3 {
+        display: none !important;
+    }
+    .bannerParticles {
+        display: none !important;
+    }
+    .dashboardTabsNav {
+        padding: 4px;
+        gap: 4px;
+        border-radius: 12px;
+        background: rgba(15, 15, 15, 0.95);
+        backdrop-filter: none !important;
+    }
+    :global(.light) .dashboardTabsNav {
+        background: rgba(240, 240, 245, 0.95) !important;
+        border-color: rgba(0, 0, 0, 0.08) !important;
+    }
+    .dashboardTabBtn {
+        padding: 8px 12px;
+        font-size: 0.8rem;
+        border-radius: 10px;
+    }
+}
+
