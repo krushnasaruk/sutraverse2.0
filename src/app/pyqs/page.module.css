@@ -203,24 +203,24 @@
 }
 
 .subjectEmoji {
-  font-size: 1.8rem;
-  width: 56px;
-  height: 56px;
+  font-size: 1.35rem;
+  width: 44px;
+  height: 44px;
   display: flex;
   align-items: center;
   justify-content: center;
-  border-radius: 16px;
+  border-radius: 12px;
   border: 1px solid var(--border);
   transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
   flex-shrink: 0;
 }
 
 .cardBadge {
-  font-size: 0.78rem;
-  font-weight: 700;
-  padding: 5px 14px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  padding: 4px 12px;
   border-radius: var(--radius-full);
-  letter-spacing: 0.02em;
+  letter-spacing: 0.01em;
 }
 
 .subjectName {
@@ -643,6 +643,16 @@
   .statBubble{padding:0 8px;flex:1;min-width:30%}
   .subjectCard{padding:20px}
   .paperCard{padding:20px}
+  .subjectEmoji {
+    width: 38px !important;
+    height: 38px !important;
+    font-size: 1.15rem !important;
+    border-radius: 10px !important;
+  }
+  .cardBadge {
+    padding: 3px 10px !important;
+    font-size: 0.68rem !important;
+  }
 }
 @media (max-width:480px){
   .heroTitle{font-size:1.8rem}
