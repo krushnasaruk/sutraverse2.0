@@ -6,6 +6,7 @@ import Image from 'next/image';
 import { usePathname, useRouter } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
 import { useTheme } from '@/context/ThemeContext';
+import { useCollege } from '@/context/CollegeContext';
 import styles from './Navbar.module.css';
 
 /* ── SVG Icon Components ───────────────────────── */
@@ -106,25 +107,32 @@ const Icons = {
 /* ── Spotlight Quick Links ────────────────────── */
 const spotlightLinks = [
     { href: '/', label: 'Home', icon: '🏠', section: 'Pages' },
-    { href: '/youtube', label: 'Lectures', icon: '▶️', section: 'Pages' },
+    { href: '/youtube', label: 'Lectures', icon: '▶️', section: 'Pages', feature: 'youtube' },
     { href: '/subjects', label: 'Subjects', icon: '📚', section: 'Pages' },
-    { href: '/pyqs', label: 'Past Year Questions', icon: '📄', section: 'Pages' },
-    { href: '/assignments', label: 'Assignments', icon: '📋', section: 'Pages' },
-    { href: '/exam-mode', label: 'Exam Mode', icon: '🎯', section: 'Pages' },
-    { href: '/paper-analysis', label: 'Paper Analysis', icon: '🔍', section: 'Pages' },
-    { href: '/community', label: 'Community', icon: '💬', section: 'Social' },
-    { href: '/clubs', label: 'Clubs', icon: '🏢', section: 'Social' },
-    { href: '/news', label: 'College News', icon: '📰', section: 'Social' },
-    { href: '/leaderboard', label: 'Leaderboard', icon: '🏆', section: 'Social' },
+    { href: '/pyqs', label: 'Past Year Questions', icon: '📄', section: 'Pages', feature: 'pyqs' },
+    { href: '/assignments', label: 'Assignments', icon: '📋', section: 'Pages', feature: 'assignments' },
+    { href: '/exam-mode', label: 'Exam Mode', icon: '🎯', section: 'Pages', feature: 'examMode' },
+    { href: '/paper-analysis', label: 'Paper Analysis', icon: '🔍', section: 'Pages', feature: 'paperAnalysis' },
+    { href: '/community', label: 'Community', icon: '💬', section: 'Social', feature: 'community' },
+    { href: '/clubs', label: 'Clubs', icon: '🏢', section: 'Social', feature: 'clubs' },
+    { href: '/news', label: 'College News', icon: '📰', section: 'Social', feature: 'news' },
+    { href: '/leaderboard', label: 'Leaderboard', icon: '🏆', section: 'Social', feature: 'leaderboard' },
     { href: '/upload', label: 'Upload Material', icon: '📤', section: 'Tools' },
-    { href: '/assistant', label: 'AI Tutor', icon: '🤖', section: 'Tools' },
+    { href: '/assistant', label: 'AI Tutor', icon: '🤖', section: 'Tools', feature: 'aiTutor' },
     { href: '/dashboard', label: 'My Profile', icon: '👤', section: 'Tools' },
 ];
 
 export default function Navbar() {
     const { user, logout } = useAuth();
     const { theme, toggleTheme } = useTheme();
+    const { featureToggles } = useCollege();
     const pathname = usePathname();
+
+    const isFeatureEnabled = useCallback((feat) => {
+        if (!feat) return true;
+        if (!featureToggles) return true;
+        return featureToggles[feat] !== false;
+    }, [featureToggles]);
     if (pathname && pathname.startsWith('/mobile-auth')) {
         return null;
     }
@@ -199,6 +207,7 @@ export default function Navbar() {
 
     const filteredLinks = spotlightLinks.filter(link => {
         if (link.adminOnly && !isAdmin) return false;
+        if (link.feature && !isFeatureEnabled(link.feature)) return false;
         return link.label.toLowerCase().includes(spotlightQuery.toLowerCase());
     });
 
@@ -238,13 +247,15 @@ export default function Navbar() {
 
     const links = [
         { href: '/', label: 'Home' },
-        { href: '/youtube', label: 'Lectures' },
+        { href: '/youtube', label: 'Lectures', feature: 'youtube' },
         { href: '/subjects', label: 'Subjects' },
-        { href: '/pyqs', label: 'PYQs' },
-        { href: '/assignments', label: 'Assignments' },
-        { href: '/exam-mode', label: 'Exam Mode' },
-        { href: '/paper-analysis', label: 'Analysis' },
+        { href: '/pyqs', label: 'PYQs', feature: 'pyqs' },
+        { href: '/assignments', label: 'Assignments', feature: 'assignments' },
+        { href: '/exam-mode', label: 'Exam Mode', feature: 'examMode' },
+        { href: '/paper-analysis', label: 'Analysis', feature: 'paperAnalysis' },
     ];
+
+    const activeLinks = links.filter(l => isFeatureEnabled(l.feature));
 
     /* ── Dropdown menu config ── */
     const menuGroups = [
@@ -257,38 +268,48 @@ export default function Navbar() {
         {
             title: 'Social',
             items: [
-                { href: '/community', label: 'Community', icon: <Icons.MessageCircle /> },
-                { href: '/leaderboard', label: 'Leaderboard', icon: <span>🏆</span> },
-                { href: '/clubs', label: 'Clubs', icon: <Icons.Building /> },
-                { href: '/clubs/manage', label: 'Club Management', icon: <Icons.Settings /> },
-                { href: '/news', label: 'College News', icon: <Icons.Newspaper /> },
+                { href: '/community', label: 'Community', icon: <Icons.MessageCircle />, feature: 'community' },
+                { href: '/leaderboard', label: 'Leaderboard', icon: <span>🏆</span>, feature: 'leaderboard' },
+                { href: '/clubs', label: 'Clubs', icon: <Icons.Building />, feature: 'clubs' },
+                { href: '/clubs/manage', label: 'Club Management', icon: <Icons.Settings />, feature: 'clubs' },
+                { href: '/news', label: 'College News', icon: <Icons.Newspaper />, feature: 'news' },
             ]
         }
     ];
+
+    const activeMenuGroups = menuGroups.map(group => ({
+        ...group,
+        items: group.items.filter(item => isFeatureEnabled(item.feature))
+    })).filter(group => group.items.length > 0);
 
     /* ── Mobile Dropdown Links ── */
     const mobileNavLinks = [
         { section: 'Pages', items: [
             { href: '/', label: 'Home', icon: '🏠' },
             { href: '/subjects', label: 'Subjects', icon: '📚' },
-            { href: '/youtube', label: 'Lectures', icon: '▶️' },
-            { href: '/pyqs', label: 'PYQs', icon: '📄' },
-            { href: '/exam-mode', label: 'Exam Prep', icon: '🎯' },
-            { href: '/assignments', label: 'Assignments', icon: '📋' },
-            { href: '/paper-analysis', label: 'Paper Analysis', icon: '🔍' },
+            { href: '/youtube', label: 'Lectures', icon: '▶️', feature: 'youtube' },
+            { href: '/pyqs', label: 'PYQs', icon: '📄', feature: 'pyqs' },
+            { href: '/exam-mode', label: 'Exam Prep', icon: '🎯', feature: 'examMode' },
+            { href: '/assignments', label: 'Assignments', icon: '📋', feature: 'assignments' },
+            { href: '/paper-analysis', label: 'Paper Analysis', icon: '🔍', feature: 'paperAnalysis' },
         ]},
         { section: 'Social', items: [
-            { href: '/community', label: 'Community', icon: '💬' },
-            { href: '/clubs', label: 'Clubs', icon: '🏢' },
-            { href: '/news', label: 'News', icon: '📰' },
-            { href: '/leaderboard', label: 'Leaderboard', icon: '🏆' },
+            { href: '/community', label: 'Community', icon: '💬', feature: 'community' },
+            { href: '/clubs', label: 'Clubs', icon: '🏢', feature: 'clubs' },
+            { href: '/news', label: 'News', icon: '📰', feature: 'news' },
+            { href: '/leaderboard', label: 'Leaderboard', icon: '🏆', feature: 'leaderboard' },
         ]},
         { section: 'Tools', items: [
             { href: '/upload', label: 'Upload', icon: '📤' },
-            { href: '/assistant', label: 'AI Tutor', icon: '🤖' },
+            { href: '/assistant', label: 'AI Tutor', icon: '🤖', feature: 'aiTutor' },
             { href: '/dashboard', label: 'My Profile', icon: '👤' },
         ]},
     ];
+
+    const activeMobileNavLinks = mobileNavLinks.map(group => ({
+        ...group,
+        items: group.items.filter(item => isFeatureEnabled(item.feature))
+    })).filter(group => group.items.length > 0);
 
     return (
         <>
@@ -318,7 +339,7 @@ export default function Navbar() {
                     {/* Nav Links */}
                     {pathname !== '/onboarding' && (
                         <div className={styles.navLinks}>
-                            {links.map((link) => (
+                            {activeLinks.map((link) => (
                                 <Link
                                     key={link.href}
                                     href={link.href}
@@ -418,7 +439,7 @@ export default function Navbar() {
                                         <div className={styles.profileMenuDivider} />
 
                                         {/* Menu Groups */}
-                                        {menuGroups.map((group, gi) => (
+                                        {activeMenuGroups.map((group, gi) => (
                                             <div key={gi}>
                                                 {group.title && (
                                                     <div className={styles.menuGroupTitle}>{group.title}</div>
@@ -434,7 +455,7 @@ export default function Navbar() {
                                                         {item.label}
                                                     </Link>
                                                 ))}
-                                                {gi < menuGroups.length - 1 && (
+                                                {gi < activeMenuGroups.length - 1 && (
                                                     <div className={styles.profileMenuDivider} />
                                                 )}
                                             </div>
@@ -463,22 +484,22 @@ export default function Navbar() {
                 <>
                     <div className={styles.mobileDropdownOverlay} onClick={() => setMobileNavOpen(false)} />
                     <div className={styles.mobileDropdown}>
-                        {mobileNavLinks.map(group => (
-                            <div key={group.section}>
-                                <div className={styles.mobileDropSection}>{group.section}</div>
-                                {group.items.map(item => (
-                                    <Link
-                                        key={item.href}
-                                        href={item.href}
-                                        className={`${styles.mobileDropItem} ${pathname === item.href ? styles.mobileDropItemActive : ''}`}
-                                        onClick={() => setMobileNavOpen(false)}
-                                    >
-                                        <span className={styles.mobileDropItemIcon}>{item.icon}</span>
-                                        {item.label}
-                                    </Link>
-                                ))}
-                            </div>
-                        ))}
+                        {activeMobileNavLinks.map(group => (
+                                                            <div key={group.section}>
+                                                                <div className={styles.mobileDropSection}>{group.section}</div>
+                                                                {group.items.map(item => (
+                                                                    <Link
+                                                                        key={item.href}
+                                                                        href={item.href}
+                                                                        className={`${styles.mobileDropItem} ${pathname === item.href ? styles.mobileDropItemActive : ''}`}
+                                                                        onClick={() => setMobileNavOpen(false)}
+                                                                    >
+                                                                        <span className={styles.mobileDropItemIcon}>{item.icon}</span>
+                                                                        {item.label}
+                                                                    </Link>
+                                                                ))}
+                                                            </div>
+                                                        ))}
                         <div className={styles.mobileDropThemeRow}>
                             <span className={styles.mobileDropThemeLabel}>
                                 {theme === 'light' ? '☀️ Light Mode' : '🌙 Dark Mode'}

@@ -1042,11 +1042,9 @@
         top: 52px;
         left: 0;
         right: 0;
-        background: var(--bg-surface);
-        backdrop-filter: blur(24px);
-        -webkit-backdrop-filter: blur(24px);
+        background: var(--bg-main) !important;
         border-bottom: 1px solid var(--border);
-        box-shadow: 0 8px 32px rgba(0,0,0,0.12);
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2) !important;
         z-index: 999;
         max-height: calc(100vh - 52px);
         overflow-y: auto;
@@ -1159,6 +1157,15 @@
         width: 100% !important;
         max-width: 100% !important;
         border-radius: 0 0 16px 16px !important;
+        background: var(--bg-main) !important;
+        border-top: none !important;
+        border-left: none !important;
+        border-right: none !important;
+        border-bottom: 1px solid var(--border) !important;
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2) !important;
+    }
+    .profileMenu::before {
+        display: none !important;
     }
 }
 
