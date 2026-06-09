@@ -79,7 +79,7 @@
   }
 
   /* Kill all hover transforms (useless on touch) */
-  *:hover {
+  *:not(nav):not([class*="navbar"]):not([class*="logo"]):hover {
     transform: none !important;
   }
 
@@ -145,7 +145,7 @@
   background-image: none !important;
 }
 
-.low-performance *:hover {
+.low-performance *:not(nav):not([class*="navbar"]):not([class*="logo"]):hover {
   transform: none !important;
 }
 

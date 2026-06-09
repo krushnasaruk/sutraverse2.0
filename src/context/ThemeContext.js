@@ -30,8 +30,8 @@ export function ThemeProvider({ children }) {
         } else {
             // Auto-detect budget/old hardware specifications
             const isLowEnd = (typeof navigator !== 'undefined') && (
-                (navigator.deviceMemory && navigator.deviceMemory <= 4) ||
-                (navigator.hardwareConcurrency && navigator.hardwareConcurrency <= 4) ||
+                (navigator.deviceMemory && navigator.deviceMemory <= 2) ||
+                (navigator.hardwareConcurrency && navigator.hardwareConcurrency < 4) ||
                 /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)
             );
             const initialPerf = isLowEnd ? 'low' : 'high';
