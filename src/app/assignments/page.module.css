@@ -58,12 +58,19 @@
 /* ═══════════════════════════════════════════════════════════════════════════ */
 /*  SIDEBAR + MAIN LAYOUT                                                    */
 /* ═══════════════════════════════════════════════════════════════════════════ */
+.filterContainer {
+  margin-top: 30px;
+  position: relative;
+  z-index: 10;
+}
+
 .layout {
   display: grid;
-  grid-template-columns: 270px 1fr;
+  grid-template-columns: 270px minmax(0, 1fr);
   gap: var(--space-2xl);
   padding-top: var(--space-xl);
   padding-bottom: var(--space-3xl);
+  margin-top: 30px;
   align-items: flex-start;
 }
 
@@ -544,17 +551,20 @@
 
 /* RESPONSIVE */
 @media(max-width:1024px) {
-    .layout { grid-template-columns: 1fr; }
+    .layout { grid-template-columns: minmax(0, 1fr); width: 100%; }
     .sidebar {
         position: static;
         border-radius: 14px;
         padding: 12px;
         gap: 8px;
+        width: 100%;
+        min-width: 0;
     }
     .sidebarHeader {
         display: none;
     }
     .sidebarList {
+        display: flex;
         flex-direction: row !important;
         overflow-x: auto;
         flex-wrap: nowrap;
@@ -583,21 +593,30 @@
     .sidebarStats {
         display: none !important;
     }
+    .cardGrid {
+        padding: 0;
+        margin: 0;
+        max-width: 100%;
+    }
+    .layout {
+        gap: 24px;
+    }
 }
 @media(max-width:768px) {
-    .pageWrapper { padding: calc(var(--navbar-height) + 20px) 16px 100px; }
-    .filterBar { flex-direction: column; align-items: stretch; gap: 12px; }
+    .pageWrapper { padding: 20px 0 100px; }
+    .filterBar { flex-direction: column; align-items: stretch; gap: 12px; padding: 12px; margin: 0; border-radius: 12px; }
     .filterGroup { width: 100%; }
     .filterSelect { flex: 1; }
-    .hero { padding: 20px 16px 20px; }
+    .hero { padding: 20px 0; }
     .heroTitle { font-size: 2.2rem; }
     .heroSub { font-size: 1rem; }
-    .layout { gap: 16px; padding-top: 16px; }
-    .sidebar { border-radius: 14px; padding: 16px; }
+    .layout { gap: 16px; padding-top: 0; }
+    .sidebar { border-radius: 14px; padding: 12px; margin: 0; }
     .cardGrid { grid-template-columns: 1fr; gap: 16px; max-width: 100%; padding: 0; margin: 0; }
-    .cardBody { padding: 20px; }
+    .cardBody { padding: 16px; }
     .cardTitle { font-size: 1.15rem; }
-    .toolbar { gap: 10px; }
+    .toolbar { gap: 10px; padding: 0; flex-direction: column; align-items: flex-start; }
+    .toolbarLeft { width: 100%; justify-content: space-between; }
     .searchBox { width: 100%; }
     .sectionTitle { font-size: 1.2rem; }
     .lockState { padding: 80px 16px; }
@@ -605,14 +624,14 @@
 }
 @media(max-width:480px) {
     .heroTitle { font-size: 1.8rem; }
-    .cardBody { padding: 16px; gap: 12px; }
-    .cardIconWrap { width: 44px; height: 44px; }
-    .getBtn { padding: 8px 18px; font-size: 0.85rem; }
+    .cardBody { padding: 14px; gap: 10px; }
+    .cardIconWrap { width: 40px; height: 40px; }
+    .getBtn { padding: 8px 16px; font-size: 0.85rem; }
     .lockState { padding: 60px 12px; }
 }
 @media(max-width:360px) {
     .heroTitle { font-size: 1.5rem; }
-    .cardBody { padding: 14px; }
-    .sidebar { padding: 12px; }
+    .cardBody { padding: 12px; }
+    .sidebar { padding: 10px; }
 }
 
