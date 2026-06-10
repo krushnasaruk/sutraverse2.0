@@ -4,8 +4,8 @@ import { createWriteStream } from 'fs';
 import { pipeline } from 'stream/promises';
 import { Readable } from 'stream';
 import path from 'path';
-import { getUploadsDir } from '@/lib/uploadsDir';
-import { adminAuth } from '@/lib/firebaseAdmin';
+import { getUploadsDir } from '@/shared/utils/uploadsDir';
+import { adminAuth } from '@/database/config/firebaseAdmin';
 
 /**
  * POST /api/upload

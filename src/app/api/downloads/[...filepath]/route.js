@@ -3,7 +3,7 @@ import { readFile } from 'fs/promises';
 import { join, resolve } from 'path';
 import { existsSync } from 'fs';
 import os from 'os';
-import { getUploadsDir } from '@/lib/uploadsDir';
+import { getUploadsDir } from '@/shared/utils/uploadsDir';
 
 function findAppRoot() {
     let current = __dirname;

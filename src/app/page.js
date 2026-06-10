@@ -4,15 +4,15 @@ import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { collection, getDocs, query, orderBy, limit, where, onSnapshot } from 'firebase/firestore';
-import { db } from '@/lib/firebase';
-import { useAuth } from '@/context/AuthContext';
-import { useCollege } from '@/context/CollegeContext';
-import { useTheme } from '@/context/ThemeContext';
-import { awardDownloadPoints } from '@/lib/points';
-import { ScrollReveal, CountUp } from '@/components/Animations';
+import { db } from '@/database/config/firebase';
+import { useAuth } from '@/frontend/context/AuthContext';
+import { useCollege } from '@/frontend/context/CollegeContext';
+import { useTheme } from '@/frontend/context/ThemeContext';
+import { awardDownloadPoints } from '@/database/queries/points';
+import { ScrollReveal, CountUp } from '@/frontend/components/ui/Animations';
 import styles from './page.module.css';
-import { IconNotes, IconPyq, IconAssignment, IconSparkles, IconUser, IconFolder, IconHat, IconStar, IconDownload } from '@/components/Icons';
-import { Skeleton, SkeletonGrid } from '@/components/Skeleton/Skeleton';
+import { IconNotes, IconPyq, IconAssignment, IconSparkles, IconUser, IconFolder, IconHat, IconStar, IconDownload } from '@/frontend/components/ui/Icons';
+import { Skeleton, SkeletonGrid } from '@/frontend/components/ui/Skeleton/Skeleton';
 
 function getTypeClass(type) {
   switch (type) {

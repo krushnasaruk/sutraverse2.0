@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { Expo } from 'expo-server-sdk';
 import { collection, getDocs } from 'firebase/firestore';
-import { db } from '../../../../lib/firebase';
+import { db } from '@/database/config/firebase';
 import { GoogleGenerativeAI } from "@google/generative-ai";
 
 let expo = new Expo();

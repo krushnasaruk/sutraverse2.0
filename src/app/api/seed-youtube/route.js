@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { collection, addDoc } from 'firebase/firestore';
-import { db } from '@/lib/firebase';
+import { db } from '@/database/config/firebase';
 
 /* ── M2 Unit 4 Lectures ─────────────────────────────────────────────────── */
 const M2_LECTURES = [

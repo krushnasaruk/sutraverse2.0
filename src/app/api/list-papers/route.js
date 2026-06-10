@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import fs from 'fs';
 import path from 'path';
-import { getUploadsDir } from '@/lib/uploadsDir';
+import { getUploadsDir } from '@/shared/utils/uploadsDir';
 
 const SUBJECT_MAP = {
     'bee': 'Basic Electrical Engineering',

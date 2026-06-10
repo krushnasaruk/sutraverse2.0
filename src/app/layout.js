@@ -2,17 +2,17 @@ import './globals.css';
 import './mobile.css';
 import './performance.css';
 import Script from 'next/script';
-import { AuthProvider } from '@/context/AuthContext';
-import { ThemeProvider } from '@/context/ThemeContext';
-import { CollegeProvider } from '@/context/CollegeContext';
-import Navbar from '@/components/Navbar/Navbar';
-import AnnouncementBanner from '@/components/AnnouncementBanner/AnnouncementBanner';
-import MaintenanceGuard from '@/components/MaintenanceGuard/MaintenanceGuard';
-import MobileNav from '@/components/MobileNav/MobileNav';
-import CookieConsent from '@/components/CookieConsent';
-import GlobalBot from '@/components/GlobalBot/GlobalBot';
-import GlobalEngagements from '@/components/GlobalEngagements/GlobalEngagements';
-import { adminDb } from '@/lib/firebaseAdmin';
+import { AuthProvider } from '@/frontend/context/AuthContext';
+import { ThemeProvider } from '@/frontend/context/ThemeContext';
+import { CollegeProvider } from '@/frontend/context/CollegeContext';
+import Navbar from '@/frontend/components/layout/Navbar/Navbar';
+import AnnouncementBanner from '@/frontend/components/layout/AnnouncementBanner/AnnouncementBanner';
+import MaintenanceGuard from '@/frontend/components/core/MaintenanceGuard/MaintenanceGuard';
+import MobileNav from '@/frontend/components/layout/MobileNav/MobileNav';
+import CookieConsent from '@/frontend/components/core/CookieConsent';
+import GlobalBot from '@/frontend/components/features/GlobalBot/GlobalBot';
+import GlobalEngagements from '@/frontend/components/features/GlobalEngagements/GlobalEngagements';
+import { adminDb } from '@/database/config/firebaseAdmin';
 
 export async function generateMetadata() {
   let title = 'SutraVerse — Digital Notes Hub';
