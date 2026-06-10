@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { readFile } from 'fs/promises';
-import { join } from 'path';
+import { join, resolve } from 'path';
 import { existsSync } from 'fs';
 import os from 'os';
 import { getUploadsDir } from '@/lib/uploadsDir';
@@ -34,30 +34,14 @@ export async function GET(request, { params }) {
         return new NextResponse("Invalid path", { status: 400 });
     }
 
-    const appRoot = findAppRoot();
     const uploadsDir = getUploadsDir();
     const filePath = join(uploadsDir, relativePath);
 
     // List of robust fallback paths to try
     const fallbackPaths = [
-        // 1. Direct path inside standard uploadsDir (configured or home directory)
         filePath,
         join(uploadsDir, relativePath.replace(/^uploads\//, '')), // Strip uploads/ if nested
-        join(uploadsDir, relativePath.replace(/^pyqs\//, '')), // Strip pyqs/ if nested
-        
-        // 2. Relative to dynamic appRoot (highly reliable Passenger & standalone fallback)
-        join(appRoot, 'public', relativePath), 
-        join(appRoot, 'public', relativePath.replace(/^uploads\//, 'uploads/')), // Ensure uploads/ nested
-        join(appRoot, relativePath),
-        
-        // 3. process.cwd() fallback
-        join(process.cwd(), 'public', relativePath),
-        join(process.cwd(), '..', 'public', relativePath),
-        
-        // 4. cPanel home folder public_html fallbacks
-        join(os.homedir(), 'public_html', 'public', relativePath),
-        join(os.homedir(), 'public_html', 'public', relativePath.replace(/^uploads\//, 'uploads/')),
-        join(os.homedir(), 'public_html', relativePath)
+        join(uploadsDir, relativePath.replace(/^pyqs\//, '')) // Strip pyqs/ if nested
     ];
 
     let foundPath = null;
@@ -74,18 +58,10 @@ export async function GET(request, { params }) {
     }
 
     // Secure boundary check to prevent directory traversal
-    const { resolve } = require('path');
     const resolvedPath = resolve(foundPath);
     const resolvedUploadsDir = resolve(uploadsDir);
-    const resolvedAppRoot = resolve(appRoot);
-    const resolvedHome = resolve(os.homedir());
 
-    const isAllowed = resolvedPath.startsWith(resolvedUploadsDir) || 
-                      resolvedPath.startsWith(join(resolvedAppRoot, 'public')) ||
-                      (resolvedPath.startsWith(join(resolvedHome, 'public_html')) && 
-                       !resolvedPath.includes('.env') && 
-                       !resolvedPath.includes('config') && 
-                       !resolvedPath.includes('node_modules'));
+    const isAllowed = resolvedPath.startsWith(resolvedUploadsDir);
 
     if (!isAllowed) {
         return new NextResponse("Forbidden: Access denied", { status: 403 });

@@ -1,16 +1,23 @@
 'use client';
 
+import { usePathname } from 'next/navigation';
 import { useCollege } from '@/context/CollegeContext';
 import { useAuth } from '@/context/AuthContext';
 import Link from 'next/link';
 import styles from './MaintenanceGuard.module.css';
 
 export default function MaintenanceGuard({ children }) {
+    const pathname = usePathname();
     const { branding, loaded } = useCollege();
     const { user } = useAuth();
 
     if (!loaded) {
         return null;
+    }
+
+    // Always allow access to the login page so admins can sign in
+    if (pathname === '/login') {
+        return children;
     }
 
     const isAdmin = user && (user.isAdmin || ['sutraverse11@gmail.com'].includes(user.email));

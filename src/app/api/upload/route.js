@@ -72,10 +72,16 @@ export async function POST(request) {
         let subDir = '';
         if (context === 'avatar') {
             subDir = 'avatars';
-        } else if (context === 'submission') {
-            subDir = 'submissions';
         } else if (context === 'teacher-material') {
             subDir = 'materials';
+        } else if (context === 'Notes') {
+            subDir = 'notes';
+        } else if (context === 'PYQ') {
+            subDir = 'pyqs';
+        } else if (context === 'Assignment') {
+            subDir = 'assignments';
+        } else if (context === 'submission') {
+            subDir = 'submissions';
         }
 
         const fileName = `${timestamp}_${safeName}`;

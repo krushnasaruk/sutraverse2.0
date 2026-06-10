@@ -97,7 +97,26 @@ export default function AdminPage() {
             youtube: ''
         },
         maintenanceMode: false,
-        maintenanceMessage: 'We are performing scheduled maintenance. We will be back shortly!'
+        maintenanceMessage: 'We are performing scheduled maintenance. We will be back shortly!',
+        fontFamily: 'var(--font-inter)',
+        glassmorphism: true,
+        cornerStyle: 'rounded',
+        seoMetaDescription: '',
+        platformName: '',
+        navStyle: 'sticky',
+        hideTeacherPortal: false,
+        hideUploadButton: false,
+        whatsappSupport: {
+            enabled: false,
+            phone: '',
+            message: 'Hi, I need help with the platform!'
+        },
+        welcomePopup: {
+            enabled: false,
+            title: 'Welcome!',
+            text: 'We are glad to have you here.',
+            imageUrl: ''
+        }
     });
     const [customSaving, setCustomSaving] = useState(false);
     const [customLoaded, setCustomLoaded] = useState(false);
@@ -241,7 +260,26 @@ export default function AdminPage() {
                         youtube: data.socials?.youtube ?? ''
                     },
                     maintenanceMode: data.maintenanceMode ?? false,
-                    maintenanceMessage: data.maintenanceMessage ?? 'We are performing scheduled maintenance. We will be back shortly!'
+                    maintenanceMessage: data.maintenanceMessage ?? 'We are performing scheduled maintenance. We will be back shortly!',
+                    fontFamily: data.fontFamily ?? 'var(--font-inter)',
+                    glassmorphism: data.glassmorphism ?? true,
+                    cornerStyle: data.cornerStyle ?? 'rounded',
+                    seoMetaDescription: data.seoMetaDescription ?? '',
+                    platformName: data.platformName ?? '',
+                    navStyle: data.navStyle ?? 'sticky',
+                    hideTeacherPortal: data.hideTeacherPortal ?? false,
+                    hideUploadButton: data.hideUploadButton ?? false,
+                    whatsappSupport: {
+                        enabled: data.whatsappSupport?.enabled ?? false,
+                        phone: data.whatsappSupport?.phone ?? '',
+                        message: data.whatsappSupport?.message ?? 'Hi, I need help with the platform!'
+                    },
+                    welcomePopup: {
+                        enabled: data.welcomePopup?.enabled ?? false,
+                        title: data.welcomePopup?.title ?? 'Welcome!',
+                        text: data.welcomePopup?.text ?? 'We are glad to have you here.',
+                        imageUrl: data.welcomePopup?.imageUrl ?? ''
+                    }
                 });
             }
             setCustomLoaded(true);
@@ -273,6 +311,16 @@ export default function AdminPage() {
                 socials: customForm.socials || {},
                 maintenanceMode: customForm.maintenanceMode ?? false,
                 maintenanceMessage: customForm.maintenanceMessage || 'We are performing scheduled maintenance. We will be back shortly!',
+                fontFamily: customForm.fontFamily,
+                glassmorphism: customForm.glassmorphism,
+                cornerStyle: customForm.cornerStyle,
+                seoMetaDescription: customForm.seoMetaDescription,
+                platformName: customForm.platformName,
+                navStyle: customForm.navStyle,
+                hideTeacherPortal: customForm.hideTeacherPortal,
+                hideUploadButton: customForm.hideUploadButton,
+                whatsappSupport: customForm.whatsappSupport,
+                welcomePopup: customForm.welcomePopup,
                 updatedAt: new Date().toISOString(),
                 updatedBy: user?.email || 'admin',
             }, { merge: true });
@@ -1251,6 +1299,52 @@ export default function AdminPage() {
                             </div>
                             
                             <div className={styles.brandingCard}>
+                                <h3>Typography & Layout</h3>
+                                <p style={{color: 'var(--text-secondary)', fontSize: '0.9rem', marginBottom: '20px'}}>
+                                    Adjust global font, card styles, and visual effects.
+                                </p>
+
+                                <div className={styles.formRow} style={{display: 'flex', gap: '15px', marginBottom: '15px'}}>
+                                    <div className={styles.formGroup} style={{flex: 1}}>
+                                        <label>Global Font Family</label>
+                                        <select 
+                                            className={styles.modalSelect} 
+                                            value={customForm.fontFamily || 'var(--font-inter)'} 
+                                            onChange={e => setCustomForm({...customForm, fontFamily: e.target.value})}
+                                        >
+                                            <option value="var(--font-inter)">Inter (Default)</option>
+                                            <option value="var(--font-poppins)">Poppins</option>
+                                            <option value="'Roboto', sans-serif">Roboto</option>
+                                            <option value="'Outfit', sans-serif">Outfit</option>
+                                            <option value="'Playfair Display', serif">Playfair Display (Serif)</option>
+                                        </select>
+                                    </div>
+                                    <div className={styles.formGroup} style={{flex: 1}}>
+                                        <label>Corner Radius Style</label>
+                                        <select 
+                                            className={styles.modalSelect} 
+                                            value={customForm.cornerStyle || 'rounded'} 
+                                            onChange={e => setCustomForm({...customForm, cornerStyle: e.target.value})}
+                                        >
+                                            <option value="rounded">Rounded (Default)</option>
+                                            <option value="pill">Pill (Very round)</option>
+                                            <option value="sharp">Sharp (Square edges)</option>
+                                        </select>
+                                    </div>
+                                </div>
+
+                                <div className={styles.checkboxGroup}>
+                                    <input 
+                                        type="checkbox" 
+                                        id="glassmorphismEnabled" 
+                                        checked={customForm.glassmorphism ?? true} 
+                                        onChange={e => setCustomForm({...customForm, glassmorphism: e.target.checked})} 
+                                    />
+                                    <label htmlFor="glassmorphismEnabled" style={{fontWeight: 'bold'}}>Enable Glassmorphism (Blur Effects)</label>
+                                </div>
+                            </div>
+
+                            <div className={styles.brandingCard}>
                                 <h3>Sitewide Announcement Banner</h3>
                                 <p style={{color: 'var(--text-secondary)', fontSize: '0.9rem', marginBottom: '20px'}}>
                                     Display a prominent notice banner at the very top of every page.
@@ -1469,6 +1563,67 @@ export default function AdminPage() {
                                 </div>
                             </div>
                             
+                            <div className={`${styles.brandingCard} ${styles.fullWidth}`}>
+                                <h3>Advanced Branding & SEO</h3>
+                                <p style={{color: 'var(--text-secondary)', fontSize: '0.9rem', marginBottom: '15px'}}>
+                                    Configure global platform metadata and navigation options.
+                                </p>
+
+                                <div className={styles.formRow} style={{display: 'flex', gap: '15px', marginBottom: '15px'}}>
+                                    <div className={styles.formGroup} style={{flex: 1}}>
+                                        <label>Platform Name (e.g. SutraVerse)</label>
+                                        <input 
+                                            type="text" 
+                                            className={styles.modalInput}
+                                            value={customForm.platformName || ''} 
+                                            onChange={e => setCustomForm({...customForm, platformName: e.target.value})}
+                                            placeholder="Leave blank to use College Name"
+                                        />
+                                    </div>
+                                    <div className={styles.formGroup} style={{flex: 1}}>
+                                        <label>Navigation Style</label>
+                                        <select 
+                                            className={styles.modalSelect} 
+                                            value={customForm.navStyle || 'sticky'} 
+                                            onChange={e => setCustomForm({...customForm, navStyle: e.target.value})}
+                                        >
+                                            <option value="sticky">Sticky (Always visible)</option>
+                                            <option value="static">Static (Scrolls away)</option>
+                                        </select>
+                                    </div>
+                                </div>
+
+                                <div className={styles.formGroup} style={{marginBottom: '15px'}}>
+                                    <label>SEO Meta Description</label>
+                                    <textarea 
+                                        className={styles.modalInput}
+                                        value={customForm.seoMetaDescription || ''} 
+                                        onChange={e => setCustomForm({...customForm, seoMetaDescription: e.target.value})}
+                                        placeholder="Description for Google search and link sharing..."
+                                        rows={2}
+                                    />
+                                </div>
+
+                                <div className={styles.checkboxGroup} style={{marginBottom: '10px'}}>
+                                    <input 
+                                        type="checkbox" 
+                                        id="hideTeacherPortal" 
+                                        checked={customForm.hideTeacherPortal ?? false} 
+                                        onChange={e => setCustomForm({...customForm, hideTeacherPortal: e.target.checked})} 
+                                    />
+                                    <label htmlFor="hideTeacherPortal">Hide Teacher Portal Link in Footer</label>
+                                </div>
+                                <div className={styles.checkboxGroup}>
+                                    <input 
+                                        type="checkbox" 
+                                        id="hideUploadButton" 
+                                        checked={customForm.hideUploadButton ?? false} 
+                                        onChange={e => setCustomForm({...customForm, hideUploadButton: e.target.checked})} 
+                                    />
+                                    <label htmlFor="hideUploadButton">Hide Upload Button globally</label>
+                                </div>
+                            </div>
+
                             <div className={styles.brandingCard}>
                                 <h3>Footer & Support Settings</h3>
                                 <p style={{color: 'var(--text-secondary)', fontSize: '0.9rem', marginBottom: '20px'}}>
@@ -1580,6 +1735,98 @@ export default function AdminPage() {
                                             })}
                                             placeholder="https://youtube.com/..."
                                         />
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div className={`${styles.brandingCard} ${styles.fullWidth}`}>
+                                <h3>Integrations & Engagement</h3>
+                                <p style={{color: 'var(--text-secondary)', fontSize: '0.9rem', marginBottom: '20px'}}>
+                                    Enable WhatsApp support chat and first-time user welcome popups.
+                                </p>
+
+                                <div style={{display: 'flex', flexDirection: 'column', gap: '20px'}}>
+                                    <div style={{background: 'var(--bg-elevated)', padding: '15px', borderRadius: '8px', border: '1px solid var(--border-light)'}}>
+                                        <div className={styles.checkboxGroup} style={{marginBottom: '15px'}}>
+                                            <input 
+                                                type="checkbox" 
+                                                id="whatsappEnabled" 
+                                                checked={customForm.whatsappSupport?.enabled ?? false} 
+                                                onChange={e => setCustomForm({...customForm, whatsappSupport: {...customForm.whatsappSupport, enabled: e.target.checked}})} 
+                                            />
+                                            <label htmlFor="whatsappEnabled" style={{fontWeight: 'bold', fontSize: '1rem', color: '#25D366'}}>Enable WhatsApp Floating Widget</label>
+                                        </div>
+                                        <div className={styles.formRow} style={{display: 'flex', gap: '15px'}}>
+                                            <div className={styles.formGroup} style={{flex: 1}}>
+                                                <label>WhatsApp Phone Number</label>
+                                                <input 
+                                                    type="text" 
+                                                    className={styles.modalInput}
+                                                    value={customForm.whatsappSupport?.phone || ''} 
+                                                    onChange={e => setCustomForm({...customForm, whatsappSupport: {...customForm.whatsappSupport, phone: e.target.value}})}
+                                                    placeholder="e.g. 919876543210"
+                                                    disabled={!customForm.whatsappSupport?.enabled}
+                                                />
+                                            </div>
+                                            <div className={styles.formGroup} style={{flex: 1}}>
+                                                <label>Default Message</label>
+                                                <input 
+                                                    type="text" 
+                                                    className={styles.modalInput}
+                                                    value={customForm.whatsappSupport?.message || ''} 
+                                                    onChange={e => setCustomForm({...customForm, whatsappSupport: {...customForm.whatsappSupport, message: e.target.value}})}
+                                                    placeholder="e.g. Hi, I need help!"
+                                                    disabled={!customForm.whatsappSupport?.enabled}
+                                                />
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div style={{background: 'var(--bg-elevated)', padding: '15px', borderRadius: '8px', border: '1px solid var(--border-light)'}}>
+                                        <div className={styles.checkboxGroup} style={{marginBottom: '15px'}}>
+                                            <input 
+                                                type="checkbox" 
+                                                id="welcomePopupEnabled" 
+                                                checked={customForm.welcomePopup?.enabled ?? false} 
+                                                onChange={e => setCustomForm({...customForm, welcomePopup: {...customForm.welcomePopup, enabled: e.target.checked}})} 
+                                            />
+                                            <label htmlFor="welcomePopupEnabled" style={{fontWeight: 'bold', fontSize: '1rem'}}>Enable First-Time Welcome Popup</label>
+                                        </div>
+                                        <div className={styles.formRow} style={{display: 'flex', gap: '15px'}}>
+                                            <div className={styles.formGroup} style={{flex: 1}}>
+                                                <label>Popup Title</label>
+                                                <input 
+                                                    type="text" 
+                                                    className={styles.modalInput}
+                                                    value={customForm.welcomePopup?.title || ''} 
+                                                    onChange={e => setCustomForm({...customForm, welcomePopup: {...customForm.welcomePopup, title: e.target.value}})}
+                                                    placeholder="Welcome to SutraVerse!"
+                                                    disabled={!customForm.welcomePopup?.enabled}
+                                                />
+                                            </div>
+                                            <div className={styles.formGroup} style={{flex: 1}}>
+                                                <label>Banner Image URL (Optional)</label>
+                                                <input 
+                                                    type="text" 
+                                                    className={styles.modalInput}
+                                                    value={customForm.welcomePopup?.imageUrl || ''} 
+                                                    onChange={e => setCustomForm({...customForm, welcomePopup: {...customForm.welcomePopup, imageUrl: e.target.value}})}
+                                                    placeholder="https://..."
+                                                    disabled={!customForm.welcomePopup?.enabled}
+                                                />
+                                            </div>
+                                        </div>
+                                        <div className={styles.formGroup} style={{marginTop: '15px'}}>
+                                            <label>Welcome Message</label>
+                                            <textarea 
+                                                className={styles.modalInput}
+                                                value={customForm.welcomePopup?.text || ''} 
+                                                onChange={e => setCustomForm({...customForm, welcomePopup: {...customForm.welcomePopup, text: e.target.value}})}
+                                                placeholder="Write a welcoming message to your students..."
+                                                rows={2}
+                                                disabled={!customForm.welcomePopup?.enabled}
+                                            />
+                                        </div>
                                     </div>
                                 </div>
                             </div>

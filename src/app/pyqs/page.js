@@ -143,27 +143,39 @@ export default function PyqsPage() {
     (async () => {
       setLoading(true);
       try {
-        if (!db) throw new Error('Firestore not initialized');
-        // Use indexed query — only fetch approved PYQs
-        const pyqQ = query(
-          collection(db, 'files'),
-          where('type', '==', 'PYQ'),
-          where('status', '==', 'approved'),
-          orderBy('createdAt', 'desc')
-        );
-        const snap = await Promise.race([
-          getDocs(pyqQ),
-          new Promise((_, r) => setTimeout(() => r(new Error('Timeout')), 15000)),
-        ]);
+        const res = await fetch('/api/list-papers');
+        if (!res.ok) throw new Error('Failed to load local papers');
+        const data = await res.json();
+        
         if (cancelled) return;
-        const data = snap.docs
-          .map(d => {
-            const f = d.data();
-            if (f.subject === 'BE') f.subject = 'BEE';
-            return { id: d.id, ...f };
-          });
-        if (!cancelled) setPyqs(data);
-      } catch (e) { console.warn('Fetch error:', e.message); if (!cancelled) setPyqs([]); }
+        
+        // Map the API output format to what the pyqs page expects
+        const mappedPyqs = data.papers.map(p => {
+            // Encode the pdfUrl as a base64 string to act as a safe Firestore document ID for tracking downloads
+            let safeId = 'local-paper';
+            try {
+                safeId = btoa(p.pdfUrl).replace(/=/g, '');
+            } catch (e) {
+                safeId = encodeURIComponent(p.pdfUrl);
+            }
+            
+            return {
+                id: safeId,
+                title: `${p.session}`,
+                subject: p.subject,
+                fileURL: p.pdfUrl,
+                downloads: 0, // In a real app, you could fetch these from a dedicated tracking collection
+                rating: 5.0,
+                branch: 'Computer',
+                uploader: 'Admin'
+            };
+        });
+        
+        setPyqs(mappedPyqs);
+      } catch (e) { 
+        console.warn('Fetch error:', e.message); 
+        if (!cancelled) setPyqs([]); 
+      }
       if (!cancelled) setLoading(false);
     })();
     return () => { cancelled = true; };

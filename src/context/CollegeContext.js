@@ -63,7 +63,28 @@ const DEFAULT_BRANDING = {
         youtube: ''
     },
     maintenanceMode: false,
-    maintenanceMessage: 'We are performing scheduled maintenance. We will be back shortly!'
+    maintenanceMessage: 'We are performing scheduled maintenance. We will be back shortly!',
+    
+    // New Customizations
+    fontFamily: 'var(--font-inter)', // Default font
+    glassmorphism: true,
+    cornerStyle: 'rounded', // rounded, pill, sharp
+    seoMetaDescription: '',
+    platformName: '',
+    navStyle: 'sticky', // sticky, static
+    hideTeacherPortal: false,
+    hideUploadButton: false,
+    whatsappSupport: {
+        enabled: false,
+        phone: '',
+        message: 'Hi, I need help with the platform!'
+    },
+    welcomePopup: {
+        enabled: false,
+        title: 'Welcome!',
+        text: 'We are glad to have you here.',
+        imageUrl: ''
+    }
 };
 
 // Restore cached branding text instantly so the college name doesn't flash blank
@@ -87,6 +108,14 @@ function getCachedBranding() {
                 socials: {
                     ...DEFAULT_BRANDING.socials,
                     ...(parsed.socials || {})
+                },
+                whatsappSupport: {
+                    ...DEFAULT_BRANDING.whatsappSupport,
+                    ...(parsed.whatsappSupport || {})
+                },
+                welcomePopup: {
+                    ...DEFAULT_BRANDING.welcomePopup,
+                    ...(parsed.welcomePopup || {})
                 }
             };
         }
@@ -130,6 +159,14 @@ export function CollegeProvider({ children }) {
                         socials: {
                             ...DEFAULT_BRANDING.socials,
                             ...(data.socials || {})
+                        },
+                        whatsappSupport: {
+                            ...DEFAULT_BRANDING.whatsappSupport,
+                            ...(data.whatsappSupport || {})
+                        },
+                        welcomePopup: {
+                            ...DEFAULT_BRANDING.welcomePopup,
+                            ...(data.welcomePopup || {})
                         }
                     };
                     setBranding(newBranding);
@@ -157,6 +194,17 @@ export function CollegeProvider({ children }) {
                             socials: newBranding.socials,
                             maintenanceMode: newBranding.maintenanceMode,
                             maintenanceMessage: newBranding.maintenanceMessage,
+                            
+                            fontFamily: newBranding.fontFamily,
+                            glassmorphism: newBranding.glassmorphism,
+                            cornerStyle: newBranding.cornerStyle,
+                            seoMetaDescription: newBranding.seoMetaDescription,
+                            platformName: newBranding.platformName,
+                            navStyle: newBranding.navStyle,
+                            hideTeacherPortal: newBranding.hideTeacherPortal,
+                            hideUploadButton: newBranding.hideUploadButton,
+                            whatsappSupport: newBranding.whatsappSupport,
+                            welcomePopup: newBranding.welcomePopup
                         }));
                     } catch (e) {}
                 }
@@ -187,6 +235,39 @@ export function CollegeProvider({ children }) {
             root.style.setProperty('--primary-glow', hexToRgba(activePrimary, 0.4));
             root.style.setProperty('--secondary', activeSecondary);
             root.style.setProperty('--secondary-glow', hexToRgba(activeSecondary, 0.3));
+
+            // Apply Typography
+            if (branding.fontFamily) {
+                root.style.setProperty('--font-primary', branding.fontFamily);
+            }
+
+            // Apply Corner Radius
+            if (branding.cornerStyle === 'pill') {
+                root.style.setProperty('--radius-sm', '100px');
+                root.style.setProperty('--radius-md', '100px');
+                root.style.setProperty('--radius-lg', '100px');
+                root.style.setProperty('--radius-full', '9999px');
+            } else if (branding.cornerStyle === 'sharp') {
+                root.style.setProperty('--radius-sm', '0px');
+                root.style.setProperty('--radius-md', '0px');
+                root.style.setProperty('--radius-lg', '0px');
+                root.style.setProperty('--radius-full', '0px');
+            } else {
+                // Default rounded
+                root.style.setProperty('--radius-sm', '0.375rem');
+                root.style.setProperty('--radius-md', '0.5rem');
+                root.style.setProperty('--radius-lg', '0.75rem');
+                root.style.setProperty('--radius-full', '9999px');
+            }
+
+            // Apply Glassmorphism Toggle
+            if (branding.glassmorphism === false) {
+                root.style.setProperty('--glass-blur', '0px');
+                root.style.setProperty('--glass-bg-opacity', '0.95'); // more opaque
+            } else {
+                root.style.setProperty('--glass-blur', '12px');
+                root.style.setProperty('--glass-bg-opacity', '0.7');
+            }
 
             // Cache branding colors to prevent flash on refresh
             localStorage.setItem('sutra_college_branding', JSON.stringify({

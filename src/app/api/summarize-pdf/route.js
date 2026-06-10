@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import fs from 'fs';
 import path from 'path';
+import { getUploadsDir } from '@/lib/uploadsDir';
 
 // Initialize Gemini API
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || '');
@@ -39,16 +40,21 @@ export async function POST(req) {
             }
 
             const cleanPdfPath = pdfPath.replace(/\.\./g, '');
-            let safePath = path.join(process.cwd(), 'public', cleanPdfPath);
+            const uploadsDir = getUploadsDir();
+
+            let safePath = path.join(uploadsDir, cleanPdfPath);
+            if (!fs.existsSync(safePath)) {
+                safePath = path.join(process.cwd(), 'public', cleanPdfPath);
+            }
             if (!fs.existsSync(safePath)) {
                 safePath = path.join(process.cwd(), cleanPdfPath);
             }
 
-            // Security: only allow paths inside pyqs
+            // Security: only allow paths inside pyqs or uploadsDir
             let pyqsRoot = path.join(process.cwd(), 'public', 'pyqs');
             if (!fs.existsSync(pyqsRoot)) pyqsRoot = path.join(process.cwd(), 'pyqs');
 
-            if (!safePath.startsWith(pyqsRoot)) {
+            if (!safePath.startsWith(pyqsRoot) && !safePath.startsWith(uploadsDir)) {
                 return NextResponse.json({ error: 'Invalid file path.' }, { status: 400 });
             }
 

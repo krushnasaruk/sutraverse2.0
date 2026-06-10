@@ -149,7 +149,7 @@ export default function UploadPage() {
         try {
             const formData = new FormData();
             formData.append('file', file);
-            formData.append('context', 'submission');
+            formData.append('context', fileType); // Use Notes, PYQ, or Assignment
 
             const xhr = new XMLHttpRequest();
 

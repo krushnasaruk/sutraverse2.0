@@ -225,9 +225,9 @@ export default function AssignmentsPage() {
       </div>
 
       {/* Branch / Year Filters */}
-      <div className="container" style={{ marginTop: '30px', position: 'relative', zIndex: 10 }}>
+      <div className={`container ${styles.filterContainer}`}>
         <ScrollReveal delay={100}>
-          <div className={styles.filterBar} style={{ background: 'var(--bg-glass)', border: '1px solid var(--border-light)', padding: '12px 24px', borderRadius: 'var(--radius-lg)' }}>
+          <div className={styles.filterBar}>
             <div className={styles.filterGroup}>
               <select className={styles.filterSelect} value={branch} onChange={e => { setBranch(e.target.value); setActiveTab('All'); }}>
                 {BRANCHES.map(b => <option key={b} value={b}>{b}</option>)}
@@ -241,7 +241,7 @@ export default function AssignmentsPage() {
         </ScrollReveal>
       </div>
 
-      <div className={`container ${styles.layout}`} style={{ marginTop: '30px' }}>
+      <div className={`container ${styles.layout}`}>
         {/* ═══ Left Sidebar ═══ */}
         <aside className={styles.sidebar}>
           <div className={styles.sidebarHeader}>

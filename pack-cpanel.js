@@ -97,6 +97,8 @@ async function packStandaloneCPanel() {
     'sutraverse-deployment', 'bee_temp_extract',
     'fwdengineeringphysicsnotesandppt',
     '_deploy',
+    'deployment', 'assets', 'mobile',
+    'seed-data-to-upload'
   ];
 
   for (const item of junkPatterns) {

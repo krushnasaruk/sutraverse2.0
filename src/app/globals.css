@@ -137,7 +137,7 @@
 html { scroll-behavior: smooth; }
 
 body {
-  font-family: var(--font-body);
+  font-family: var(--font-primary, var(--font-body));
   background-color: var(--bg-main);
   color: var(--text-primary);
   line-height: 1.6;
@@ -228,8 +228,10 @@ select option {
 .glass-panel {
   background: var(--bg-card);
   border: 1px solid var(--border);
-  border-radius: var(--radius-xl);
+  border-radius: var(--border-radius, var(--radius-xl));
   box-shadow: var(--shadow-glass);
+  backdrop-filter: blur(var(--glass-blur, 12px));
+  -webkit-backdrop-filter: blur(var(--glass-blur, 12px));
   position: relative;
   overflow: hidden;
   transition: box-shadow 0.2s ease, border-color 0.2s ease;
@@ -250,8 +252,8 @@ select option {
   justify-content: center;
   gap: var(--space-sm);
   padding: 12px 28px;
-  border-radius: var(--radius-full);
-  font-family: var(--font-heading);
+  border-radius: var(--border-radius, var(--radius-full));
+  font-family: var(--font-primary, var(--font-heading));
   font-weight: 700;
   font-size: 0.95rem;
   transition: background 0.2s ease, box-shadow 0.2s ease;
