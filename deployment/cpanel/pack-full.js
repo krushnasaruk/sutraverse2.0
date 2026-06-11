@@ -3,7 +3,7 @@ const archiver = require('archiver');
 const path = require('path');
 
 async function packStandaloneCPanel() {
-  const rootDir = __dirname;
+  const rootDir = path.join(__dirname, '..', '..');
   const standaloneDir = path.join(rootDir, '.next', 'standalone');
   const deployZipPath = path.join(rootDir, 'cpanel-full-deploy.zip');
 

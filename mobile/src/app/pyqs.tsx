@@ -6,6 +6,7 @@ import { collection, getDocs, query, where, orderBy } from 'firebase/firestore';
 import { db } from '../lib/firebase';
 import { useTheme } from '../context/ThemeContext';
 import { BlurView } from 'expo-blur';
+import { getAllSubjects } from '../lib/subjectMap';
 
 const { width: SW } = Dimensions.get('window');
 
@@ -60,7 +61,8 @@ export default function PYQScreen() {
         setPyqs(data);
         
         // Auto-select first subject if exists
-        const subjects = [...new Set(data.map(d => d.subject?.trim() || 'Other'))];
+        const validSubjects = getAllSubjects();
+        const subjects = [...new Set(data.map(d => d.subject?.trim() || 'Other'))].filter(s => validSubjects.includes(s)).sort();
         if (subjects.length > 0) setActiveSubject(subjects[0]);
       } catch (error) {
         console.warn('Error fetching pyqs:', error);
@@ -73,7 +75,10 @@ export default function PYQScreen() {
   }, []);
 
   const subjectsList = useMemo(() => {
-    return [...new Set(pyqs.map(p => p.subject?.trim() || 'Other'))].sort();
+    const validSubjects = getAllSubjects();
+    return [...new Set(pyqs.map(p => p.subject?.trim() || 'Other'))]
+           .filter(s => validSubjects.includes(s))
+           .sort();
   }, [pyqs]);
 
   const activePapers = useMemo(() => {

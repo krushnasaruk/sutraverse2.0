@@ -20,6 +20,14 @@ export function getUploadsDir() {
         return process.env.UPLOADS_DIR;
     }
 
+    // Use true system home directory (os.userInfo().homedir) as it is unaffected by Passenger's HOME override
+    let homeDir;
+    try {
+        homeDir = os.userInfo().homedir;
+    } catch (e) {
+        homeDir = os.homedir();
+    }
+
     // Default: store in home directory, safe from app redeployments
-    return path.join(os.homedir(), 'user-uploads');
+    return path.join(homeDir, 'user-uploads');
 }

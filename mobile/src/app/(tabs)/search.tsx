@@ -8,6 +8,7 @@ import { db } from '../../lib/firebase';
 import { useTheme } from '../../context/ThemeContext';
 import { useDownloads } from '../../context/DownloadsContext';
 import { BlurView } from 'expo-blur';
+import { getAllSubjects } from '../../lib/subjectMap';
 
 const { width: SW } = Dimensions.get('window');
 
@@ -59,9 +60,11 @@ export default function SearchScreen() {
   }, [allFiles, activeSection, secMeta]);
 
   const subjects = useMemo(() => {
+    const validSubjects = getAllSubjects();
     const m: Record<string,{count:number;downloads:number}> = {};
     sectionFiles.forEach(f => {
       const s = f.subject?.trim()||'Other';
+      if (!validSubjects.includes(s)) return;
       if (!m[s]) m[s]={count:0,downloads:0};
       m[s].count++; m[s].downloads += f.downloads||0;
     });

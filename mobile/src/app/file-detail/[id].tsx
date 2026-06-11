@@ -36,7 +36,7 @@ interface NoteFile {
 export default function FileDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const { colors, theme } = useTheme();
-  const { user } = useAuth();
+  const { user, getToken } = useAuth();
   const { downloadFile, isDownloaded, getLocalUri, removeDownload } = useDownloads();
   const router = useRouter();
 
@@ -84,26 +84,45 @@ export default function FileDetailScreen() {
     if (!rawUrl) return "https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf";
     let url = rawUrl;
     const BASE_URL = 'https://sutraverse.co.in';
-    
-    if (url.startsWith('https://firebasestorage.googleapis.com')) {
+
+    if (url.includes('firebasestorage.googleapis.com')) {
       return url;
     }
-    
-    if (url.startsWith('/api/downloads/')) {
-      url = `${BASE_URL}${url}`;
-    } else if (url.startsWith('/')) {
-      url = `${BASE_URL}/api/downloads${url}`;
-    } else if (url.includes('localhost:3000')) {
-      url = url.replace('http://localhost:3000', BASE_URL);
-    } else if (url.includes('192.168.') || url.includes('172.20.')) {
-      url = url.replace(/^http:\/\/[^\/]+/, BASE_URL);
+
+    // Strip out base urls to get a clean relative path
+    if (url.startsWith('http://') || url.startsWith('https://')) {
+      try {
+        // Only strip if it's not a generic http link that's unrelated
+        if (url.includes('localhost') || url.includes('sutraverse.co.in') || url.includes('192.168.')) {
+            const match = url.match(/^https?:\/\/[^\/]+(.*)/);
+            if (match && match[1]) {
+                url = match[1];
+            }
+        }
+      } catch (e) {}
     }
-    return url;
+
+    let relativePath = url;
+    if (relativePath.startsWith('/')) {
+      relativePath = relativePath.substring(1);
+    }
+    if (relativePath.includes('api/downloads/')) {
+      relativePath = relativePath.split('api/downloads/')[1];
+    }
+    relativePath = relativePath.split('?')[0];
+
+    return `${BASE_URL}/api/downloads/${relativePath}`;
   };
 
   const handleSaveOffline = async () => {
     if (!file) return;
-    const url = resolveUrl(file.fileURL || file.fileUrl);
+    let url = resolveUrl(file.fileURL || file.fileUrl);
+
+    const token = await getToken();
+    if (token && !url.includes('firebasestorage')) {
+      const sep = url.includes('?') ? '&' : '?';
+      url = `${url}${sep}token=${token}`;
+    }
 
     setDownloading(true);
     setDownloadProgress(0);
@@ -180,7 +199,14 @@ export default function FileDetailScreen() {
 
   const handleViewOnline = async () => {
     if (!file) return;
-    const url = resolveUrl(file.fileURL || file.fileUrl);
+    let url = resolveUrl(file.fileURL || file.fileUrl);
+
+    const token = await getToken();
+    if (token && !url.includes('firebasestorage')) {
+      const sep = url.includes('?') ? '&' : '?';
+      url = `${url}${sep}token=${token}`;
+    }
+
     const encodedUrl = url.includes('%') ? url : encodeURI(url);
     try {
       await WebBrowser.openBrowserAsync(encodedUrl);

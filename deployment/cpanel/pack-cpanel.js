@@ -3,7 +3,7 @@ const archiver = require('archiver');
 const path = require('path');
 
 async function packStandaloneCPanel() {
-  const rootDir = __dirname;
+  const rootDir = path.join(__dirname, '..', '..');
   const standaloneDir = path.join(rootDir, '.next', 'standalone');
   const deployZipPath = path.join(rootDir, 'cpanel-deploy.zip');
 
@@ -27,8 +27,8 @@ async function packStandaloneCPanel() {
     await fs.copy(publicSrc, publicDest, {
       filter: (src) => {
         const rel = path.relative(publicSrc, src);
-        // Exclude uploads and pyqs directories (they live outside the app on the server)
-        if (rel.startsWith('uploads') || rel.startsWith('pyqs')) return false;
+        // Exclude uploads directory (it lives outside the app on the server)
+        if (rel.startsWith('uploads')) return false;
         return true;
       }
     });
@@ -98,7 +98,9 @@ async function packStandaloneCPanel() {
     'fwdengineeringphysicsnotesandppt',
     '_deploy',
     'deployment', 'assets', 'mobile',
-    'seed-data-to-upload'
+    'seed-data-to-upload',
+    // Huge local folders tracked by Next.js NFT tracer but not needed in production
+    'user_uploads', 'BXE', 'chemistry', 'EG', 'EM', 'fpl', 'physics data', 'pps', 'zi97nRtM'
   ];
 
   for (const item of junkPatterns) {

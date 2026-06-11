@@ -4,15 +4,16 @@ import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { collection, getDocs, query, orderBy, limit, where, onSnapshot } from 'firebase/firestore';
-import { db } from '@/lib/firebase';
-import { useAuth } from '@/context/AuthContext';
-import { useCollege } from '@/context/CollegeContext';
-import { useTheme } from '@/context/ThemeContext';
-import { awardDownloadPoints } from '@/lib/points';
-import { ScrollReveal, CountUp } from '@/components/Animations';
+import { db, auth } from '@/database/config/firebase';
+import { useAuth } from '@/frontend/context/AuthContext';
+import { useCollege } from '@/frontend/context/CollegeContext';
+import { useTheme } from '@/frontend/context/ThemeContext';
+import { awardDownloadPoints } from '@/database/queries/points';
+import { ScrollReveal, CountUp } from '@/frontend/components/ui/Animations';
 import styles from './page.module.css';
-import { IconNotes, IconPyq, IconAssignment, IconSparkles, IconUser, IconFolder, IconHat, IconStar, IconDownload } from '@/components/Icons';
-import { Skeleton, SkeletonGrid } from '@/components/Skeleton/Skeleton';
+import { IconNotes, IconPyq, IconAssignment, IconSparkles, IconUser, IconFolder, IconHat, IconStar, IconDownload } from '@/frontend/components/ui/Icons';
+import { Skeleton, SkeletonGrid } from '@/frontend/components/ui/Skeleton/Skeleton';
+import { filterAvailableFiles } from '@/shared/utils/verifyFiles';
 
 function getTypeClass(type) {
   switch (type) {
@@ -59,10 +60,16 @@ export default function HomePage() {
         const snapshot = await Promise.race([getDocs(recentQ), timeout]);
         clearTimeout(timeoutId);
         
-        if (cancelled) return;
+        const data = snapshot.docs.map(d => {
+          const f = d.data();
+          if (f.subject === 'BE') f.subject = 'BEE';
+          if (f.subject === 'Engineering Mathematics 1') f.subject = 'Engineering Mathematics I';
+          return { id: d.id, ...f };
+        });
         
-        const data = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
-        setRecentFiles(data);
+        // Filter out files that don't exist on disk
+        const verified = await filterAvailableFiles(data);
+        if (!cancelled) setRecentFiles(verified);
       } catch (error) {
         console.warn('Error fetching recent files:', error);
         if (!cancelled) setRecentFiles([]);
@@ -216,7 +223,19 @@ export default function HomePage() {
       await awardDownloadPoints(file.id, file.uploaderUID, user?.uid);
       setRecentFiles(prev => prev.map(f => f.id === file.id ? { ...f, downloads: (f.downloads || 0) + 1 } : f));
     } catch (e) { console.warn('Could not update download count:', e.message); }
-    window.open(url, '_blank');
+
+    let finalUrl = url;
+    if (!url.includes('firebasestorage') && auth?.currentUser) {
+      try {
+        const idToken = await auth.currentUser.getIdToken();
+        if (idToken) {
+          finalUrl = `${url}?token=${encodeURIComponent(idToken)}`;
+        }
+      } catch (tokenErr) {
+        console.warn('Failed to retrieve authentication token:', tokenErr);
+      }
+    }
+    window.open(finalUrl, '_blank');
   };
 
   const getInitials = (name) => {
@@ -273,9 +292,13 @@ export default function HomePage() {
       {/* ══════════════════════════════════════════════════ */}
       <section className={styles.hero} ref={heroRef}>
         {/* Floating orbs */}
-        <div className={styles.heroOrb1}></div>
-        <div className={styles.heroOrb2}></div>
-        <div className={styles.heroOrb3}></div>
+        {(branding.showHeroOrbs ?? true) && (
+          <>
+            <div className={styles.heroOrb1}></div>
+            <div className={styles.heroOrb2}></div>
+            <div className={styles.heroOrb3}></div>
+          </>
+        )}
 
         <div className={styles.heroInner}>
           <div className={styles.heroBadge}>
@@ -303,16 +326,14 @@ export default function HomePage() {
             </span>
           </h1>
 
-          <p className={styles.heroSubtitle}>
-            {branding.heroSubtitle}
-          </p>
+
 
           <form className={styles.heroSearchBar} onSubmit={handleHeroSearch}>
             <span className={styles.heroSearchIcon}>🔍</span>
             <input
               type="text"
               className={styles.heroSearchInput}
-              placeholder="Search for DBMS notes, DSA questions, Physics..."
+              placeholder={branding.heroPlaceholder || "Search for DBMS notes, DSA questions, Physics..."}
               value={heroQuery}
               onChange={(e) => setHeroQuery(e.target.value)}
               suppressHydrationWarning
@@ -353,7 +374,7 @@ export default function HomePage() {
             { href: '/assistant', icon: null, emoji: '🤖', label: 'AI Tutor', color: '#b91c1c', desc: 'Doubt solving' },
             { href: '/community', icon: null, emoji: '💬', label: 'Discussions', color: '#15803d', desc: 'Peer support' },
             { href: '/news', icon: null, emoji: '📰', label: 'Notice Board', color: '#10b981', desc: 'Official updates' },
-            { href: '/clubs', icon: null, emoji: '🏢', label: 'Clubs', color: '#ef4444', desc: 'Campus life' },
+            { href: '/paper-analysis', icon: null, emoji: '🔍', label: 'Paper Analysis', color: '#f59e0b', desc: 'AI Insights' },
           ].map((item, i) => (
             <ScrollReveal key={item.href} delay={i * 60}>
               <Link href={item.href} className={styles.dockItem}>
@@ -393,153 +414,7 @@ export default function HomePage() {
         </section>
       )}
 
-      {/* ══════════════════════════════════════════════════ */}
-      {/* ═══ CAMPUS LIFE — MAGAZINE LAYOUT ══════════════ */}
-      {/* ══════════════════════════════════════════════════ */}
-      <section className={styles.campusSection}>
-        <ScrollReveal>
-          <div className={styles.campusHeader}>
-            <div className={styles.campusHeaderLeft}>
-              <span className={styles.campusBadge}>🏫 Beyond the classroom</span>
-              <h2 className={styles.campusTitle}>Campus Life</h2>
-              <p className={styles.campusSubtitle}>Connect, collaborate, and never miss what&apos;s happening on campus.</p>
-            </div>
-          </div>
-        </ScrollReveal>
 
-        <div className={styles.campusGrid}>
-          {/* ── COMMUNITY — Hero Card ── */}
-          <ScrollReveal delay={0}>
-            <Link href="/community" className={`${styles.campusCard} ${styles.campusCardHero}`}>
-              <div className={styles.campusCardShimmer}></div>
-              <div className={styles.campusCardGradient} style={{ background: 'linear-gradient(160deg, #b91c1c30 0%, #15803d15 100%)' }}></div>
-              <div className={styles.campusCardInner}>
-                <div className={styles.campusCardTop}>
-                  <div className={styles.campusCardIconLg} style={{ background: 'linear-gradient(135deg, #b91c1c, #15803d)' }}>
-                    💬
-                  </div>
-                  <div className={styles.campusLiveDot}>
-                    <span className={styles.campusLivePing}></span>
-                    <span className={styles.campusLiveCore}></span>
-                  </div>
-                </div>
-                <h3 className={styles.campusCardName}>Community</h3>
-                <p className={styles.campusCardDesc}>
-                  Real-time discussions, peer support, and campus updates from every department — your digital quad.
-                </p>
-
-                {/* Live feed preview */}
-                {communityPosts.length > 0 && (
-                  <div className={styles.campusFeed}>
-                    {communityPosts.slice(0, 3).map((post, i) => (
-                      <div key={post.id} className={styles.campusFeedItem} style={{ animationDelay: `${i * 150}ms` }}>
-                        <div className={styles.campusFeedAvatar} style={{ background: ['#b91c1c','#dc2626','#22c55e'][i % 3] }}>
-                          {post.authorName?.charAt(0) || '?'}
-                        </div>
-                        <div className={styles.campusFeedBody}>
-                          <span className={styles.campusFeedAuthor}>{post.authorName}</span>
-                          <span className={styles.campusFeedText}>{post.content?.slice(0, 55)}...</span>
-                        </div>
-                        <div className={styles.campusFeedMeta}>
-                          ❤️ {post.likes?.length || 0}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
-
-                <div className={styles.campusCardAction}>
-                  <span>Join the conversation</span>
-                  <span className={styles.campusArrowIcon}>→</span>
-                </div>
-              </div>
-            </Link>
-          </ScrollReveal>
-
-          {/* Right column */}
-          <div className={styles.campusRight}>
-            {/* ── CLUBS ── */}
-            <ScrollReveal delay={120}>
-              <Link href="/clubs" className={`${styles.campusCard} ${styles.campusCardClubs}`}>
-                <div className={styles.campusCardShimmer}></div>
-                <div className={styles.campusCardGradient} style={{ background: 'linear-gradient(160deg, #f59e0b20 0%, #ef444415 100%)' }}></div>
-                <div className={styles.campusCardInner}>
-                  <div className={styles.campusCardTop}>
-                    <div className={styles.campusCardIconLg} style={{ background: 'linear-gradient(135deg, #f59e0b, #ef4444)' }}>
-                      🏢
-                    </div>
-                    <div className={styles.campusCountBadge}>
-                      <span className={styles.campusCountNum}>{clubsCount}+</span>
-                      <span className={styles.campusCountLabel}>clubs</span>
-                    </div>
-                  </div>
-                  <h3 className={styles.campusCardName}>Campus Clubs</h3>
-                  <p className={styles.campusCardDesc}>Coding marathons, robotics, drama, debate — find your tribe.</p>
-
-                  <div className={styles.campusTagsRow}>
-                    {[
-                      { label: '💻 Tech', color: '#dc2626' },
-                      { label: '🎨 Arts', color: '#22c55e' },
-                      { label: '⚽ Sports', color: '#22c55e' },
-                      { label: '💼 Business', color: '#f59e0b' },
-                      { label: '🔬 Science', color: '#b91c1c' },
-                    ].map(tag => (
-                      <span key={tag.label} className={styles.campusTag} style={{ color: tag.color, borderColor: `${tag.color}40`, background: `${tag.color}10` }}>
-                        {tag.label}
-                      </span>
-                    ))}
-                  </div>
-
-                  <div className={styles.campusCardAction}>
-                    <span>Browse all clubs</span>
-                    <span className={styles.campusArrowIcon}>→</span>
-                  </div>
-                </div>
-              </Link>
-            </ScrollReveal>
-
-            {/* ── NEWS ── */}
-            <ScrollReveal delay={220}>
-              <Link href="/news" className={`${styles.campusCard} ${styles.campusCardNews}`}>
-                <div className={styles.campusCardShimmer}></div>
-                <div className={styles.campusCardGradient} style={{ background: 'linear-gradient(160deg, #ef444420 0%, #f9731615 100%)' }}></div>
-                <div className={styles.campusCardInner}>
-                  <div className={styles.campusCardTop}>
-                    <div className={styles.campusCardIconLg} style={{ background: 'linear-gradient(135deg, #ef4444, #f97316)' }}>
-                      📰
-                    </div>
-                    <div className={styles.campusLiveDot}>
-                      <span className={styles.campusLivePing} style={{ background: '#ef4444' }}></span>
-                      <span className={styles.campusLiveCore} style={{ background: '#ef4444' }}></span>
-                    </div>
-                  </div>
-                  <h3 className={styles.campusCardName}>College News</h3>
-                  <p className={styles.campusCardDesc}>Never miss an announcement or event.</p>
-
-                  {latestNews.length > 0 && (
-                    <div className={styles.campusNewsList}>
-                      {latestNews.slice(0, 3).map((item, i) => (
-                        <div key={item.id} className={styles.campusNewsRow}>
-                          <span className={styles.campusNewsType} style={{ background: getNewsTypeColor(item.type) }}>
-                            {getNewsTypeEmoji(item.type)}
-                          </span>
-                          <span className={styles.campusNewsText}>{item.title}</span>
-                          <span className={styles.campusNewsTime}>{formatNewsDate(item.timestamp)}</span>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-
-                  <div className={styles.campusCardAction}>
-                    <span>View bulletin</span>
-                    <span className={styles.campusArrowIcon}>→</span>
-                  </div>
-                </div>
-              </Link>
-            </ScrollReveal>
-          </div>
-        </div>
-      </section>
 
       {/* ══════════════════════════════════════════════════ */}
       {/* ═══ RECENT UPLOADS / RECOMMENDED ════════════════ */}
@@ -751,11 +626,11 @@ export default function HomePage() {
                 <strong style={{color: 'var(--primary)', fontWeight: '800'}}>Sutraverse can evolve into {branding.collegeShortName}’s official academic digital platform.</strong>
               </p>
               <div className={styles.ctaActions}>
-                <Link href={`mailto:admin@${branding.collegeShortName.toLowerCase() || 'sutraverse'}.edu`} className={styles.ctaBtnPrimary}>
-                  Pilot Implementation
+                <Link href={branding.ctaPilotLink || `mailto:admin@${branding.collegeShortName?.toLowerCase() || 'sutraverse'}.edu`} className={styles.ctaBtnPrimary}>
+                  {branding.ctaPilotText || 'Pilot Implementation'}
                 </Link>
-                <Link href="/about" className={styles.ctaBtnSecondary}>
-                  Faculty Onboarding
+                <Link href={branding.ctaFacultyLink || '/about'} className={styles.ctaBtnSecondary}>
+                  {branding.ctaFacultyText || 'Faculty Onboarding'}
                 </Link>
               </div>
             </div>
@@ -797,7 +672,36 @@ export default function HomePage() {
             </div>
           </div>
           <div className={styles.footerBottom}>
-            <span>© 2026 Sutraverse. All rights reserved. (Deployed via Automated CI/CD Pipeline 🚀)</span>
+            <span>© 2026 Sutraverse. All rights reserved.</span>
+            
+            {branding.socials && Object.values(branding.socials).some(link => link) && (
+              <div style={{ display: 'flex', gap: '15px', justifyContent: 'center', marginTop: '10px', marginBottom: '10px', flexWrap: 'wrap' }}>
+                {branding.socials.linkedin && (
+                  <a href={branding.socials.linkedin} target="_blank" rel="noopener noreferrer" style={{ fontSize: '0.85rem', textDecoration: 'none', color: 'var(--text-secondary)' }} title="LinkedIn">🔗 LinkedIn</a>
+                )}
+                {branding.socials.instagram && (
+                  <a href={branding.socials.instagram} target="_blank" rel="noopener noreferrer" style={{ fontSize: '0.85rem', textDecoration: 'none', color: 'var(--text-secondary)' }} title="Instagram">📸 Instagram</a>
+                )}
+                {branding.socials.github && (
+                  <a href={branding.socials.github} target="_blank" rel="noopener noreferrer" style={{ fontSize: '0.85rem', textDecoration: 'none', color: 'var(--text-secondary)' }} title="GitHub">💻 GitHub</a>
+                )}
+                {branding.socials.youtube && (
+                  <a href={branding.socials.youtube} target="_blank" rel="noopener noreferrer" style={{ fontSize: '0.85rem', textDecoration: 'none', color: 'var(--text-secondary)' }} title="YouTube">▶️ YouTube</a>
+                )}
+              </div>
+            )}
+
+            <div style={{ marginTop: '12px', display: 'flex', flexDirection: 'column', gap: '4px', alignItems: 'center' }}>
+              <a href={branding.developedByLink || "https://krushnasaruk.in"} target="_blank" rel="noopener noreferrer" style={{ color: 'var(--text-primary)', fontWeight: '700', textDecoration: 'none' }}>
+                Developed by {branding.developedByName || "Krushna Saruk"}
+              </a>
+              {branding.supportPhone && (
+                <span style={{ color: 'var(--text-muted)' }}>Contact: {branding.supportPhone}</span>
+              )}
+              {branding.supportEmail && (
+                <span style={{ color: 'var(--text-muted)' }}>Email: {branding.supportEmail}</span>
+              )}
+            </div>
           </div>
         </div>
       </footer>

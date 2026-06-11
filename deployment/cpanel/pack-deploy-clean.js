@@ -3,7 +3,7 @@ const archiver = require('archiver');
 const path = require('path');
 
 async function packClean() {
-  const rootDir = __dirname;
+  const rootDir = path.join(__dirname, '..', '..');
   const standaloneDir = path.join(rootDir, '.next', 'standalone');
   const staticDir = path.join(rootDir, '.next', 'static');
   const deployZipPath = path.join(rootDir, 'cpanel-deploy-clean.zip');

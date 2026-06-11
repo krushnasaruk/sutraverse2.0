@@ -2,23 +2,49 @@ import './globals.css';
 import './mobile.css';
 import './performance.css';
 import Script from 'next/script';
-import { AuthProvider } from '@/context/AuthContext';
-import { ThemeProvider } from '@/context/ThemeContext';
-import { CollegeProvider } from '@/context/CollegeContext';
-import Navbar from '@/components/Navbar/Navbar';
-import MobileNav from '@/components/MobileNav/MobileNav';
-import CookieConsent from '@/components/CookieConsent';
-import GlobalBot from '@/components/GlobalBot/GlobalBot';
+import { AuthProvider } from '@/frontend/context/AuthContext';
+import { ThemeProvider } from '@/frontend/context/ThemeContext';
+import { CollegeProvider } from '@/frontend/context/CollegeContext';
+import Navbar from '@/frontend/components/layout/Navbar/Navbar';
+import AnnouncementBanner from '@/frontend/components/layout/AnnouncementBanner/AnnouncementBanner';
+import MaintenanceGuard from '@/frontend/components/core/MaintenanceGuard/MaintenanceGuard';
+import MobileNav from '@/frontend/components/layout/MobileNav/MobileNav';
+import CookieConsent from '@/frontend/components/core/CookieConsent';
+import GlobalBot from '@/frontend/components/features/GlobalBot/GlobalBot';
+import GlobalEngagements from '@/frontend/components/features/GlobalEngagements/GlobalEngagements';
+import { adminDb } from '@/database/config/firebaseAdmin';
 
-export const metadata = {
-  title: 'Sutras — The Student OS',
-  description: 'Find notes, PYQs, assignments, and ace your exams with a sleek platform built for modern students.',
-  keywords: 'notes, pyqs, assignments, college, exam prep, study material, sutras, futuristic',
-};
+export async function generateMetadata() {
+  let title = 'SutraVerse — Digital Notes Hub';
+  let description = 'Find notes, PYQs, assignments, and ace your exams with a sleek platform built for modern students.';
+  
+  try {
+    const snap = await adminDb.collection('settings').doc('college').get();
+    if (snap.exists) {
+      const data = snap.data();
+      if (data.platformName) {
+        title = `${data.platformName} — Digital Notes Hub`;
+      } else if (data.collegeName) {
+        title = `${data.collegeName} — Digital Notes Hub`;
+      }
+      if (data.seoMetaDescription) {
+        description = data.seoMetaDescription;
+      }
+    }
+  } catch (e) {
+    console.warn('Metadata fetch failed:', e.message);
+  }
+
+  return {
+    title,
+    description,
+    keywords: 'notes, pyqs, assignments, college, exam prep, study material, sutraverse, futuristic',
+  };
+}
 
 export default function RootLayout({ children }) {
   return (
-    <html lang="en" suppressHydrationWarning>
+    <html lang="en" suppressHydrationWarning data-scroll-behavior="smooth">
       <head>
         {/* Anti-Flash Theme Injector */}
         <script dangerouslySetInnerHTML={{
@@ -52,11 +78,15 @@ export default function RootLayout({ children }) {
         <ThemeProvider>
           <CollegeProvider>
             <AuthProvider>
-              <Navbar />
-              <main>{children}</main>
-              <MobileNav />
-              <CookieConsent />
-              <GlobalBot />
+              <MaintenanceGuard>
+                <Navbar />
+                <AnnouncementBanner />
+                <main>{children}</main>
+                <MobileNav />
+                <CookieConsent />
+                <GlobalBot />
+                <GlobalEngagements />
+              </MaintenanceGuard>
             </AuthProvider>
           </CollegeProvider>
         </ThemeProvider>

@@ -3,9 +3,9 @@ const archiver = require('archiver');
 const path = require('path');
 
 async function packStandalone() {
-  const rootDir = __dirname;
+  const rootDir = path.join(__dirname, '..', '..');
   const standaloneDir = path.join(rootDir, '.next', 'standalone');
-  const deployZipPath = path.join(rootDir, '..', 'standalone-deploy.zip');
+  const deployZipPath = path.join(rootDir, 'standalone-deploy.zip');
 
   if (!fs.existsSync(standaloneDir)) {
     console.error("Standalone directory doesn't exist. Did you run 'npm run build' with output: 'standalone'?");

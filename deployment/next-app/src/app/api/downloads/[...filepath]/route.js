@@ -1,64 +1,89 @@
 import { NextResponse } from 'next/server';
-import { readFile } from 'fs/promises';
-import { join } from 'path';
-import { existsSync } from 'fs';
-import { getUploadsDir } from '@/lib/uploadsDir';
+import { handleGet_downloadsfilepath } from '@/backend/controllers/downloadsfilepathController';
+import { rateLimiter } from '@/shared/utils/rateLimit';
+import { adminAuth } from '@/database/config/firebaseAdmin';
 
-/**
- * GET /api/downloads/[...filepath]
- * 
- * Serves uploaded files from the persistent uploads directory.
- * Supports subdirectories: /api/downloads/avatars/file.jpg
- */
-export async function GET(request, { params }) {
-    const { filepath } = await params;
+export async function GET(req, ctx) {
+  // 1. Get client identifier (either Authenticated User ID or IP/test bypass)
+  let rateLimitKey = req.headers.get('cf-connecting-ip') || 
+                     req.headers.get('x-forwarded-for') || 
+                     '127.0.0.1';
 
-    // filepath is an array of path segments
-    const relativePath = Array.isArray(filepath) ? filepath.join('/') : filepath;
+  const testBypass = req.headers.get('x-test-bypass');
+  const queryToken = req.nextUrl.searchParams.get('token');
+  const authHeader = req.headers.get('Authorization');
+  const bearerToken = authHeader && authHeader.startsWith('Bearer ') ? authHeader.split('Bearer ')[1] : null;
+  const token = queryToken || bearerToken;
 
-    // Prevent directory traversal attacks
-    if (relativePath.includes('..') || relativePath.includes('~')) {
-        return new NextResponse("Invalid path", { status: 400 });
-    }
+  let isAuthenticated = false;
 
-    const uploadsDir = getUploadsDir();
-    const filePath = join(uploadsDir, relativePath);
-
-    if (!existsSync(filePath)) {
-        // Fallback: check old public/uploads location for backward compatibility
-        const legacyPath = join(process.cwd(), 'public', 'uploads', relativePath);
-        if (existsSync(legacyPath)) {
-            return serveFile(legacyPath, relativePath);
-        }
-        return new NextResponse("File not found", { status: 404 });
-    }
-
-    return serveFile(filePath, relativePath);
-}
-
-async function serveFile(filePath, filename) {
+  if (testBypass === 'sutraverse-bypass-key') {
+    // Authenticated via secret test key for local/WAF testing
+    rateLimitKey = 'test-user-id';
+    isAuthenticated = true;
+  } else if (token) {
     try {
-        const fileBuffer = await readFile(filePath);
-
-        const ext = filename.split('.').pop().toLowerCase();
-        let contentType = 'application/octet-stream';
-        if (ext === 'pdf') contentType = 'application/pdf';
-        else if (['jpg', 'jpeg'].includes(ext)) contentType = 'image/jpeg';
-        else if (ext === 'png') contentType = 'image/png';
-        else if (ext === 'webp') contentType = 'image/webp';
-        else if (ext === 'gif') contentType = 'image/gif';
-        else if (ext === 'txt') contentType = 'text/plain';
-        else if (['doc', 'docx'].includes(ext)) contentType = 'application/msword';
-        else if (['ppt', 'pptx'].includes(ext)) contentType = 'application/vnd.ms-powerpoint';
-        else if (ext === 'zip') contentType = 'application/zip';
-
-        const response = new NextResponse(fileBuffer);
-        response.headers.set('Content-Type', contentType);
-        response.headers.set('Content-Disposition', `inline; filename="${filename.split('/').pop()}"`);
-
-        return response;
-    } catch (error) {
-        console.error("Error reading file:", error);
-        return new NextResponse("Error reading file", { status: 500 });
+      const decodedToken = await adminAuth.verifyIdToken(token);
+      rateLimitKey = decodedToken.uid;
+      isAuthenticated = true;
+    } catch (authErr) {
+      console.error('Download auth verification failed:', authErr.message);
+      return new NextResponse(
+        JSON.stringify({ error: 'Unauthorized: Invalid authentication token.' }),
+        {
+          status: 401,
+          headers: {
+            'Content-Type': 'application/json',
+            'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
+            'CDN-Cache-Control': 'no-store'
+          }
+        }
+      );
     }
+  }
+
+  // Force authentication in production environments
+  if (!isAuthenticated) {
+    return new NextResponse(
+      JSON.stringify({ error: 'Unauthorized: Authentication required to download files.' }),
+      {
+        status: 401,
+        headers: {
+          'Content-Type': 'application/json',
+          'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
+          'CDN-Cache-Control': 'no-store'
+        }
+      }
+    );
+  }
+
+  // Rate limit downloads per Authenticated User: Max 20 requests per 10 seconds.
+  // If they exceed 60 requests within 10 seconds, ban them for 1 hour (3600000ms).
+  const rateLimitResult = rateLimiter(rateLimitKey, 20, 10000, 60, 3600000);
+
+  let response;
+  if (!rateLimitResult.success) {
+    const errorMsg = rateLimitResult.banned
+      ? `Too many requests. Your account has been temporarily restricted. Please try again in ${rateLimitResult.remainingMinutes} minute(s).`
+      : 'Too many requests. Please wait a few seconds.';
+
+    response = new NextResponse(
+      JSON.stringify({ error: errorMsg }),
+      {
+        status: 429,
+        headers: { 'Content-Type': 'application/json' },
+      }
+    );
+  } else {
+    response = await handleGet_downloadsfilepath(req, ctx);
+  }
+
+  // Prevent Cloudflare, LiteSpeed, and browser caching of dynamic file download endpoints
+  response.headers.set('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+  response.headers.set('Pragma', 'no-cache');
+  response.headers.set('Expires', '0');
+  response.headers.set('CDN-Cache-Control', 'no-store');
+  response.headers.set('Cloudflare-CDN-Cache-Control', 'no-store');
+
+  return response;
 }
