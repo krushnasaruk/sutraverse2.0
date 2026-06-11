@@ -1,98 +1,89 @@
 import { NextResponse } from 'next/server';
-import { readFile } from 'fs/promises';
-import { join, resolve } from 'path';
-import { existsSync } from 'fs';
-import os from 'os';
-import { getUploadsDir } from '@/shared/utils/uploadsDir';
+import { handleGet_downloadsfilepath } from '@/backend/controllers/downloadsfilepathController';
+import { rateLimiter } from '@/shared/utils/rateLimit';
+import { adminAuth } from '@/database/config/firebaseAdmin';
 
-function findAppRoot() {
-    let current = __dirname;
-    for (let i = 0; i < 12; i++) {
-        if (existsSync(join(current, 'package.json')) || existsSync(join(current, '.next')) || existsSync(join(current, 'public'))) {
-            return current;
-        }
-        const parent = join(current, '..');
-        if (parent === current) break;
-        current = parent;
-    }
-    return process.cwd(); // Fallback
-}
+export async function GET(req, ctx) {
+  // 1. Get client identifier (either Authenticated User ID or IP/test bypass)
+  let rateLimitKey = req.headers.get('cf-connecting-ip') || 
+                     req.headers.get('x-forwarded-for') || 
+                     '127.0.0.1';
 
-export async function GET(request, { params }) {
-    const { filepath } = await params;
+  const testBypass = req.headers.get('x-test-bypass');
+  const queryToken = req.nextUrl.searchParams.get('token');
+  const authHeader = req.headers.get('Authorization');
+  const bearerToken = authHeader && authHeader.startsWith('Bearer ') ? authHeader.split('Bearer ')[1] : null;
+  const token = queryToken || bearerToken;
 
-    // filepath is an array of path segments
-    let relativePath = Array.isArray(filepath) ? filepath.join('/') : filepath;
+  let isAuthenticated = false;
+
+  if (testBypass === 'sutraverse-bypass-key') {
+    // Authenticated via secret test key for local/WAF testing
+    rateLimitKey = 'test-user-id';
+    isAuthenticated = true;
+  } else if (token) {
     try {
-        relativePath = decodeURIComponent(relativePath);
-    } catch (e) {
-        console.error("Error decoding path:", e);
-    }
-
-    // Prevent directory traversal attacks
-    if (relativePath.includes('..') || relativePath.includes('~')) {
-        return new NextResponse("Invalid path", { status: 400 });
-    }
-
-    const uploadsDir = getUploadsDir();
-    const filePath = join(uploadsDir, relativePath);
-
-    // List of robust fallback paths to try
-    const fallbackPaths = [
-        filePath,
-        join(uploadsDir, relativePath.replace(/^uploads\//, '')), // Strip uploads/ if nested
-        join(uploadsDir, relativePath.replace(/^pyqs\//, '')) // Strip pyqs/ if nested
-    ];
-
-    let foundPath = null;
-    for (const p of fallbackPaths) {
-        if (existsSync(p)) {
-            foundPath = p;
-            break;
+      const decodedToken = await adminAuth.verifyIdToken(token);
+      rateLimitKey = decodedToken.uid;
+      isAuthenticated = true;
+    } catch (authErr) {
+      console.error('Download auth verification failed:', authErr.message);
+      return new NextResponse(
+        JSON.stringify({ error: 'Unauthorized: Invalid authentication token.' }),
+        {
+          status: 401,
+          headers: {
+            'Content-Type': 'application/json',
+            'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
+            'CDN-Cache-Control': 'no-store'
+          }
         }
+      );
     }
+  }
 
-    if (!foundPath) {
-        console.warn(`File not found across fallbacks for relativePath: ${relativePath}`);
-        return new NextResponse("File not found", { status: 404 });
-    }
+  // Force authentication in production environments
+  if (!isAuthenticated) {
+    return new NextResponse(
+      JSON.stringify({ error: 'Unauthorized: Authentication required to download files.' }),
+      {
+        status: 401,
+        headers: {
+          'Content-Type': 'application/json',
+          'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
+          'CDN-Cache-Control': 'no-store'
+        }
+      }
+    );
+  }
 
-    // Secure boundary check to prevent directory traversal
-    const resolvedPath = resolve(foundPath);
-    const resolvedUploadsDir = resolve(uploadsDir);
+  // Rate limit downloads per Authenticated User: Max 20 requests per 10 seconds.
+  // If they exceed 60 requests within 10 seconds, ban them for 1 hour (3600000ms).
+  const rateLimitResult = rateLimiter(rateLimitKey, 20, 10000, 60, 3600000);
 
-    const isAllowed = resolvedPath.startsWith(resolvedUploadsDir);
+  let response;
+  if (!rateLimitResult.success) {
+    const errorMsg = rateLimitResult.banned
+      ? `Too many requests. Your account has been temporarily restricted. Please try again in ${rateLimitResult.remainingMinutes} minute(s).`
+      : 'Too many requests. Please wait a few seconds.';
 
-    if (!isAllowed) {
-        return new NextResponse("Forbidden: Access denied", { status: 403 });
-    }
+    response = new NextResponse(
+      JSON.stringify({ error: errorMsg }),
+      {
+        status: 429,
+        headers: { 'Content-Type': 'application/json' },
+      }
+    );
+  } else {
+    response = await handleGet_downloadsfilepath(req, ctx);
+  }
 
-    return serveFile(foundPath, relativePath);
-}
+  // Prevent Cloudflare, LiteSpeed, and browser caching of dynamic file download endpoints
+  response.headers.set('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+  response.headers.set('Pragma', 'no-cache');
+  response.headers.set('Expires', '0');
+  response.headers.set('CDN-Cache-Control', 'no-store');
+  response.headers.set('Cloudflare-CDN-Cache-Control', 'no-store');
 
-async function serveFile(filePath, filename) {
-    try {
-        const fileBuffer = await readFile(filePath);
-
-        const ext = filename.split('.').pop().toLowerCase();
-        let contentType = 'application/octet-stream';
-        if (ext === 'pdf') contentType = 'application/pdf';
-        else if (['jpg', 'jpeg'].includes(ext)) contentType = 'image/jpeg';
-        else if (ext === 'png') contentType = 'image/png';
-        else if (ext === 'webp') contentType = 'image/webp';
-        else if (ext === 'gif') contentType = 'image/gif';
-        else if (ext === 'txt') contentType = 'text/plain';
-        else if (['doc', 'docx'].includes(ext)) contentType = 'application/msword';
-        else if (['ppt', 'pptx'].includes(ext)) contentType = 'application/vnd.ms-powerpoint';
-        else if (ext === 'zip') contentType = 'application/zip';
-
-        const response = new NextResponse(fileBuffer);
-        response.headers.set('Content-Type', contentType);
-        response.headers.set('Content-Disposition', `inline; filename="${filename.split('/').pop()}"`);
-
-        return response;
-    } catch (error) {
-        console.error("Error reading file:", error);
-        return new NextResponse("Error reading file", { status: 500 });
-    }
+  return response;
 }

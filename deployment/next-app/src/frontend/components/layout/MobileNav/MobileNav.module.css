@@ -1,0 +1,4 @@
+/* Completely disabled — replaced by top navbar dropdown */
+.mobileNav {
+  display: none !important;
+}

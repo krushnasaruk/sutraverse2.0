@@ -1,0 +1,344 @@
+.container {
+    padding: 2rem;
+    max-width: 1000px;
+    margin: 0 auto;
+    color: #fff;
+    animation: fadeIn 0.4s ease-out;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.header {
+    margin-bottom: 2rem;
+}
+
+.title {
+    font-size: 2rem;
+    font-weight: 700;
+    margin-bottom: 0.5rem;
+    color: #f8fafc;
+}
+
+.subtitle {
+    color: #94a3b8;
+    font-size: 1rem;
+}
+
+.emptyState {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 50vh;
+    color: #94a3b8;
+    font-size: 1.2rem;
+}
+
+.card {
+    background: rgba(30, 41, 59, 0.5);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 12px;
+    padding: 1.5rem;
+    margin-bottom: 2rem;
+    backdrop-filter: blur(10px);
+}
+
+.cardTitle {
+    font-size: 1.25rem;
+    font-weight: 600;
+    margin-bottom: 1.5rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.modeToggle {
+    display: flex;
+    gap: 0.5rem;
+    background: rgba(0, 0, 0, 0.2);
+    padding: 0.25rem;
+    border-radius: 8px;
+}
+
+.modeBtn {
+    background: transparent;
+    border: none;
+    color: #94a3b8;
+    padding: 0.5rem 1rem;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.2s;
+    font-size: 0.9rem;
+}
+
+.modeBtnActive {
+    background: #475569;
+    color: #fff;
+}
+
+.formGrid {
+    display: grid;
+    gap: 1rem;
+}
+
+.formRow {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+}
+
+.input {
+    width: 100%;
+    padding: 0.75rem 1rem;
+    background: rgba(15, 23, 42, 0.6);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 8px;
+    color: #fff;
+    font-family: inherit;
+    transition: border-color 0.2s;
+}
+
+.input:focus {
+    outline: none;
+    border-color: #a855f7;
+}
+
+.btnPrimary, .btnSecondary {
+    padding: 0.75rem 1.5rem;
+    border-radius: 8px;
+    border: none;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.btnPrimary {
+    background: #7c3aed;
+    color: white;
+}
+
+.btnPrimary:hover:not(:disabled) {
+    opacity: 0.9;
+    transform: translateY(-1px);
+}
+
+.btnPrimary:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.btnSecondary {
+    background: rgba(255, 255, 255, 0.1);
+    color: white;
+}
+
+.btnSecondary:hover {
+    background: rgba(255, 255, 255, 0.15);
+}
+
+.aiGenerateBtn {
+    background: #2563eb;
+    color: white;
+    padding: 0.75rem 1.5rem;
+    border-radius: 8px;
+    border: none;
+    font-weight: 600;
+    cursor: pointer;
+    width: 100%;
+    margin-top: 1rem;
+    transition: all 0.2s;
+}
+
+.aiGenerateBtn:hover:not(:disabled) {
+    opacity: 0.9;
+}
+
+.aiGenerateBtn:disabled {
+    opacity: 0.5;
+    cursor: wait;
+}
+
+.questionBuilder {
+    margin-top: 2rem;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+    padding-top: 2rem;
+}
+
+.questionItem {
+    background: rgba(15, 23, 42, 0.4);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    border-radius: 8px;
+    padding: 1.5rem;
+    margin-bottom: 1rem;
+    position: relative;
+}
+
+.removeQuestionBtn {
+    position: absolute;
+    top: 1rem;
+    right: 1rem;
+    background: rgba(239, 68, 68, 0.2);
+    color: #fca5a5;
+    border: none;
+    border-radius: 4px;
+    padding: 0.25rem 0.5rem;
+    font-size: 0.8rem;
+    cursor: pointer;
+}
+
+.removeQuestionBtn:hover {
+    background: rgba(239, 68, 68, 0.4);
+}
+
+.questionHeader {
+    font-weight: 600;
+    margin-bottom: 1rem;
+    color: #e2e8f0;
+}
+
+.optionsGrid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.75rem;
+    margin-top: 1rem;
+}
+
+.optionWrapper {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.optionRadio {
+    accent-color: #a855f7;
+    width: 18px;
+    height: 18px;
+    cursor: pointer;
+}
+
+.publishActions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 1rem;
+    margin-top: 2rem;
+}
+
+.statusMsg {
+    margin-top: 1rem;
+    padding: 0.75rem;
+    border-radius: 8px;
+    font-size: 0.9rem;
+    text-align: center;
+}
+
+.statusError {
+    background: rgba(239, 68, 68, 0.1);
+    color: #fca5a5;
+    border: 1px solid rgba(239, 68, 68, 0.2);
+}
+
+.statusSuccess {
+    background: rgba(34, 197, 94, 0.1);
+    color: #86efac;
+    border: 1px solid rgba(34, 197, 94, 0.2);
+}
+
+.testsList {
+    display: grid;
+    gap: 1rem;
+}
+
+.testItem {
+    background: rgba(30, 41, 59, 0.5);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 8px;
+    padding: 1.5rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.testInfo h4 {
+    margin: 0 0 0.25rem 0;
+    font-size: 1.1rem;
+    color: #f8fafc;
+}
+
+.testMeta {
+    color: #94a3b8;
+    font-size: 0.85rem;
+    margin: 0;
+}
+
+.testActions {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.viewBtn {
+    background: rgba(59, 130, 246, 0.2);
+    color: #93c5fd;
+    border: 1px solid rgba(59, 130, 246, 0.3);
+    padding: 0.5rem 1rem;
+    border-radius: 6px;
+    cursor: pointer;
+}
+
+.viewBtn:hover { background: rgba(59, 130, 246, 0.3); }
+
+.deleteBtn {
+    background: rgba(239, 68, 68, 0.2);
+    color: #fca5a5;
+    border: 1px solid rgba(239, 68, 68, 0.3);
+    padding: 0.5rem 1rem;
+    border-radius: 6px;
+    cursor: pointer;
+}
+
+.deleteBtn:hover { background: rgba(239, 68, 68, 0.3); }
+
+/* Grading Panel Overlay */
+.gradingPanel {
+    position: fixed;
+    top: 0; right: 0; bottom: 0;
+    width: 400px;
+    background: #0f172a;
+    border-left: 1px solid rgba(255, 255, 255, 0.1);
+    padding: 2rem;
+    box-shadow: -10px 0 30px rgba(0, 0, 0, 0.5);
+    z-index: 100;
+    overflow-y: auto;
+}
+
+.gradingHeader {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 2rem;
+    border-bottom: 1px solid rgba(255,255,255,0.1);
+    padding-bottom: 1rem;
+}
+
+.closeBtn {
+    background: none;
+    border: none;
+    color: #94a3b8;
+    font-size: 1.5rem;
+    cursor: pointer;
+}
+
+.closeBtn:hover { color: #fff; }
+
+.submissionCard {
+    background: rgba(30, 41, 59, 0.5);
+    border: 1px solid rgba(255,255,255,0.05);
+    padding: 1rem;
+    border-radius: 8px;
+    margin-bottom: 1rem;
+}
+
+.subInfo strong { display: block; margin-bottom: 0.25rem; color: #fff; }
+.subScore { color: #86efac; font-weight: 600; font-size: 1.1rem; }
+.subDate { display: block; color: #64748b; font-size: 0.8rem; margin-top: 0.5rem; }

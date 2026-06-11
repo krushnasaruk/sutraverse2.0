@@ -4,7 +4,7 @@ import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { collection, getDocs, query, orderBy, limit, where, onSnapshot } from 'firebase/firestore';
-import { db } from '@/database/config/firebase';
+import { db, auth } from '@/database/config/firebase';
 import { useAuth } from '@/frontend/context/AuthContext';
 import { useCollege } from '@/frontend/context/CollegeContext';
 import { useTheme } from '@/frontend/context/ThemeContext';
@@ -13,6 +13,7 @@ import { ScrollReveal, CountUp } from '@/frontend/components/ui/Animations';
 import styles from './page.module.css';
 import { IconNotes, IconPyq, IconAssignment, IconSparkles, IconUser, IconFolder, IconHat, IconStar, IconDownload } from '@/frontend/components/ui/Icons';
 import { Skeleton, SkeletonGrid } from '@/frontend/components/ui/Skeleton/Skeleton';
+import { filterAvailableFiles } from '@/shared/utils/verifyFiles';
 
 function getTypeClass(type) {
   switch (type) {
@@ -59,10 +60,16 @@ export default function HomePage() {
         const snapshot = await Promise.race([getDocs(recentQ), timeout]);
         clearTimeout(timeoutId);
         
-        if (cancelled) return;
+        const data = snapshot.docs.map(d => {
+          const f = d.data();
+          if (f.subject === 'BE') f.subject = 'BEE';
+          if (f.subject === 'Engineering Mathematics 1') f.subject = 'Engineering Mathematics I';
+          return { id: d.id, ...f };
+        });
         
-        const data = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
-        setRecentFiles(data);
+        // Filter out files that don't exist on disk
+        const verified = await filterAvailableFiles(data);
+        if (!cancelled) setRecentFiles(verified);
       } catch (error) {
         console.warn('Error fetching recent files:', error);
         if (!cancelled) setRecentFiles([]);
@@ -216,7 +223,19 @@ export default function HomePage() {
       await awardDownloadPoints(file.id, file.uploaderUID, user?.uid);
       setRecentFiles(prev => prev.map(f => f.id === file.id ? { ...f, downloads: (f.downloads || 0) + 1 } : f));
     } catch (e) { console.warn('Could not update download count:', e.message); }
-    window.open(url, '_blank');
+
+    let finalUrl = url;
+    if (!url.includes('firebasestorage') && auth?.currentUser) {
+      try {
+        const idToken = await auth.currentUser.getIdToken();
+        if (idToken) {
+          finalUrl = `${url}?token=${encodeURIComponent(idToken)}`;
+        }
+      } catch (tokenErr) {
+        console.warn('Failed to retrieve authentication token:', tokenErr);
+      }
+    }
+    window.open(finalUrl, '_blank');
   };
 
   const getInitials = (name) => {

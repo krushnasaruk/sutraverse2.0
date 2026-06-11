@@ -1,0 +1,1178 @@
+/* ═══════════════════════════════════════════════════
+   NAVBAR — Premium Floating Glass Bar
+   ═══════════════════════════════════════════════════ */
+
+/* ── Shell ── */
+.navbar {
+    position: fixed;
+    top: var(--space-md);
+    bottom: auto;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 90%;
+    max-width: var(--max-width);
+    height: 58px;
+    background: var(--bg-surface);
+    backdrop-filter: blur(32px) saturate(180%);
+    -webkit-backdrop-filter: blur(32px) saturate(180%);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-full);
+    z-index: 1000;
+    display: flex;
+    align-items: center;
+    box-shadow:
+        0 1px 3px rgba(0,0,0,0.03),
+        0 4px 12px rgba(0,0,0,0.05),
+        0 16px 48px rgba(0,0,0,0.03);
+    transition: all 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+    animation: navSlideIn 0.7s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+/* Solid accent line on top edge */
+.navbar::before {
+    content: '';
+    position: absolute;
+    top: -1px;
+    left: 15%;
+    right: 15%;
+    height: 2px;
+    background: var(--primary);
+    border-radius: var(--radius-full);
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.5s ease;
+}
+
+@keyframes navSlideIn {
+    from {
+        transform: translate(-50%, -120%);
+        opacity: 0;
+    }
+    to {
+        transform: translate(-50%, 0);
+        opacity: 1;
+    }
+}
+
+.navbarScrolled {
+    background: var(--bg-card);
+    border-color: var(--border-glow);
+    box-shadow:
+        0 4px 16px rgba(0,0,0,0.08),
+        0 12px 40px rgba(0,0,0,0.06),
+        0 0 0 1px var(--border-glow);
+    height: 52px;
+}
+
+/* Show solid border on scroll */
+.navbarScrolled::before {
+    opacity: 0.8;
+}
+
+/* ── Inner Layout ── */
+.navInner {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+    padding: 0 16px;
+    gap: 6px;
+}
+
+/* ═══════════════════════════════════════════════════
+   LOGO
+   ═══════════════════════════════════════════════════ */
+.logo {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    text-decoration: none;
+    flex-shrink: 0;
+    transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.logo:hover {
+    transform: scale(1.03);
+}
+
+.logo:hover .logoImage {
+    transform: scale(1.1);
+}
+
+.logoImage {
+    height: 36px;
+    width: auto;
+    object-fit: contain;
+    transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.logoText {
+    font-family: var(--font-heading);
+    font-weight: 800;
+    font-size: 1.15rem;
+    color: var(--text-primary);
+    letter-spacing: -0.04em;
+}
+
+/* ═══════════════════════════════════════════════════
+   SEARCH TRIGGER (opens Spotlight)
+   ═══════════════════════════════════════════════════ */
+.searchTrigger {
+    flex: 1;
+    max-width: 280px;
+    margin: 0 12px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 7px 12px 7px 14px;
+    background: var(--bg-input);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-full);
+    cursor: pointer;
+    transition: all 0.25s ease;
+    color: var(--text-muted);
+}
+
+.searchTrigger:hover {
+    border-color: var(--border-glow);
+    background: var(--bg-surface);
+    box-shadow: 0 0 0 3px var(--primary-glow);
+}
+
+.searchPlaceholder {
+    flex: 1;
+    font-size: 0.78rem;
+    color: var(--text-muted);
+    text-align: left;
+    pointer-events: none;
+}
+
+.searchKbd {
+    display: inline-flex;
+    align-items: center;
+    gap: 2px;
+    padding: 2px 6px;
+    background: var(--bg-surface);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    font-size: 0.65rem;
+    font-weight: 600;
+    color: var(--text-muted);
+    font-family: var(--font-body);
+    line-height: 1;
+    letter-spacing: 0.02em;
+}
+
+/* ═══════════════════════════════════════════════════
+   NAV LINKS — Pill Segmented Control
+   ═══════════════════════════════════════════════════ */
+.navLinks {
+    display: flex;
+    align-items: center;
+    gap: 1px;
+    background: var(--bg-input);
+    border-radius: var(--radius-full);
+    padding: 3px;
+    border: 1px solid var(--border);
+    min-width: 0;
+    flex-shrink: 1;
+    overflow-x: auto;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+}
+
+.navLinks::-webkit-scrollbar {
+    display: none;
+}
+
+.navLink {
+    padding: 5px 12px;
+    border-radius: var(--radius-full);
+    font-size: 0.76rem;
+    font-weight: 550;
+    color: var(--text-muted);
+    transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+    text-decoration: none;
+    position: relative;
+    white-space: nowrap;
+    letter-spacing: -0.01em;
+}
+
+.navLink:hover {
+    color: var(--text-primary);
+    background: var(--bg-surface);
+}
+
+.navLinkActive {
+    color: #fff;
+    background: var(--primary);
+    font-weight: 650;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.15), inset 0 1px 0 rgba(255,255,255,0.15);
+}
+
+.navLinkActive:hover {
+    color: #fff;
+    background: var(--primary);
+}
+
+/* ═══════════════════════════════════════════════════
+   ACTIONS
+   ═══════════════════════════════════════════════════ */
+.navActions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-left: 6px;
+    flex-shrink: 0;
+}
+
+/* ── Theme Toggle (inside navbar) ── */
+.themeToggle {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 34px;
+    height: 34px;
+    border-radius: var(--radius-full);
+    background: var(--bg-input);
+    border: 1px solid var(--border);
+    color: var(--text-secondary);
+    transition: all 0.35s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    cursor: pointer;
+    flex-shrink: 0;
+    overflow: hidden;
+}
+
+/* Mobile-only theme toggle (fixed position, hidden on desktop) */
+.themeToggleMobile {
+    display: none;
+}
+
+.themeIconWrap {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.themeToggle:hover {
+    background: var(--primary);
+    color: #fff;
+    border-color: var(--primary);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+}
+
+.themeToggle:hover .themeIconWrap {
+    transform: rotate(30deg) scale(1.1);
+}
+
+/* ── Upload Button ── */
+.uploadBtn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 7px 16px;
+    background: var(--gradient-brand);
+    color: #fff;
+    border: none;
+    border-radius: var(--radius-full);
+    font-size: 0.76rem;
+    font-weight: 650;
+    transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    text-decoration: none;
+    position: relative;
+    overflow: hidden;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+    letter-spacing: 0.01em;
+}
+
+.uploadBtn::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.25), transparent);
+    animation: btnShine 4s infinite linear;
+}
+
+@keyframes btnShine {
+    0% { left: -100%; }
+    25% { left: 100%; }
+    100% { left: 100%; }
+}
+
+.uploadBtn:hover {
+    transform: translateY(-1px) scale(1.04);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+}
+
+/* ── Sign In Button ── */
+.loginBtn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 7px 18px;
+    border-radius: var(--radius-full);
+    font-size: 0.78rem;
+    font-weight: 650;
+    background: var(--gradient-brand);
+    color: #fff;
+    transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    border: none;
+    text-decoration: none;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+}
+
+.loginBtn:hover {
+    box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+    transform: translateY(-1px) scale(1.04);
+}
+
+.loginBtn svg {
+    transition: transform 0.3s ease;
+}
+
+.loginBtn:hover svg {
+    transform: translateX(3px);
+}
+
+/* ═══════════════════════════════════════════════════
+   AVATAR
+   ═══════════════════════════════════════════════════ */
+.avatar {
+    width: 34px;
+    height: 34px;
+    border-radius: var(--radius-full);
+    overflow: visible;
+    cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    flex-shrink: 0;
+    position: relative;
+    background: none;
+    border: none;
+    padding: 0;
+}
+
+.avatar img {
+    width: 34px;
+    height: 34px;
+    object-fit: cover;
+    border-radius: var(--radius-full);
+    border: 2px solid var(--border);
+    transition: border-color 0.3s ease;
+}
+
+.avatar:hover img {
+    border-color: var(--primary);
+}
+
+/* Animated ring on hover */
+.avatarRing {
+    position: absolute;
+    inset: -3px;
+    border-radius: var(--radius-full);
+    border: 2px solid var(--primary);
+    opacity: 0;
+    transform: scale(1.1);
+    transition: all 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+    pointer-events: none;
+}
+
+.avatar:hover .avatarRing {
+    opacity: 1;
+    transform: scale(1);
+}
+
+.avatarFallback {
+    width: 34px;
+    height: 34px;
+    background: var(--gradient-brand);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-weight: 700;
+    font-size: 0.82rem;
+    border-radius: var(--radius-full);
+}
+
+/* ═══════════════════════════════════════════════════
+   PROFILE DROPDOWN — Premium Card
+   ═══════════════════════════════════════════════════ */
+.profileWrapper {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+.profileMenu {
+    position: absolute;
+    top: calc(100% + 16px);
+    right: -12px;
+    background: var(--bg-surface);
+    backdrop-filter: blur(40px) saturate(180%);
+    -webkit-backdrop-filter: blur(40px) saturate(180%);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    box-shadow:
+        0 8px 32px rgba(0,0,0,0.12),
+        0 32px 64px rgba(0,0,0,0.06);
+    min-width: 260px;
+    padding: 6px;
+    animation: menuPopIn 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    transform-origin: top right;
+    z-index: 1050;
+    overflow: hidden;
+}
+
+.profileMenu::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    background: var(--bg-main);
+    opacity: 0.96;
+    z-index: -1;
+    pointer-events: none;
+}
+
+/* Top gradient accent line */
+.profileMenu::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 20px;
+    right: 20px;
+    height: 2px;
+    background: var(--gradient-brand);
+    border-radius: 0 0 2px 2px;
+}
+
+@keyframes menuPopIn {
+    from {
+        opacity: 0;
+        transform: scale(0.92) translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1) translateY(0);
+    }
+}
+
+.profileMenuScrolled {
+    background: var(--bg-card);
+}
+
+/* ── User Header Card ── */
+.menuHeader {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 14px 12px 12px;
+}
+
+.menuHeaderAvatar {
+    width: 40px;
+    height: 40px;
+    border-radius: var(--radius-full);
+    overflow: hidden;
+    flex-shrink: 0;
+    border: 2px solid var(--primary-glow);
+}
+
+.menuHeaderAvatar img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.menuHeaderAvatarFallback {
+    width: 100%;
+    height: 100%;
+    background: var(--gradient-brand);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #fff;
+    font-weight: 700;
+    font-size: 1rem;
+}
+
+.menuHeaderInfo {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+}
+
+.menuHeaderName {
+    font-weight: 700;
+    font-size: 0.88rem;
+    color: var(--text-primary);
+    line-height: 1.3;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.menuHeaderEmail {
+    font-size: 0.7rem;
+    color: var(--text-muted);
+    line-height: 1.3;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* ── Group Title ── */
+.menuGroupTitle {
+    font-size: 0.65rem;
+    font-weight: 700;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    padding: 8px 12px 4px;
+}
+
+/* ── Menu Item ── */
+.profileMenuItem {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 12px;
+    border-radius: 10px;
+    font-size: 0.82rem;
+    color: var(--text-secondary);
+    transition: all 0.2s ease;
+    width: 100%;
+    text-decoration: none;
+    cursor: pointer;
+    letter-spacing: -0.01em;
+    font-weight: 500;
+    background: none;
+    border: none;
+}
+
+.menuItemIcon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    border-radius: 8px;
+    background: var(--bg-input);
+    border: 1px solid var(--border);
+    flex-shrink: 0;
+    transition: all 0.2s ease;
+    color: var(--text-secondary);
+}
+
+.profileMenuItem:hover {
+    background: var(--bg-input);
+    color: var(--text-primary);
+}
+
+.profileMenuItem:hover .menuItemIcon {
+    background: var(--primary-glow);
+    border-color: var(--border-glow);
+    color: var(--primary);
+}
+
+.profileMenuItemAccent {
+    color: var(--accent);
+}
+
+.profileMenuItemAccent .menuItemIcon {
+    color: var(--accent);
+}
+
+.profileMenuItemDanger {
+    color: var(--error);
+}
+
+.profileMenuItemDanger .menuItemIcon {
+    color: var(--error);
+}
+
+.profileMenuItemDanger:hover {
+    background: rgba(239,68,68,0.08);
+    color: var(--error);
+}
+
+.profileMenuItemDanger:hover .menuItemIcon {
+    background: rgba(239,68,68,0.12);
+    border-color: rgba(239,68,68,0.15);
+}
+
+.profileMenuDivider {
+    height: 1px;
+    background: var(--border);
+    margin: 4px 10px;
+}
+
+/* ═══════════════════════════════════════════════════
+   SPOTLIGHT / COMMAND PALETTE
+   ═══════════════════════════════════════════════════ */
+.spotlightOverlay {
+    position: fixed;
+    inset: 0;
+    z-index: 9999;
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+    padding-top: calc(var(--navbar-height) + 8px);
+    background: transparent;
+    animation: overlayFadeIn 0.15s ease;
+}
+
+@keyframes overlayFadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+.spotlightModal {
+    width: 90%;
+    max-width: 560px;
+    background: var(--bg-surface);
+    backdrop-filter: blur(40px) saturate(180%);
+    -webkit-backdrop-filter: blur(40px) saturate(180%);
+    border: 1px solid var(--border);
+    border-radius: 18px;
+    box-shadow:
+        0 8px 32px rgba(0,0,0,0.1),
+        0 24px 64px rgba(0,0,0,0.06),
+        0 0 0 1px var(--border);
+    overflow: hidden;
+    animation: modalDropIn 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+    position: relative;
+}
+
+.spotlightModal::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    background: var(--bg-main);
+    opacity: 0.97;
+    z-index: -1;
+    pointer-events: none;
+}
+
+@keyframes modalDropIn {
+    from {
+        opacity: 0;
+        transform: translateY(-12px) scale(0.98);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+/* ── Search Bar ── */
+.spotlightSearch {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 16px 20px;
+    border-bottom: 1px solid var(--border);
+    color: var(--text-muted);
+}
+
+.spotlightInput {
+    flex: 1;
+    background: none;
+    border: none;
+    font-size: 1rem;
+    color: var(--text-primary);
+    font-weight: 500;
+    outline: none;
+}
+
+.spotlightInput::placeholder {
+    color: var(--text-muted);
+    font-weight: 400;
+}
+
+.spotlightClose {
+    padding: 4px 8px;
+    border-radius: 6px;
+    background: var(--bg-input);
+    border: 1px solid var(--border);
+    color: var(--text-muted);
+    font-size: 0.65rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    font-family: var(--font-body);
+    letter-spacing: 0.03em;
+}
+
+.spotlightClose:hover {
+    background: var(--bg-surface);
+    color: var(--text-primary);
+}
+
+/* ── Results ── */
+.spotlightResults {
+    max-height: 340px;
+    overflow-y: auto;
+    padding: 8px;
+}
+
+.spotlightResults::-webkit-scrollbar { width: 4px; }
+.spotlightResults::-webkit-scrollbar-thumb {
+    background: var(--scrollbar-thumb);
+    border-radius: var(--radius-full);
+}
+
+.spotlightGroup {
+    margin-bottom: 4px;
+}
+
+.spotlightGroupTitle {
+    font-size: 0.65rem;
+    font-weight: 700;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    padding: 8px 12px 4px;
+}
+
+.spotlightItem {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    width: 100%;
+    padding: 10px 12px;
+    border-radius: 12px;
+    border: none;
+    background: none;
+    color: var(--text-secondary);
+    font-size: 0.88rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    text-align: left;
+}
+
+.spotlightItem:hover,
+.spotlightItemActive {
+    background: var(--bg-input);
+    color: var(--text-primary);
+}
+
+.spotlightItemIcon {
+    font-size: 1.1rem;
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 10px;
+    background: var(--bg-surface);
+    border: 1px solid var(--border);
+    flex-shrink: 0;
+    transition: all 0.15s ease;
+}
+
+.spotlightItemActive .spotlightItemIcon {
+    background: var(--primary-glow);
+    border-color: var(--border-glow);
+}
+
+.spotlightItemLabel {
+    flex: 1;
+}
+
+.spotlightItemArrow {
+    color: var(--primary);
+    display: flex;
+    align-items: center;
+    animation: arrowBounce 1s ease infinite;
+}
+
+@keyframes arrowBounce {
+    0%, 100% { transform: translateX(0); }
+    50% { transform: translateX(3px); }
+}
+
+.spotlightEmpty {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 32px 16px;
+    color: var(--text-muted);
+    font-size: 0.88rem;
+    gap: 6px;
+}
+
+.spotlightEmptySub {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    opacity: 0.7;
+}
+
+/* ── Footer ── */
+.spotlightFooter {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 10px 20px;
+    border-top: 1px solid var(--border);
+    font-size: 0.68rem;
+    color: var(--text-muted);
+}
+
+.spotlightFooter kbd {
+    display: inline-flex;
+    align-items: center;
+    padding: 1px 5px;
+    background: var(--bg-input);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    font-size: 0.65rem;
+    font-weight: 600;
+    margin-right: 4px;
+    font-family: var(--font-body);
+}
+
+/* ═══════════════════════════════════════════════════
+   AVATAR TOOLTIP (First-Time Discovery)
+   ═══════════════════════════════════════════════════ */
+.avatarTooltip {
+    position: absolute;
+    top: calc(100% + 14px);
+    right: -8px;
+    z-index: 1060;
+    animation: tooltipSlideIn 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+    filter: drop-shadow(0 8px 32px rgba(0,0,0,0.18));
+}
+
+@keyframes tooltipSlideIn {
+    from {
+        opacity: 0;
+        transform: translateY(-8px) scale(0.95);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+/* Upward-pointing arrow */
+.avatarTooltipArrow {
+    position: absolute;
+    top: -7px;
+    right: 18px;
+    width: 14px;
+    height: 14px;
+    background: var(--bg-surface);
+    border: 1px solid var(--border);
+    border-bottom: none;
+    border-right: none;
+    transform: rotate(45deg);
+    z-index: 1;
+}
+
+.avatarTooltipContent {
+    position: relative;
+    background: var(--bg-surface);
+    backdrop-filter: blur(40px) saturate(180%);
+    -webkit-backdrop-filter: blur(40px) saturate(180%);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 18px 20px;
+    min-width: 260px;
+    max-width: 300px;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+}
+
+/* Gradient accent on top */
+.avatarTooltipContent::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 16px;
+    right: 16px;
+    height: 2px;
+    background: var(--gradient-brand);
+    border-radius: 0 0 2px 2px;
+}
+
+/* Subtle pulsing ring around the tooltip */
+.avatarTooltip::after {
+    content: '';
+    position: absolute;
+    top: -20px;
+    right: 10px;
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    border: 2px solid var(--primary);
+    opacity: 0;
+    animation: tooltipRingPulse 2s ease-in-out infinite;
+    pointer-events: none;
+}
+
+@keyframes tooltipRingPulse {
+    0%, 100% { opacity: 0; transform: scale(0.8); }
+    50% { opacity: 0.4; transform: scale(1.4); }
+}
+
+.avatarTooltipEmoji {
+    font-size: 1.3rem;
+}
+
+.avatarTooltipText {
+    font-size: 0.82rem;
+    color: var(--text-secondary);
+    line-height: 1.55;
+    margin: 0;
+}
+
+.avatarTooltipText strong {
+    color: var(--primary);
+    font-weight: 700;
+}
+
+.avatarTooltipBtn {
+    align-self: flex-end;
+    padding: 6px 18px;
+    background: var(--gradient-brand);
+    color: #fff;
+    border: none;
+    border-radius: var(--radius-full);
+    font-size: 0.78rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+}
+
+.avatarTooltipBtn:hover {
+    transform: translateY(-1px) scale(1.04);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+}
+
+/* ═══════════════════════════════════════════════════
+   RESPONSIVE — LAPTOP / TABLET
+   ═══════════════════════════════════════════════════ */
+@media (max-width: 1250px) and (min-width: 769px) {
+    .navInner { padding: 0 6px; gap: 4px; }
+    .searchPlaceholder, .searchKbd { display: none; }
+    .searchTrigger { max-width: 36px; padding: 6px; margin: 0 4px; justify-content: center; }
+    .navLinks { gap: 0; padding: 2px; }
+    .navLink { padding: 5px 6px; font-size: 0.68rem; }
+    .navActions { gap: 4px; margin-left: 2px; }
+    .uploadBtn { padding: 6px 10px; font-size: 0.7rem; gap: 4px; }
+    .logoText { display: none; }
+    .logo { gap: 0; }
+    .themeToggle { width: 30px; height: 30px; }
+}
+
+/* ═══════════════════════════════════════════════════
+   RESPONSIVE — MOBILE: HIDE NAVBAR, KEEP THEME TOGGLE
+   ═══════════════════════════════════════════════════ */
+@media (max-width: 768px) {
+    /* ── Show Navbar as a compact mobile bar ── */
+    .navbar {
+        top: 0 !important;
+        left: 0 !important;
+        right: 0 !important;
+        width: 100% !important;
+        max-width: 100% !important;
+        transform: none !important;
+        border-radius: 0 !important;
+        height: 52px !important;
+        animation: none !important;
+        border-left: none !important;
+        border-right: none !important;
+        border-top: none !important;
+    }
+    .navbar::before { display: none; }
+
+    /* Hide desktop-only elements */
+    .navLinks { display: none !important; }
+    .searchTrigger { display: none !important; }
+    .uploadBtn { display: none !important; }
+    .searchKbd { display: none !important; }
+    .themeToggle { display: none !important; }
+
+    /* Show the mobile theme toggle floating button — hidden since we have it in nav */
+    .themeToggleMobile { display: none !important; }
+
+    /* ── Logo: compact ── */
+    .logo { gap: 6px; }
+    .logoIcon { width: 28px; height: 28px; font-size: 0.85rem; }
+    .logoText { font-size: 1rem; }
+
+    /* ── Nav Actions: show hamburger ── */
+    .navActions { gap: 8px !important; }
+    .avatar { width: 30px !important; height: 30px !important; }
+
+    /* ── Hamburger Button (mobile only) ── */
+    .mobileMenuBtn {
+        display: flex !important;
+        align-items: center;
+        justify-content: center;
+        width: 36px;
+        height: 36px;
+        border-radius: 10px;
+        border: 1px solid var(--border);
+        background: var(--bg-input);
+        color: var(--text-primary);
+        cursor: pointer;
+        transition: all 0.2s ease;
+    }
+    .mobileMenuBtn:active {
+        transform: scale(0.92);
+    }
+
+    /* ── Mobile Dropdown Panel ── */
+    .mobileDropdown {
+        display: flex !important;
+        flex-direction: column;
+        position: fixed;
+        top: 52px;
+        left: 0;
+        right: 0;
+        background: var(--bg-main) !important;
+        border-bottom: 1px solid var(--border);
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2) !important;
+        z-index: 999;
+        max-height: calc(100vh - 52px);
+        overflow-y: auto;
+        animation: mobileSlideDown 0.25s ease forwards;
+        padding: 8px 0;
+    }
+
+    @keyframes mobileSlideDown {
+        from { opacity: 0; transform: translateY(-8px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+
+    .mobileDropdownOverlay {
+        display: block !important;
+        position: fixed;
+        inset: 0;
+        top: 52px;
+        background: rgba(0,0,0,0.3);
+        z-index: 998;
+    }
+
+    /* ── Section Header in Dropdown ── */
+    .mobileDropSection {
+        display: block;
+        padding: 8px 20px 4px;
+        font-size: 0.6rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.1em;
+        color: var(--text-muted);
+    }
+    .mobileDropSection:not(:first-child) {
+        border-top: 1px solid var(--border);
+        margin-top: 4px;
+        padding-top: 10px;
+    }
+
+    /* ── Dropdown Nav Item ── */
+    .mobileDropItem {
+        display: flex !important;
+        align-items: center;
+        gap: 12px;
+        padding: 10px 20px;
+        color: var(--text-primary);
+        text-decoration: none;
+        font-size: 0.88rem;
+        font-weight: 600;
+        transition: background 0.15s ease;
+        border: none;
+        background: none;
+        width: 100%;
+        text-align: left;
+        cursor: pointer;
+    }
+    .mobileDropItem:active {
+        background: var(--bg-input);
+    }
+    .mobileDropItemActive {
+        color: var(--primary) !important;
+        background: var(--primary-glow);
+    }
+    .mobileDropItemIcon {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 32px;
+        height: 32px;
+        border-radius: 10px;
+        background: var(--bg-input);
+        font-size: 1rem;
+        flex-shrink: 0;
+    }
+    .mobileDropItemActive .mobileDropItemIcon {
+        background: var(--primary-glow);
+    }
+
+    /* ── Theme row in dropdown ── */
+    .mobileDropThemeRow {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 10px 20px;
+        border-top: 1px solid var(--border);
+        margin-top: 4px;
+    }
+    .mobileDropThemeLabel {
+        font-size: 0.82rem;
+        font-weight: 600;
+        color: var(--text-secondary);
+    }
+    .mobileDropThemeBtn {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 36px;
+        height: 36px;
+        border-radius: 10px;
+        border: 1px solid var(--border);
+        background: var(--bg-input);
+        color: var(--text-primary);
+        cursor: pointer;
+    }
+
+    /* ── Profile Menu on Mobile ── */
+    .profileMenu {
+        position: fixed !important;
+        top: 52px !important;
+        right: 0 !important;
+        left: 0 !important;
+        width: 100% !important;
+        max-width: 100% !important;
+        border-radius: 0 0 16px 16px !important;
+        background: var(--bg-main) !important;
+        border-top: none !important;
+        border-left: none !important;
+        border-right: none !important;
+        border-bottom: 1px solid var(--border) !important;
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2) !important;
+    }
+    .profileMenu::before {
+        display: none !important;
+    }
+}
+
+/* Hide mobile-only elements on desktop */
+@media (min-width: 769px) {
+    .mobileMenuBtn { display: none !important; }
+    .mobileDropdown { display: none !important; }
+    .mobileDropdownOverlay { display: none !important; }
+    .themeToggleMobile { display: none; }
+}
