@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { GoogleGenerativeAI } from '@google/generative-ai';
+import { requireUser } from '@/backend/middlewares/requireUser';
 
 
 
@@ -15,11 +16,15 @@ export const handlePost_paperanalysischat = async (request) => {
         let offlineUserContent = '';
 
         try {
+            // ── Auth Gate ──────────────────────────────────────────────
+            const { user, error: authError } = await requireUser(request);
+            if (authError) return authError;
+
             if (!process.env.GEMINI_API_KEY) {
                 return NextResponse.json({ error: 'AI integration is not configured correctly on the server.' }, { status: 500 });
             }
 
-            const body = await req.json();
+            const body = await request.json();
             messages = body.messages || [];
             paperSummary = body.paperSummary || 'No paper summary context loaded.';
             const subjectName = body.subjectName || '';
