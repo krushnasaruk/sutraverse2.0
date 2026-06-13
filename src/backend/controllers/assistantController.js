@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { GoogleGenerativeAI } from '@google/generative-ai';
+import { requireUser } from '@/backend/middlewares/requireUser';
 
 
 
@@ -9,12 +10,16 @@ const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || '');
 
 export const handlePost_assistant = async (request) => {
     try {
+        // ── Auth Gate ──────────────────────────────────────────────────
+        const { user, error: authError } = await requireUser(request);
+        if (authError) return authError;
+
         if (!process.env.GEMINI_API_KEY) {
             console.error('GEMINI_API_KEY is not defined in environment variables.');
             return NextResponse.json({ error: 'AI Assistant requires the GEMINI_API_KEY environment variable. Please configure it.' }, { status: 500 });
         }
 
-        const body = await req.json();
+        const body = await request.json();
         const { messages, context } = body;
 
         if (!messages || !Array.isArray(messages)) {
