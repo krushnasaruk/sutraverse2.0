@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { StyleSheet, Text, View, TextInput, ScrollView, TouchableOpacity, KeyboardAvoidingView, Platform, Animated } from 'react-native';
+import { StyleSheet, Text, View, TextInput, ScrollView, TouchableOpacity, KeyboardAvoidingView, Platform, Animated, Keyboard } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { GoogleGenerativeAI } from '@google/generative-ai';
@@ -7,7 +7,7 @@ import { useAuth } from '../../context/AuthContext';
 import { useTheme } from '../../context/ThemeContext';
 import { BlurView } from 'expo-blur';
 
-const GEMINI_API_KEY = "AIzaSyAumR3u6AF49rTiaB7kqfk6HP6KQN-4m6I";
+const GEMINI_API_KEY = "AQ.Ab8RN6IivWVmq7QHAZ8oNl3EpALKmJzYY92dnrm0XJ2_AzMBtg";
 const genAI = new GoogleGenerativeAI(GEMINI_API_KEY);
 
 interface ChatMessage {
@@ -21,6 +21,35 @@ const SUGGESTIONS = [
   { icon: 'calendar-outline', text: 'Plan Study', query: 'Create a 5-day study roadmap for calculus' },
   { icon: 'help-circle-outline', text: 'Quiz Me', query: 'Create a 5-question multiple choice quiz on data structures' },
 ];
+
+const TypingIndicator = ({ colors }: { colors: any }) => {
+  const dot1 = useRef(new Animated.Value(0.3)).current;
+  const dot2 = useRef(new Animated.Value(0.3)).current;
+  const dot3 = useRef(new Animated.Value(0.3)).current;
+
+  useEffect(() => {
+    const animateDot = (dot: Animated.Value, delay: number) => {
+      Animated.loop(
+        Animated.sequence([
+          Animated.timing(dot, { toValue: 1, duration: 400, delay, useNativeDriver: true }),
+          Animated.timing(dot, { toValue: 0.3, duration: 400, useNativeDriver: true }),
+        ])
+      ).start();
+    };
+    animateDot(dot1, 0);
+    animateDot(dot2, 200);
+    animateDot(dot3, 400);
+  }, [dot1, dot2, dot3]);
+
+  return (
+    <View style={styles.typingRow}>
+      <Animated.View style={[styles.typingDot, { backgroundColor: colors.primary, opacity: dot1 }]} />
+      <Animated.View style={[styles.typingDot, { backgroundColor: colors.primary, opacity: dot2 }]} />
+      <Animated.View style={[styles.typingDot, { backgroundColor: colors.primary, opacity: dot3 }]} />
+      <Text style={[styles.thinkText, { color: colors.textDisabled }]}>Thinking...</Text>
+    </View>
+  );
+};
 
 export default function AssistantScreen() {
   const { user } = useAuth();
@@ -38,6 +67,13 @@ export default function AssistantScreen() {
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
   const scrollViewRef = useRef<ScrollView>(null);
+  const [isKeyboardVisible, setKeyboardVisible] = useState(false);
+
+  useEffect(() => {
+    const showSub = Keyboard.addListener(Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow', () => setKeyboardVisible(true));
+    const hideSub = Keyboard.addListener(Platform.OS === 'ios' ? 'keyboardWillHide' : 'keyboardDidHide', () => setKeyboardVisible(false));
+    return () => { showSub.remove(); hideSub.remove(); };
+  }, []);
 
   const displayName = user?.name ? user.name.split(' ')[0] : 'there';
 
@@ -134,7 +170,7 @@ If a student asks you to explain a concept, explain it clearly with analogies if
   return (
     <KeyboardAvoidingView
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-      keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : 0}
+      keyboardVerticalOffset={0}
       style={[styles.container, { backgroundColor: colors.bgMain }]}
     >
       {/* Dynamic background mesh matching index.tsx */}
@@ -255,12 +291,7 @@ If a student asks you to explain a concept, explain it clearly with analogies if
             </View>
             <View style={[styles.msgBubble, styles.modelBubble, { backgroundColor: colors.bgCard, borderColor: colors.dividerSoft }]}>
               <View style={styles.modelInner}>
-                <View style={styles.typingRow}>
-                  {[0, 1, 2].map(i => (
-                    <View key={i} style={[styles.typingDot, { backgroundColor: colors.primary, opacity: 0.3 + i * 0.2 }]} />
-                  ))}
-                  <Text style={[styles.thinkText, { color: colors.textDisabled }]}>Thinking...</Text>
-                </View>
+                <TypingIndicator colors={colors} />
               </View>
             </View>
           </View>
@@ -268,7 +299,11 @@ If a student asks you to explain a concept, explain it clearly with analogies if
       </Animated.ScrollView>
 
       {/* ═══ INPUT BAR — Apple search-input pill style ═══ */}
-      <View style={[styles.inputBar, { backgroundColor: colors.canvas, borderTopColor: colors.hairline }]}>
+      <View style={[styles.inputBar, { 
+        backgroundColor: colors.canvas, 
+        borderTopColor: colors.hairline,
+        paddingBottom: isKeyboardVisible ? 16 : (Platform.OS === 'ios' ? 96 : 76)
+      }]}>
         <View style={[styles.inputWrap, { backgroundColor: colors.bgMain, borderColor: colors.dividerSoft }]}>
           <TextInput
             style={[styles.inputField, { color: colors.textPrimary }]}
@@ -355,7 +390,6 @@ const styles = StyleSheet.create({
   // Input bar
   inputBar: {
     flexDirection: 'row', paddingHorizontal: 16, paddingTop: 12,
-    paddingBottom: Platform.OS === 'ios' ? 96 : 76,
     borderTopWidth: StyleSheet.hairlineWidth, alignItems: 'flex-end',
   },
   inputWrap: {

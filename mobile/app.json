@@ -31,10 +31,8 @@
         "expo-splash-screen",
         {
           "backgroundColor": "#050509",
-          "android": {
-            "image": "./assets/images/splash-icon.png",
-            "imageWidth": 76
-          }
+          "image": "./assets/images/logo.png",
+          "imageWidth": 200
         }
       ],
       "expo-web-browser"

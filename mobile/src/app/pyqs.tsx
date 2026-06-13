@@ -56,6 +56,9 @@ export default function PYQScreen() {
         const data = snap.docs.map(d => {
           const f = d.data();
           return { id: d.id, ...f } as PYQFile;
+        }).filter(f => {
+          const t = (f.title || '').toUpperCase();
+          return !t.includes('2025 PYQ') && !t.includes('60MARKS');
         });
         
         setPyqs(data);

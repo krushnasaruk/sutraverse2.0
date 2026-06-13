@@ -8,6 +8,7 @@ import { db } from '../../lib/firebase';
 import { useAuth } from '../../context/AuthContext';
 import { useTheme } from '../../context/ThemeContext';
 import { useDownloads } from '../../context/DownloadsContext';
+import { getAllSubjects } from '../../lib/subjectMap';
 
 const { width: SW } = Dimensions.get('window');
 const CARD_W = (SW - 56) / 2;
@@ -65,10 +66,20 @@ export default function HomeScreen() {
           collection(db, 'files'),
           where('status', '==', 'approved'),
           orderBy('createdAt', 'desc'),
-          limit(6)
+          limit(30)
         );
         const snapshot = await getDocs(q);
-        setRecentFiles(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) as NoteFile[]);
+        const validSubjects = new Set(getAllSubjects().map(s => s.toLowerCase()));
+        
+        const validDocs = snapshot.docs
+          .map(doc => ({ id: doc.id, ...doc.data() }) as NoteFile)
+          .filter(file => validSubjects.has((file.subject || '').trim().toLowerCase()))
+          .filter(file => {
+            const t = (file.title || '').toUpperCase();
+            return !t.includes('2025 PYQ') && !t.includes('60MARKS');
+          });
+
+        setRecentFiles(validDocs.slice(0, 6));
       } catch (err) {
         console.warn('Error fetching recent files:', err);
         setRecentFiles([]);

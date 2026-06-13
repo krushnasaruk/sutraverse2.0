@@ -45,7 +45,11 @@ export default function SearchScreen() {
       try {
         const q = query(collection(db, 'files'), where('status', '==', 'approved'));
         const snap = await getDocs(q);
-        setAllFiles(snap.docs.map(d => ({ id: d.id, ...d.data() })));
+        const data = snap.docs.map(d => ({ id: d.id, ...d.data() })).filter((f: any) => {
+          const t = (f.title || '').toUpperCase();
+          return !t.includes('2025 PYQ') && !t.includes('60MARKS');
+        });
+        setAllFiles(data);
       } catch (err) {
         console.warn('Error fetching all files:', err);
         setAllFiles([]);

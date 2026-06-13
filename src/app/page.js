@@ -64,6 +64,9 @@ export default function HomePage() {
           const f = d.data();
           if (f.subject === 'BE') f.subject = 'BEE';
           if (f.subject === 'Engineering Mathematics 1') f.subject = 'Engineering Mathematics I';
+          if (f.subject === 'EG') f.subject = 'Engineering Graphics';
+          if (f.subject === 'EM') f.subject = 'Engineering Mechanics';
+          if (f.subject === 'Basic Electronics Engineering' || f.subject === 'BXE') f.subject = 'BEE';
           return { id: d.id, ...f };
         });
         

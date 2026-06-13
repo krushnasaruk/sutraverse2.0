@@ -19,9 +19,15 @@ export async function generateMetadata() {
   let description = 'Find notes, PYQs, assignments, and ace your exams with a sleek platform built for modern students.';
   
   try {
-    const snap = await adminDb.collection('settings').doc('college').get();
-    if (snap.exists) {
-      const data = snap.data();
+    // Skip remote metadata fetch in local dev to prevent 10s ADC timeout
+    if (process.env.NODE_ENV === 'development') {
+      return { title, description, keywords: 'notes, pyqs, assignments, college, exam prep, study material, sutraverse, futuristic' };
+    }
+
+    if (adminDb) {
+      const snap = await adminDb.collection('settings').doc('college').get();
+      if (snap.exists) {
+        const data = snap.data();
       if (data.platformName) {
         title = `${data.platformName} — Digital Notes Hub`;
       } else if (data.collegeName) {
@@ -29,6 +35,7 @@ export async function generateMetadata() {
       }
       if (data.seoMetaDescription) {
         description = data.seoMetaDescription;
+      }
       }
     }
   } catch (e) {
