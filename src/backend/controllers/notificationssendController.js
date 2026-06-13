@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { Expo } from 'expo-server-sdk';
 import { collection, getDocs } from 'firebase/firestore';
 import { db } from '@/database/config/firebase';
+import { requireUser } from '@/backend/middlewares/requireUser';
 
 
 
@@ -12,7 +13,11 @@ var expo = new Expo();
 
 export const handlePost_notificationssend = async (request) => {
   try {
-    const { title, body, data } = await req.json();
+    // ── Admin-Only Auth Gate ────────────────────────────────────────
+    const { user, error: authError } = await requireUser(request, { admin: true });
+    if (authError) return authError;
+
+    const { title, body, data } = await request.json();
 
     if (!title || !body) {
       return NextResponse.json({ error: 'Title and body are required' }, { status: 400 });
