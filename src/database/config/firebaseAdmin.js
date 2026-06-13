@@ -5,26 +5,33 @@ import path from 'path';
 
 if (!admin.apps.length) {
     try {
-        const keyPath = path.join(process.cwd(), 'sutraverse2-firebase-adminsdk-fbsvc-de34e6d305.json');
-        if (fs.existsSync(keyPath)) {
-            const serviceAccount = JSON.parse(fs.readFileSync(keyPath, 'utf8'));
-            admin.initializeApp({
-                credential: admin.credential.cert(serviceAccount)
-            });
-        } else {
-            // Check fallback path (for different server structures or subdirectories)
-            const fallbackKeyPath = path.join(process.cwd(), '..', 'sutraverse2-firebase-adminsdk-fbsvc-de34e6d305.json');
-            if (fs.existsSync(fallbackKeyPath)) {
-                const serviceAccount = JSON.parse(fs.readFileSync(fallbackKeyPath, 'utf8'));
+        if (process.env.FIREBASE_SERVICE_ACCOUNT) {
+            try {
+                const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT);
                 admin.initializeApp({
                     credential: admin.credential.cert(serviceAccount)
                 });
-            } else {
-                // Fallback for environment variables setup
+            } catch (e) {
+                console.error('Failed to initialize Firebase Admin with FIREBASE_SERVICE_ACCOUNT env var:', e);
+            }
+        }
+
+        if (!admin.apps.length && process.env.NODE_ENV !== 'production') {
+            const keyPath = path.join(process.cwd(), 'sutraverse2-firebase-adminsdk-fbsvc-de34e6d305.json');
+            if (fs.existsSync(keyPath)) {
+                console.warn('WARNING: Loading Firebase Service Account credential file from disk. This is only safe in development.');
+                const serviceAccount = JSON.parse(fs.readFileSync(keyPath, 'utf8'));
                 admin.initializeApp({
-                    projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID || "sutraverse2",
+                    credential: admin.credential.cert(serviceAccount)
                 });
             }
+        }
+
+        if (!admin.apps.length) {
+            // Fallback for default initialization or environment variables setup
+            admin.initializeApp({
+                projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID || "sutraverse2",
+            });
         }
     } catch (e) {
         console.error('Firebase Admin init failed:', e);
