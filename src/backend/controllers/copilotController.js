@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { GoogleGenerativeAI, SchemaType } from '@google/generative-ai';
 import { collection, query, where, getDocs, orderBy, limit } from 'firebase/firestore';
 import { db } from '@/database/config/firebase';
+import { requireUser } from '@/backend/middlewares/requireUser';
 import fs from 'fs';
 import path from 'path';
 
@@ -434,11 +435,15 @@ export const handlePost_copilot = async (request) => {
     let messages = [];
     let context = {};
     try {
+        // ── Auth Gate ──────────────────────────────────────────────────
+        const { user, error: authError } = await requireUser(request);
+        if (authError) return authError;
+
         if (!process.env.GEMINI_API_KEY) {
             return NextResponse.json({ error: 'GEMINI_API_KEY not configured' }, { status: 500 });
         }
 
-        const body = await req.json();
+        const body = await request.json();
         messages = body.messages || [];
         context = body.context || {};
 
