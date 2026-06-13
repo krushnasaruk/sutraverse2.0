@@ -17,6 +17,29 @@ export function middleware(request) {
         return NextResponse.next();
     }
 
+    // Determine path-specific rate limit
+    let maxRequests = RATE_LIMIT_MAX_REQUESTS; // default 50
+    
+    const aiPaths = [
+        '/api/assistant',
+        '/api/copilot',
+        '/api/generate-mcq',
+        '/api/generate-study-guide',
+        '/api/summarize-pdf',
+        '/api/paper-analysis/chat'
+    ];
+    
+    const notificationPaths = [
+        '/api/notifications/send',
+        '/api/notifications/generate-and-send'
+    ];
+    
+    if (aiPaths.includes(pathname)) {
+        maxRequests = 10;
+    } else if (notificationPaths.includes(pathname)) {
+        maxRequests = 5;
+    }
+
     // Extract headers to build a fingerprint to catch rotating IPs
     const ip = request.headers.get('x-forwarded-for') || request.ip || 'unknown-ip';
     const userAgent = request.headers.get('user-agent') || 'unknown-ua';
@@ -48,7 +71,7 @@ export function middleware(request) {
             // Increment count
             data.count += 1;
             
-            if (data.count > RATE_LIMIT_MAX_REQUESTS) {
+            if (data.count > maxRequests) {
                 console.warn(`Rate limit exceeded for pattern: ${fingerprint}`);
                 return new NextResponse('Too Many Requests. Please try again later.', { 
                     status: 429,
