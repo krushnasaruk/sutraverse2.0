@@ -1,12 +1,22 @@
 import { NextResponse } from 'next/server';
 import { copyFile, mkdir, stat } from 'fs/promises';
 import { join } from 'path';
+import { requireUser } from '@/backend/middlewares/requireUser';
 
-
-
+// ── Shared guard: block seed routes in production, require admin in dev ──
+async function guardSeedRoute(request) {
+    if (process.env.NODE_ENV === 'production') {
+        return new NextResponse('Not Found', { status: 404 });
+    }
+    const { user, error } = await requireUser(request, { admin: true });
+    if (error) return error;
+    return null; // allowed
+}
 
 
 export const handleGet_seedbee = async (request) => {
+    const blocked = await guardSeedRoute(request);
+    if (blocked) return blocked;
     try {
         const uploadDir = join(process.cwd(), 'public', 'uploads');
         await mkdir(uploadDir, { recursive: true });
@@ -77,7 +87,10 @@ export const handleGet_seedbee = async (request) => {
 
 
 
+
 export const handleGet_seedfiles = async (request) => {
+    const blocked = await guardSeedRoute(request);
+    if (blocked) return blocked;
     try {
         const uploadDir = join(process.cwd(), 'public', 'uploads');
         await mkdir(uploadDir, { recursive: true });
@@ -153,6 +166,8 @@ export const handleGet_seedfiles = async (request) => {
 
 
 export const handleGet_seedm2 = async (request) => {
+    const blocked = await guardSeedRoute(request);
+    if (blocked) return blocked;
     try {
         const uploadDir = join(process.cwd(), 'public', 'uploads');
         await mkdir(uploadDir, { recursive: true });
@@ -282,6 +297,8 @@ function formatTitle(filename, subjectName) {
 }
 
 export const handleGet_seedpyqs = async (request) => {
+  const blocked = await guardSeedRoute(request);
+  if (blocked) return blocked;
   try {
     const pyqsDir = join(process.cwd(), 'public', 'pyqs');
     const metadataList = [];
@@ -680,6 +697,8 @@ const MECHANICS_LECTURES = [
 ];
 
 export const handleGet_seedyoutube = async (request) => {
+  const blocked = await guardSeedRoute(request);
+  if (blocked) return blocked;
   try {
     if (!db) throw new Error('Firestore not initialized');
 
