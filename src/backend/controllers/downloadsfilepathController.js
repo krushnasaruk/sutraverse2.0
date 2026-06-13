@@ -1,7 +1,8 @@
 import { NextResponse } from 'next/server';
 import { readFile } from 'fs/promises';
-import { join, resolve, basename } from 'path';
-import { existsSync, readdirSync, statSync } from 'fs';
+import { join, resolve, basename, sep } from 'path';
+import { existsSync, readdirSync, statSync, createReadStream, realpathSync } from 'fs';
+import { Readable } from 'stream';
 import os from 'os';
 import { getUploadsDir } from '@/shared/utils/uploadsDir';
 
@@ -107,6 +108,9 @@ export const handleGet_downloadsfilepath = async (req, ctx) => {
         join(nestedUnderscore, relativePath),
         // 3. Inside nested user-uploads (dash)
         join(nestedDash, relativePath),
+        // 4. Public folder
+        join(appDir, 'public', relativePath),
+        join(appDir, 'public', 'uploads', relativePath),
     ];
 
     if (isPyq) {
@@ -117,9 +121,7 @@ export const handleGet_downloadsfilepath = async (req, ctx) => {
             join(nestedDash, 'pyqs', pyqsRelativePath),
             join(appDir, 'public', 'pyqs', pyqsRelativePath),
             join(appDir, 'pyqs', pyqsRelativePath),
-            join(homeDir, 'pyqs', pyqsRelativePath),
-            // Also try the subject folder directly under public/pyqs
-            join(appDir, 'public', relativePath),
+            join(homeDir, 'pyqs', pyqsRelativePath)
         );
     }
 
@@ -130,6 +132,8 @@ export const handleGet_downloadsfilepath = async (req, ctx) => {
             join(uploadsBase, stripped),
             join(nestedUnderscore, stripped),
             join(nestedDash, stripped),
+            join(appDir, 'public', stripped),
+            join(appDir, 'public', 'uploads', stripped)
         );
     }
 
@@ -172,17 +176,7 @@ export const handleGet_downloadsfilepath = async (req, ctx) => {
         console.log(`[downloads] Fallback paths exhausted for "${relativePath}". Trying recursive search for "${filenameOnly}"...`);
         
         // Search in uploadsDir first (includes nested user_uploads)
-        foundPath = findFileRecursive(uploadsBase, filenameOnly);
-        
-        // If still not found, try public directory
-        if (!foundPath) {
-            foundPath = findFileRecursive(join(appDir, 'public'), filenameOnly);
-        }
-        
-        // Try home directory as absolute last resort (limited depth)
-        if (!foundPath) {
-            foundPath = findFileRecursive(homeDir, filenameOnly, 4);
-        }
+        foundPath = findFileRecursive(uploadsBase, filenameOnly, 3); // Max depth 3
 
         if (foundPath) {
             console.log(`[downloads] Recursive search found file at: ${foundPath}`);
@@ -209,51 +203,67 @@ export const handleGet_downloadsfilepath = async (req, ctx) => {
             return NextResponse.redirect(redirectUrl, 307);
         }
 
-        // Collect debug info
-        let debugInfo = '';
-        try {
-            const envInfo = `UPLOADS_DIR=${process.env.UPLOADS_DIR || 'not set'}, cwd=${process.cwd()}`;
-            
-            // List what actually exists in the uploads directory
-            let dirListing = 'N/A';
+        // Collect debug info only in non-production environments
+        if (process.env.NODE_ENV !== 'production') {
+            let debugInfo = '';
             try {
-                if (existsSync(uploadsBase)) {
-                    const entries = readdirSync(uploadsBase).map(e => {
-                        try { return `${e}(${statSync(join(uploadsBase, e)).isDirectory() ? 'd' : 'f'})`; }
-                        catch { return e; }
-                    });
-                    dirListing = entries.join(', ');
-                }
-            } catch (e) { dirListing = `Error: ${e.message}`; }
+                const envInfo = `UPLOADS_DIR=${process.env.UPLOADS_DIR || 'not set'}, cwd=${process.cwd()}`;
+                
+                // List what actually exists in the uploads directory
+                let dirListing = 'N/A';
+                try {
+                    if (existsSync(uploadsBase)) {
+                        const entries = readdirSync(uploadsBase).map(e => {
+                            try { return `${e}(${statSync(join(uploadsBase, e)).isDirectory() ? 'd' : 'f'})`; }
+                            catch { return e; }
+                        });
+                        dirListing = entries.join(', ');
+                    }
+                } catch (e) { dirListing = `Error: ${e.message}`; }
 
-            // List nested user_uploads if it exists
-            let nestedListing = 'N/A';
-            try {
-                if (existsSync(nestedUnderscore)) {
-                    const entries = readdirSync(nestedUnderscore).map(e => {
-                        try { return `${e}(${statSync(join(nestedUnderscore, e)).isDirectory() ? 'd' : 'f'})`; }
-                        catch { return e; }
-                    });
-                    nestedListing = entries.join(', ');
-                }
-            } catch (e) { nestedListing = `Error: ${e.message}`; }
+                // List nested user_uploads if it exists
+                let nestedListing = 'N/A';
+                try {
+                    if (existsSync(nestedUnderscore)) {
+                        const entries = readdirSync(nestedUnderscore).map(e => {
+                            try { return `${e}(${statSync(join(nestedUnderscore, e)).isDirectory() ? 'd' : 'f'})`; }
+                            catch { return e; }
+                        });
+                        nestedListing = entries.join(', ');
+                    }
+                } catch (e) { nestedListing = `Error: ${e.message}`; }
 
-            debugInfo = `${envInfo} | uploadsDir contents: [${dirListing}] | user_uploads contents: [${nestedListing}] | Searched ${fallbackPaths.length} paths + recursive`;
-        } catch (e) {
-            debugInfo = `Debug error: ${e.message}`;
+                debugInfo = `${envInfo} | uploadsDir contents: [${dirListing}] | user_uploads contents: [${nestedListing}] | Searched ${fallbackPaths.length} paths + recursive`;
+            } catch (e) {
+                debugInfo = `Debug error: ${e.message}`;
+            }
+
+            return new NextResponse(`File not found. Debug: ${debugInfo}`, { status: 404 });
         }
 
-        return new NextResponse(`File not found. Debug: ${debugInfo}`, { status: 404 });
+        return new NextResponse("File not found.", { status: 404 });
     }
 
     // ── Security boundary check ─────────────────────────────────────────
-    const resolvedPath = resolve(foundPath);
+    let resolvedPath;
+    try {
+        resolvedPath = realpathSync(foundPath);
+    } catch (e) {
+        return new NextResponse("Forbidden: Invalid path resolution", { status: 403 });
+    }
+
     const allowedRoots = [
-        resolve(uploadsBase),
-        resolve(homeDir),
-        resolve(appDir, 'public'),
-        resolve(appDir, 'pyqs'),
-    ];
+        uploadsBase,
+        join(appDir, 'public'),
+        join(appDir, 'pyqs'),
+    ].filter(existsSync).map(p => {
+        try {
+            const r = realpathSync(p);
+            return r.endsWith(sep) ? r : r + sep;
+        } catch (e) {
+            return null;
+        }
+    }).filter(Boolean);
 
     const isAllowed = allowedRoots.some(root => resolvedPath.startsWith(root));
 
@@ -266,23 +276,43 @@ export const handleGet_downloadsfilepath = async (req, ctx) => {
 
 async function serveFile(filePath, filename) {
     try {
-        const fileBuffer = await readFile(filePath);
+        const stat = statSync(filePath);
+        const stream = createReadStream(filePath);
+        
+        // Convert Node.js stream to Web ReadableStream with native backpressure
+        const readableStream = Readable.toWeb(stream);
 
         const ext = filename.split('.').pop().toLowerCase();
         let contentType = 'application/octet-stream';
-        if (ext === 'pdf') contentType = 'application/pdf';
-        else if (['jpg', 'jpeg'].includes(ext)) contentType = 'image/jpeg';
-        else if (ext === 'png') contentType = 'image/png';
-        else if (ext === 'webp') contentType = 'image/webp';
-        else if (ext === 'gif') contentType = 'image/gif';
-        else if (ext === 'txt') contentType = 'text/plain';
-        else if (['doc', 'docx'].includes(ext)) contentType = 'application/msword';
+        let isSafeInline = false;
+        if (ext === 'pdf') {
+            contentType = 'application/pdf';
+            isSafeInline = true;
+        } else if (['jpg', 'jpeg'].includes(ext)) {
+            contentType = 'image/jpeg';
+            isSafeInline = true;
+        } else if (ext === 'png') {
+            contentType = 'image/png';
+            isSafeInline = true;
+        } else if (ext === 'webp') {
+            contentType = 'image/webp';
+            isSafeInline = true;
+        } else if (ext === 'gif') {
+            contentType = 'image/gif';
+            isSafeInline = true;
+        } else if (ext === 'txt') {
+            contentType = 'text/plain';
+            isSafeInline = true;
+        } else if (['doc', 'docx'].includes(ext)) contentType = 'application/msword';
         else if (['ppt', 'pptx'].includes(ext)) contentType = 'application/vnd.ms-powerpoint';
         else if (ext === 'zip') contentType = 'application/zip';
 
-        const response = new NextResponse(fileBuffer);
+        const response = new NextResponse(readableStream);
         response.headers.set('Content-Type', contentType);
-        response.headers.set('Content-Disposition', `inline; filename="${filename.split('/').pop()}"`);
+        const disposition = isSafeInline ? 'inline' : 'attachment';
+        response.headers.set('Content-Disposition', `${disposition}; filename="${filename.split('/').pop()}"`);
+        response.headers.set('Content-Length', stat.size.toString());
+        response.headers.set('X-Content-Type-Options', 'nosniff');
 
         return response;
     } catch (error) {
