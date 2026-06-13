@@ -3,6 +3,7 @@ import { join, resolve } from 'path';
 import { existsSync, statSync, readdirSync } from 'fs';
 import os from 'os';
 import { getUploadsDir } from '@/shared/utils/uploadsDir';
+import { requireUser } from '@/backend/middlewares/requireUser';
 
 /**
  * Build an index of ALL filenames on disk (Set for O(1) lookups).
@@ -102,6 +103,9 @@ function fileExists(relativePath, index, uploadsBase, nestedUnderscore, nestedDa
  */
 export async function POST(request) {
     try {
+        const { user, error: authError } = await requireUser(request, { admin: true });
+        if (authError) return authError;
+
         const { urls } = await request.json();
 
         if (!Array.isArray(urls) || urls.length === 0) {

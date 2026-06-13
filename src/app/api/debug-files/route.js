@@ -3,6 +3,7 @@ import fs from 'fs';
 import path from 'path';
 import os from 'os';
 import { getUploadsDir } from '@/shared/utils/uploadsDir';
+import { requireUser } from '@/backend/middlewares/requireUser';
 
 function scanDir(dir, maxDepth = 4, currentDepth = 0) {
     const results = [];
@@ -33,12 +34,8 @@ function scanDir(dir, maxDepth = 4, currentDepth = 0) {
 }
 
 export async function GET(request) {
-    const { searchParams } = new URL(request.url);
-    const token = searchParams.get('token');
-
-    if (token !== 'sutraverse_debug_123') {
-        return new NextResponse("Unauthorized", { status: 401 });
-    }
+    const { user, error: authError } = await requireUser(request, { admin: true });
+    if (authError) return authError;
 
     const appDir = process.cwd();
     let homeDir = '/home/jhdexjiu';
