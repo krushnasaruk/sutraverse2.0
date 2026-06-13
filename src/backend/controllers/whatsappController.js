@@ -1,10 +1,15 @@
 import { NextResponse } from 'next/server';
+import { requireUser } from '@/backend/middlewares/requireUser';
 
 
 
 export const handlePost_whatsapp = async (request) => {
     try {
-        const body = await req.json();
+        // ── Admin-Only Auth Gate ────────────────────────────────────────
+        const { user, error: authError } = await requireUser(request, { admin: true });
+        if (authError) return authError;
+
+        const body = await request.json();
         const { studentPhone, parentPhone, studentName, assignmentTitle, marks } = body;
 
         const accountSid = process.env.TWILIO_ACCOUNT_SID;
