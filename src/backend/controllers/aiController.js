@@ -2,6 +2,7 @@ import { Expo } from "expo-server-sdk";
 
 import { NextResponse } from 'next/server';
 import { GoogleGenerativeAI, SchemaType } from '@google/generative-ai';
+import { requireUser } from '@/backend/middlewares/requireUser';
 
 
 
@@ -11,11 +12,15 @@ var genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || '');
 
 export const handlePost_generatemcq = async (request) => {
     try {
+        // ── Auth Gate ──────────────────────────────────────────────────
+        const { user, error: authError } = await requireUser(request);
+        if (authError) return authError;
+
         if (!process.env.GEMINI_API_KEY) {
             return NextResponse.json({ error: 'GEMINI_API_KEY not configured' }, { status: 500 });
         }
 
-        const body = await req.json();
+        const body = await request.json();
         const { topic, subject, difficulty, count } = body;
 
         if (!topic || !count) {
@@ -93,7 +98,11 @@ function findLocalSubject(requestedSubject) {
 
 export const handlePost_generatestudyguide = async (request) => {
     try {
-        const body = await req.json();
+        // ── Auth Gate ──────────────────────────────────────────────────
+        const { user, error: authError } = await requireUser(request);
+        if (authError) return authError;
+
+        const body = await request.json();
         const { year, branch, subject } = body;
 
         if (!subject || !branch || !year) {
@@ -277,7 +286,11 @@ var genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || '');
 
 export const handlePost_notificationsgenerateandsend = async (request) => {
   try {
-    const { contentType, contentTitle, contentDetails } = await req.json();
+    // ── Admin-Only Auth Gate ────────────────────────────────────────
+    const { user, error: authError } = await requireUser(request, { admin: true });
+    if (authError) return authError;
+
+    const { contentType, contentTitle, contentDetails } = await request.json();
 
     if (!contentType || !contentTitle) {
       return NextResponse.json({ error: 'Missing content information' }, { status: 400 });
@@ -414,17 +427,21 @@ var SUBJECT_MAP = {
 export const handlePost_summarizepdf = async (request) => {
     let pdfPath = null;
     try {
+        // ── Auth Gate ──────────────────────────────────────────────────
+        const { user, error: authError } = await requireUser(request);
+        if (authError) return authError;
+
         let base64Data;
         let fileName = 'unknown.pdf';
         let cacheSearchName = '';
         let pdfPathForResponse = null;
 
         // Determine the input source: JSON body (library path) or FormData (file upload)
-        const contentType = req.headers.get('content-type') || '';
+        const contentType = request.headers.get('content-type') || '';
         
         if (contentType.includes('application/json')) {
             // ── Library Selection Mode: Read PDF from local filesystem ──
-            const body = await req.json();
+            const body = await request.json();
             pdfPath = body.pdfPath;
             
             if (!pdfPath) {
@@ -463,7 +480,7 @@ export const handlePost_summarizepdf = async (request) => {
             console.log(`[API] Processing library PDF: ${pdfPath} (${buffer.length} bytes)`);
         } else {
             // ── Upload Mode: Read PDF from FormData ──
-            const formData = await req.formData();
+            const formData = await request.formData();
             const file = formData.get('file');
 
             if (!file) {
