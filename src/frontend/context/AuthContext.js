@@ -21,6 +21,34 @@ export function AuthProvider({ children }) {
         try {
             const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
                 if (firebaseUser) {
+                    const isEmailUser = firebaseUser.providerData.some(p => p.providerId === 'password');
+                    const isVerified = firebaseUser.emailVerified;
+
+                    // Handle redirects
+                    const path = window.location.pathname;
+                    const isAuthRoute = path === '/login' || path === '/signup' || path.startsWith('/mobile-auth');
+                    const isVerifyRoute = path === '/verify-email';
+
+                    if (isEmailUser && !isVerified) {
+                        if (!isAuthRoute && !isVerifyRoute) {
+                            window.location.href = '/verify-email';
+                            return;
+                        }
+                        
+                        // Set the basic user details so that the verify-email page can show user details and request email resend
+                        const quickUser = {
+                            uid: firebaseUser.uid,
+                            name: firebaseUser.displayName || '',
+                            email: firebaseUser.email || '',
+                            photoURL: firebaseUser.photoURL || '',
+                            uploads: 0,
+                            points: 0,
+                        };
+                        setUser(quickUser);
+                        setLoading(false);
+                        return;
+                    }
+
                     // INSTANTLY set user from Firebase Auth (no async delay)
                     const quickUser = {
                         uid: firebaseUser.uid,
@@ -54,18 +82,8 @@ export function AuthProvider({ children }) {
 
                         // Set the enriched + live-updated user
                         setUser(prev => ({ ...prev, uid: firebaseUser.uid, ...userData }));
-                        
-                        const isEmailUser = firebaseUser.providerData.some(p => p.providerId === 'password');
-                        const isVerified = firebaseUser.emailVerified;
 
-                        // Handle redirects
-                        const path = window.location.pathname;
-                        const isAuthRoute = path === '/login' || path === '/signup' || path.startsWith('/mobile-auth');
-                        const isVerifyRoute = path === '/verify-email';
-
-                        if (isEmailUser && !isVerified && !isAuthRoute && !isVerifyRoute) {
-                            window.location.href = '/verify-email';
-                        } else if (userData && userData.profileComplete === false && 
+                        if (userData && userData.profileComplete === false && 
                             path !== '/onboarding' && 
                             !isAuthRoute && 
                             !isVerifyRoute) {

@@ -38,7 +38,10 @@ export const handlePost_upload = async (request) => {
 
         const idToken = authHeader.split('Bearer ')[1];
         try {
-            await adminAuth.verifyIdToken(idToken);
+            const decodedToken = await adminAuth.verifyIdToken(idToken);
+            if (!decodedToken.email_verified) {
+                return NextResponse.json({ error: 'Forbidden: Email verification required' }, { status: 403 });
+            }
         } catch (authErr) {
             console.error('Upload verification failed:', authErr.message);
             return NextResponse.json({ error: 'Unauthorized: Invalid authentication token' }, { status: 401 });

@@ -24,6 +24,19 @@ export async function GET(req, ctx) {
   } else if (token) {
     try {
       const decodedToken = await adminAuth.verifyIdToken(token);
+      if (!decodedToken.email_verified) {
+        return new NextResponse(
+          JSON.stringify({ error: 'Forbidden: Email verification required.' }),
+          {
+            status: 403,
+            headers: {
+              'Content-Type': 'application/json',
+              'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
+              'CDN-Cache-Control': 'no-store'
+            }
+          }
+        );
+      }
       rateLimitKey = decodedToken.uid;
       isAuthenticated = true;
     } catch (authErr) {

@@ -34,6 +34,15 @@ export async function requireUser(request, { admin = false } = {}) {
     try {
         const decodedToken = await adminAuth.verifyIdToken(idToken);
 
+        if (!decodedToken.email_verified) {
+            return {
+                error: NextResponse.json(
+                    { error: 'Forbidden: Email verification required.' },
+                    { status: 403 }
+                ),
+            };
+        }
+
         if (admin) {
             const userDoc = await adminDb.doc(`users/${decodedToken.uid}`).get();
             if (!userDoc.exists || userDoc.data()?.isAdmin !== true) {
