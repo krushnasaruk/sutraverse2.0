@@ -17,9 +17,11 @@ if (!admin.apps.length) {
         }
 
         if (!admin.apps.length && process.env.NODE_ENV !== 'production') {
-            const keyPath = path.join(process.cwd(), 'sutraverse2-firebase-adminsdk-fbsvc-de34e6d305.json');
-            if (fs.existsSync(keyPath)) {
-                console.warn('WARNING: Loading Firebase Service Account credential file from disk. This is only safe in development.');
+            const files = fs.readdirSync(process.cwd());
+            const keyFile = files.find(f => f.startsWith('sutraverse2-firebase-adminsdk-') && f.endsWith('.json'));
+            if (keyFile) {
+                const keyPath = path.join(process.cwd(), keyFile);
+                console.warn(`WARNING: Loading Firebase Service Account credential file: ${keyFile} from disk. This is only safe in development.`);
                 const serviceAccount = JSON.parse(fs.readFileSync(keyPath, 'utf8'));
                 admin.initializeApp({
                     credential: admin.credential.cert(serviceAccount)
