@@ -204,11 +204,21 @@ export default function AssignmentsPage() {
     try { await awardDownloadPoints(item.id, item.uploaderUID, user?.uid); setAssignments(prev => prev.map(a => a.id === item.id ? { ...a, downloads: (a.downloads || 0) + 1 } : a)); } catch (e) {}
     
     let finalUrl = url;
-    if (!url.includes('firebasestorage') && auth?.currentUser) {
+    if (!url.includes('firebasestorage')) {
       try {
-        const idToken = await auth.currentUser.getIdToken();
-        if (idToken) {
-          finalUrl = `${url}?token=${encodeURIComponent(idToken)}`;
+        let currentUser = auth?.currentUser;
+        if (!currentUser && auth) {
+          const { onAuthStateChanged } = await import('firebase/auth');
+          currentUser = await new Promise((resolve) => {
+            const unsub = onAuthStateChanged(auth, (u) => { unsub(); resolve(u); });
+            setTimeout(() => resolve(null), 3000);
+          });
+        }
+        if (currentUser) {
+          const idToken = await currentUser.getIdToken(true);
+          if (idToken) {
+            finalUrl = `${url}?token=${encodeURIComponent(idToken)}`;
+          }
         }
       } catch (tokenErr) {
         console.warn('Failed to retrieve authentication token:', tokenErr);
