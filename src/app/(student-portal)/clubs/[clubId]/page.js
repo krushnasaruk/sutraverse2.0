@@ -16,33 +16,16 @@ import {
 import { useAuth } from '@/frontend/context/AuthContext';
 import { BANNER_PRESETS } from '@/shared/constants/bannerPresets';
 import styles from './page.module.css';
-
-const adjustColorBrightness = (hex, percent) => {
-    if (!hex || hex.charAt(0) !== '#') return hex || '#3b82f6';
-    let R = parseInt(hex.substring(1, 3), 16);
-    let G = parseInt(hex.substring(3, 5), 16);
-    let B = parseInt(hex.substring(5, 7), 16);
-
-    R = parseInt(R * (100 + percent) / 100);
-    G = parseInt(G * (100 + percent) / 100);
-    B = parseInt(B * (100 + percent) / 100);
-
-    R = R < 255 ? R : 255;
-    G = G < 255 ? G : 255;
-    B = B < 255 ? B : 255;
-
-    R = R > 0 ? R : 0;
-    G = G > 0 ? G : 0;
-    B = B > 0 ? B : 0;
-
-    const rHex = R.toString(16).padStart(2, '0');
-    const gHex = G.toString(16).padStart(2, '0');
-    const bHex = B.toString(16).padStart(2, '0');
-
-    return `#${rHex}${gHex}${bHex}`;
-};
-
-
+import AnnouncementsTab from './components/AnnouncementsTab';
+import QATab from './components/QATab';
+import EventsTab from './components/EventsTab';
+import ShowcaseTab from './components/ShowcaseTab';
+import GalleryTab from './components/GalleryTab';
+import ChatTab from './components/ChatTab';
+import MembersTab from './components/MembersTab';
+import AboutTab from './components/AboutTab';
+import ClubHero from './components/ClubHero';
+import { adjustColorBrightness } from '@/shared/utils/colors';
 
 
 export default function ClubDetailPage({ params: paramsPromise }) {
@@ -959,107 +942,14 @@ export default function ClubDetailPage({ params: paramsPromise }) {
                 ? `linear-gradient(135deg, ${club.accentColor}, ${adjustColorBrightness(club.accentColor, -30)})` 
                 : 'linear-gradient(135deg, var(--primary), #1d4ed8)'
         }}>
-            {/* ── HERO ── */}
-            <div className={styles.heroBanner}>
-                <div className={styles.heroBannerBg} style={{ 
-                    background: club.coverImage 
-                        ? `url(${club.coverImage}) center/cover no-repeat` 
-                        : club.gradient || 'var(--gradient-brand)' 
-                }}></div>
-
-                {/* Floating particles */}
-                <div className={styles.heroParticles}>
-                    {[...Array(8)].map((_, i) => (
-                        <div key={i} className={styles.particle}
-                            style={{ left: `${10 + i * 12}%`, width: `${4 + i % 3 * 3}px`, height: `${4 + i % 3 * 3}px` }}
-                        />
-                    ))}
-                </div>
-
-                <div className={styles.heroContainer}>
-                    <Link href="/clubs" className={styles.backBtn}>← All Clubs</Link>
-
-                    <div className={styles.heroContent}>
-                        {/* Icon */}
-                        <div className={styles.heroLeft}>
-                            <div className={styles.heroIconWrap}>
-                                <div className={styles.heroIcon}>{club.emoji || '🎓'}</div>
-                                <div className={styles.heroIconGlow} style={{ background: club.gradient || 'var(--gradient-brand)' }}></div>
-                            </div>
-                        </div>
-
-                        {/* Info */}
-                        <div className={styles.heroInfo}>
-                            <div className={styles.heroTopRow}>
-                                <span className={styles.clubCategoryBadge}>{club.category}</span>
-                                {club.upcomingEvent && (
-                                    <span className={styles.eventBadge}>📅 {club.upcomingEvent}</span>
-                                )}
-                            </div>
-                            <h1 className={styles.clubName}>{club.name}</h1>
-                            <p className={styles.clubDesc}>{club.description}</p>
-
-                            {club.tags?.length > 0 && (
-                                <div className={styles.heroTags}>
-                                    {club.tags.map(tag => (
-                                        <span key={tag} className={styles.heroTag}>{tag}</span>
-                                    ))}
-                                </div>
-                            )}
-
-                            <div className={styles.heroMetaRow}>
-                                <span className={styles.metaPill}>👥 {club.membersCount || members.length} members</span>
-                                {club.meetSchedule && <span className={styles.metaPill}>📍 {club.meetSchedule}</span>}
-                                {club.adminName && <span className={styles.metaPill}>👤 Led by {club.adminName}</span>}
-                                {club.supervisorName && <span className={styles.metaPill}>🎓 Supervised by {club.supervisorName}</span>}
-                            </div>
-                        </div>
-
-                        {/* Actions */}
-                        <div className={styles.heroActions}>
-                            {/* Join/Leave */}
-                            {!isAdmin && (
-                                joined ? (
-                                    <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-                                        <div className={styles.joinedBadge}>✅ You're a member!</div>
-                                        <button className={styles.leaveBtnLarge} onClick={handleJoin} disabled={joiningLoading}>
-                                            {joiningLoading ? 'Leaving...' : 'Leave Club'}
-                                        </button>
-                                    </div>
-                                ) : (
-                                    <button className={styles.joinBtnLarge} onClick={handleJoin} disabled={joiningLoading}>
-                                        {joiningLoading ? 'Joining...' : <>Join Club <span className={styles.joinArrow}>→</span></>}
-                                    </button>
-                                )
-                            )}
-
-                            {/* Joining/Registration link */}
-                            {club.joiningLink && (
-                                <a href={club.joiningLink.startsWith('http') ? club.joiningLink : `https://${club.joiningLink}`}
-                                    target="_blank" rel="noopener noreferrer" className={styles.linkBtn} style={{ background: 'rgba(34,197,94,0.25)', borderColor: 'rgba(34,197,94,0.5)' }}>
-                                    📋 Registration Form
-                                </a>
-                            )}
-
-                            {/* Discord */}
-                            {club.discord && (
-                                <a href={club.discord.startsWith('http') ? club.discord : `https://${club.discord}`}
-                                    target="_blank" rel="noopener noreferrer" className={styles.discordBtn}>
-                                    💬 Discord Server
-                                </a>
-                            )}
-
-                            {/* WhatsApp */}
-                            {club.whatsapp && (
-                                <a href={club.whatsapp.startsWith('http') ? club.whatsapp : `https://${club.whatsapp}`}
-                                    target="_blank" rel="noopener noreferrer" className={styles.linkBtn} style={{ background: 'rgba(34,197,94,0.2)', borderColor: 'rgba(34,197,94,0.4)' }}>
-                                    📱 WhatsApp Group
-                                </a>
-                            )}
-                        </div>
-                    </div>
-                </div>
-            </div>
+            <ClubHero
+                club={club}
+                joined={joined}
+                isAdmin={isAdmin}
+                handleJoin={handleJoin}
+                joiningLoading={joiningLoading}
+                members={members}
+            />
 
             {/* ── CONTENT ── */}
             <div className={styles.container}>
@@ -1097,157 +987,38 @@ export default function ClubDetailPage({ params: paramsPromise }) {
 
                 {/* ── ANNOUNCEMENTS TAB ── */}
                 {activeTab === 'announcements' && (
-                    <div className={styles.tabContent}>
-                        {/* Compose box — visible to admins */}
-                        {isAdmin && (
-                            <div className={styles.composeBox}>
-                                <div className={styles.composeAvatar}>
-                                    {user?.photoURL ? <img src={user.photoURL} alt="" style={{ width: 44, height: 44, borderRadius: '50%' }} /> : '📢'}
-                                </div>
-                                <div className={styles.composeRight}>
-                                    <textarea
-                                        className={styles.composeInput}
-                                        placeholder="Post an announcement to all members..."
-                                        value={newAnnouncement}
-                                        onChange={e => setNewAnnouncement(e.target.value)}
-                                        maxLength={2000}
-                                    />
-                                    <div className={styles.composeFooter}>
-                                        <span className={styles.composeTip}>📌 Members will see this immediately.</span>
-                                        <button
-                                            className={styles.postBtn}
-                                            onClick={handlePostAnnouncement}
-                                            disabled={posting || !newAnnouncement.trim()}
-                                        >
-                                            {posting ? 'Posting...' : 'Post Announcement'}
-                                        </button>
-                                    </div>
-                                </div>
-                            </div>
-                        )}
-
-                        {/* Join prompt for non-members */}
-                        {!joined && !isAdmin && (
-                            <div className={styles.joinPrompt}>
-                                <span>🔔</span>
-                                <div>
-                                    <strong>Join to see all announcements!</strong>
-                                    <p>Members get notified about events, updates, and much more.</p>
-                                </div>
-                                <button className={styles.joinPromptBtn} onClick={handleJoin} disabled={joiningLoading}>
-                                    {joiningLoading ? 'Joining...' : 'Join Club'}
-                                </button>
-                            </div>
-                        )}
-
-                        {announcements.length === 0 ? (
-                            <div className={styles.emptyTab}>
-                                <div className={styles.emptyTabIcon}>📭</div>
-                                <p>No announcements yet.{isAdmin ? ' Be the first to post!' : ' Check back soon!'}</p>
-                            </div>
-                        ) : (
-                            <div className={styles.announcementList}>
-                                {announcements.map((a, i) => (
-                                    <div key={a.id}
-                                        className={`${styles.announcementCard} ${a.pinned ? styles.pinnedCard : ''}`}
-                                        style={{ animationDelay: `${i * 60}ms` }}
-                                    >
-                                        {a.pinned && <div className={styles.pinnedBanner}>📌 Pinned</div>}
-                                        <div className={styles.announceHeader}>
-                                            <div className={styles.announceAuthorRow}>
-                                                <div className={styles.announceAvatar}>{a.authorEmoji || a.authorName?.charAt(0) || '👤'}</div>
-                                                <div>
-                                                    <div className={styles.announceAuthor}>{a.authorName}</div>
-                                                    <div className={styles.announceTime}>{formatDate(a.createdAt)}</div>
-                                                </div>
-                                            </div>
-                                        </div>
-                                        <div className={styles.announceBody}>{a.content}</div>
-                                    </div>
-                                ))}
-                            </div>
-                        )}
-                    </div>
+                    <AnnouncementsTab
+                        isAdmin={isAdmin}
+                        user={user}
+                        newAnnouncement={newAnnouncement}
+                        setNewAnnouncement={setNewAnnouncement}
+                        handlePostAnnouncement={handlePostAnnouncement}
+                        posting={posting}
+                        joined={joined}
+                        handleJoin={handleJoin}
+                        joiningLoading={joiningLoading}
+                        announcements={announcements}
+                        formatDate={formatDate}
+                    />
                 )}
 
                 {/* ── Q&A TAB ── */}
                 {activeTab === 'qa' && (
-                    <div className={styles.tabContent}>
-                        {/* Compose Question Box */}
-                        {user ? (
-                            <div className={styles.composeBox}>
-                                <div className={styles.composeAvatar}>
-                                    {user.photoURL ? <img src={user.photoURL} alt="" style={{ width: 44, height: 44, borderRadius: '50%' }} /> : '❓'}
-                                </div>
-                                <div className={styles.composeRight}>
-                                    <textarea
-                                        className={styles.composeInput}
-                                        placeholder="Ask a question about this club..."
-                                        value={newQuestion}
-                                        onChange={e => setNewQuestion(e.target.value)}
-                                        maxLength={1000}
-                                    />
-                                    <div className={styles.composeFooter}>
-                                        <span className={styles.composeTip}>💬 Anyone can reply and upvote.</span>
-                                        <button
-                                            className={styles.postBtn}
-                                            onClick={handlePostQuestion}
-                                            disabled={submittingQA || !newQuestion.trim()}
-                                        >
-                                            {submittingQA ? 'Posting...' : 'Ask Question'}
-                                        </button>
-                                    </div>
-                                </div>
-                            </div>
-                        ) : (
-                            <div className={styles.joinPrompt}>
-                                <span>🔒</span>
-                                <div>
-                                    <strong>Log in to ask questions!</strong>
-                                    <p>Connect with club admins and members to learn more about club operations.</p>
-                                </div>
-                                <Link href="/login" className={styles.joinPromptBtn}>Log In</Link>
-                            </div>
-                        )}
-
-                        {/* Questions List */}
-                        {qaList.length === 0 ? (
-                            <div className={styles.emptyTab}>
-                                <div className={styles.emptyTabIcon}>💬</div>
-                                <p>No questions asked yet. Be the first to start the conversation!</p>
-                            </div>
-                        ) : (
-                            <div className={styles.qaList}>
-                                {qaList.map((qa, i) => {
-                                    const hasUpvoted = user && qa.upvotes?.includes(user.uid);
-                                    return (
-                                        <div key={qa.id} className={styles.qaCard} style={{ animationDelay: `${i * 60}ms` }}>
-                                            {/* Left Column: Upvotes */}
-                                            <div className={styles.qaUpvoteCol}>
-                                                <button
-                                                    className={`${styles.upvoteBtn} ${hasUpvoted ? styles.upvoteBtnActive : ''}`}
-                                                    onClick={() => handleUpvoteQuestion(qa.id)}
-                                                    title={hasUpvoted ? 'Remove Upvote' : 'Upvote Question'}
-                                                >
-                                                    <span className={styles.upvoteArrow}>▲</span>
-                                                    <span className={styles.upvoteCount}>{qa.upvoteCount || 0}</span>
-                                                </button>
-                                            </div>
-
-                                            {/* Right Column: Question & Replies */}
-                                            <div className={styles.qaMainCol}>
-                                                <div className={styles.qaQuestionHeader}>
-                                                    <span className={styles.qaAuthor}>{qa.userName}</span>
-                                                    <span className={styles.qaTime}>{formatDate(qa.createdAt)}</span>
-                                                </div>
-                                                <div className={styles.qaQuestionText}>{qa.questionText}</div>
-
-                                                {/* Replies Stack */}
-                                                {qa.replies && qa.replies.length > 0 && (
-                                                    <div className={styles.qaRepliesStack}>
-                                                        {qa.replies.map(reply => {
-                                                            const isReplyAdmin = reply.authorRole === 'Admin';
-                                                            const isSpecialRole = reply.authorRole !== 'Member' && reply.authorRole !== 'Admin' && reply.authorRole !== 'Visitor';
+                    <QATab
+                        user={user}
+                        newQuestion={newQuestion}
+                        setNewQuestion={setNewQuestion}
+                        handlePostQuestion={handlePostQuestion}
+                        submittingQA={submittingQA}
+                        qaList={qaList}
+                        handleUpvoteQuestion={handleUpvoteQuestion}
+                        newReply={newReply}
+                        setNewReply={setNewReply}
+                        handlePostReply={handlePostReply}
+                        formatDate={formatDate}
+                        club={club}
+                    />
+                )}
                                                             return (
                                                                 <div
                                                                     key={reply.replyId}
@@ -1318,153 +1089,29 @@ export default function ClubDetailPage({ params: paramsPromise }) {
 
                 {/* ── EVENTS TAB ── */}
                 {activeTab === 'events' && (
-                    <div className={styles.tabContent}>
-                        {/* Event Admin controls */}
-                        <div className={styles.eventsHeader}>
-                            <div>
-                                <span className={styles.membersTitle}>Club Calendar</span>
-                                <span className={styles.membersSubtitle}>({eventsList.length} scheduled)</span>
-                            </div>
-                            {isAdmin && (
-                                <button
-                                    className={styles.postBtn}
-                                    onClick={() => setShowAddEventModal(true)}
-                                >
-                                    ✨ Schedule New Event
-                                </button>
-                            )}
-                        </div>
-
-                        {/* Events list */}
-                        {eventsList.length === 0 ? (
-                            <div className={styles.emptyTab}>
-                                <div className={styles.emptyTabIcon}>📅</div>
-                                <p>No events scheduled currently. Check back soon!</p>
-                            </div>
-                        ) : (
-                            <div className={styles.eventsTimeline}>
-                                {eventsList.map((evt, i) => {
-                                    const hasRSVPd = user && evt.attendees?.includes(user.uid);
-                                    const eventDateStr = evt.date?.toDate
-                                        ? evt.date.toDate().toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' })
-                                        : new Date(evt.date).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' });
-                                    
-                                    const eventTimeStr = evt.date?.toDate
-                                        ? evt.date.toDate().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })
-                                        : new Date(evt.date).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
-
-                                    // Google Calendar link builder
-                                    const dObj = evt.date?.toDate ? evt.date.toDate() : new Date(evt.date);
-                                    const gCalStart = dObj.toISOString().replace(/-|:|\.\d\d\d/g, "");
-                                    const endD = new Date(dObj.getTime() + 2 * 60 * 60 * 1000); // assume 2 hours duration
-                                    const gCalEnd = endD.toISOString().replace(/-|:|\.\d\d\d/g, "");
-                                    const gCalUrl = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(evt.title)}&dates=${gCalStart}/${gCalEnd}&details=${encodeURIComponent(evt.description)}&location=${encodeURIComponent(evt.venue)}`;
-
-                                    return (
-                                        <div key={evt.id} className={styles.eventTimelineCard} style={{ animationDelay: `${i * 80}ms` }}>
-                                            <div className={styles.eventLeftBar} style={{ background: evt.coverGradient || 'var(--gradient-brand)' }}>
-                                                <span className={styles.eventLeftDate}>
-                                                    {evt.date?.toDate ? evt.date.toDate().getDate() : new Date(evt.date).getDate()}
-                                                </span>
-                                                <span className={styles.eventLeftMonth}>
-                                                    {evt.date?.toDate ? evt.date.toDate().toLocaleDateString('en-US', { month: 'short' }) : new Date(evt.date).toLocaleDateString('en-US', { month: 'short' })}
-                                                </span>
-                                            </div>
-
-                                            <div className={styles.eventTimelineRight}>
-                                                <div className={styles.eventHeaderRow}>
-                                                    <h3 className={styles.eventTitle}>{evt.title}</h3>
-                                                    <div style={{ display: 'flex', gap: '8px' }}>
-                                                        <a
-                                                            href={gCalUrl}
-                                                            target="_blank"
-                                                            rel="noopener noreferrer"
-                                                            className={styles.gCalExportBtn}
-                                                            title="Export to Google Calendar"
-                                                        >
-                                                            📅 Google Calendar
-                                                        </a>
-                                                    </div>
-                                                </div>
-
-                                                <div className={styles.eventMetaRow}>
-                                                    <span>🕒 {eventTimeStr}</span>
-                                                    <span>📍 {evt.venue}</span>
-                                                </div>
-
-                                                <p className={styles.eventDescText}>{evt.description}</p>
-
-                                                <div className={styles.eventRSVPRow}>
-                                                    <button
-                                                        className={`${styles.rsvpActionBtn} ${hasRSVPd ? styles.rsvpActionBtnActive : ''}`}
-                                                        onClick={() => handleRSVPEvent(evt.id)}
-                                                    >
-                                                        {hasRSVPd ? '✓ Attending' : 'Count Me In! ⚡'}
-                                                    </button>
-                                                    
-                                                    {evt.attendeeCount > 0 && (
-                                                        <div className={styles.attendeeCounterText}>
-                                                            🔥 Join {evt.attendeeCount} others attending!
-                                                        </div>
-                                                    )}
-                                                </div>
-                                            </div>
-                                        </div>
-                                    );
-                                })}
-                            </div>
-                        )}
-
-                        {/* Event Creation Modal */}
-                        {showAddEventModal && (
-                            <div className={styles.modalOverlay}>
-                                <div className={styles.modalContent}>
-                                    <div className={styles.modalHeader}>
-                                        <h3>📅 Schedule New Event</h3>
-                                        <button
-                                            className={styles.closeModalBtn}
-                                            onClick={() => setShowAddEventModal(false)}
-                                        >
-                                            ✕
-                                        </button>
-                                    </div>
-                                    <form onSubmit={handleCreateEvent} className={styles.modalForm}>
-                                        <div className={styles.formGroup}>
-                                            <label className={styles.label}>Event Title</label>
-                                            <input
-                                                type="text"
-                                                className={styles.input}
-                                                required
-                                                placeholder="Enter event name..."
-                                                value={newEventTitle}
-                                                onChange={e => setNewEventTitle(e.target.value)}
-                                            />
-                                        </div>
-                                        <div className={styles.formGroup}>
-                                            <label className={styles.label}>Description</label>
-                                            <textarea
-                                                className={styles.textarea}
-                                                required
-                                                placeholder="Provide event details, schedule, or prerequisites..."
-                                                value={newEventDesc}
-                                                onChange={e => setNewEventDesc(e.target.value)}
-                                            />
-                                        </div>
-                                        <div className={styles.formRow}>
-                                            <div className={styles.formGroup} style={{ flex: 1 }}>
-                                                <label className={styles.label}>Date</label>
-                                                <input
-                                                    type="date"
-                                                    className={styles.input}
-                                                    required
-                                                    value={newEventDate}
-                                                    onChange={e => setNewEventDate(e.target.value)}
-                                                />
-                                            </div>
-                                            <div className={styles.formGroup} style={{ flex: 1 }}>
-                                                <label className={styles.label}>Time</label>
-                                                <input
-                                                    type="time"
+                    <EventsTab
+                        isAdmin={isAdmin}
+                        eventsList={eventsList}
+                        setShowAddEventModal={setShowAddEventModal}
+                        user={user}
+                        handleRSVPEvent={handleRSVPEvent}
+                        showAddEventModal={showAddEventModal}
+                        handleCreateEvent={handleCreateEvent}
+                        newEventTitle={newEventTitle}
+                        setNewEventTitle={setNewEventTitle}
+                        newEventDesc={newEventDesc}
+                        setNewEventDesc={setNewEventDesc}
+                        newEventDate={newEventDate}
+                        setNewEventDate={setNewEventDate}
+                        newEventTime={newEventTime}
+                        setNewEventTime={setNewEventTime}
+                        newEventVenue={newEventVenue}
+                        setNewEventVenue={setNewEventVenue}
+                        newEventGradient={newEventGradient}
+                        setNewEventGradient={setNewEventGradient}
+                        submittingEvent={submittingEvent}
+                    />
+                )}
                                                     className={styles.input}
                                                     required
                                                     value={newEventTime}
@@ -1528,166 +1175,27 @@ export default function ClubDetailPage({ params: paramsPromise }) {
 
                 {/* ── SHOWCASE TAB ── */}
                 {activeTab === 'showcase' && (
-                    <div className={styles.tabContent}>
-                        {/* Showcase Controls */}
-                        <div className={styles.eventsHeader}>
-                            <div>
-                                <span className={styles.membersTitle}>Project Showcase</span>
-                                <span className={styles.membersSubtitle}>({projectsList.length} innovations)</span>
-                            </div>
-                            {joined && (
-                                <button
-                                    className={styles.postBtn}
-                                    onClick={() => setShowAddProjModal(true)}
-                                >
-                                    🚀 Share Your Project
-                                </button>
-                            )}
-                        </div>
-
-                        {/* Projects Masonry / Grid */}
-                        {projectsList.length === 0 ? (
-                            <div className={styles.emptyTab}>
-                                <div className={styles.emptyTabIcon}>🎨</div>
-                                <p>No projects shared yet. {joined ? "Be the first to showcase your work!" : "Join the club to start sharing projects."}</p>
-                            </div>
-                        ) : (
-                            <div className={styles.projectsMasonry}>
-                                {projectsList.map((proj, i) => {
-                                    const hasLiked = user && proj.likes?.includes(user.uid);
-                                    return (
-                                        <div key={proj.id} className={styles.projectCard} style={{ animationDelay: `${i * 60}ms` }}>
-                                            <div className={styles.projectImageWrap}>
-                                                <img
-                                                    src={proj.imageUrl}
-                                                    alt={proj.title}
-                                                    className={styles.projectImage}
-                                                    loading="lazy"
-                                                />
-                                                <div className={styles.projectGlassOverlay}>
-                                                    {proj.link && (
-                                                        <a
-                                                            href={proj.link.startsWith('http') ? proj.link : `https://${proj.link}`}
-                                                            target="_blank"
-                                                            rel="noopener noreferrer"
-                                                            className={styles.projLinkBtn}
-                                                        >
-                                                            🔗 View Project ↗
-                                                        </a>
-                                                    )}
-                                                </div>
-                                                <button
-                                                    className={`${styles.projLikeBtn} ${hasLiked ? styles.projLikeBtnActive : ''}`}
-                                                    onClick={() => handleLikeProject(proj.id)}
-                                                    title={hasLiked ? 'Unlike Project' : 'Like Project'}
-                                                >
-                                                    ❤️ <span className={styles.projLikeCount}>{proj.likeCount || 0}</span>
-                                                </button>
-                                            </div>
-
-                                            <div className={styles.projectInfo}>
-                                                <h4 className={styles.projectTitle}>{proj.title}</h4>
-                                                <p className={styles.projectDesc}>{proj.description}</p>
-                                                
-                                                {proj.tags && proj.tags.length > 0 && (
-                                                    <div className={styles.projTags}>
-                                                        {proj.tags.map(tag => (
-                                                            <span key={tag} className={styles.projTag}>#{tag}</span>
-                                                        ))}
-                                                    </div>
-                                                )}
-
-                                                <div className={styles.projectFooter}>
-                                                    <span className={styles.projectCreator}>BY {proj.creatorName.toUpperCase()}</span>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    );
-                                })}
-                            </div>
-                        )}
-
-                        {/* Add Project Modal */}
-                        {showAddProjModal && (
-                            <div className={styles.modalOverlay}>
-                                <div className={styles.modalContent}>
-                                    <div className={styles.modalHeader}>
-                                        <h3>🚀 Share New Project</h3>
-                                        <button
-                                            className={styles.closeModalBtn}
-                                            onClick={() => setShowAddProjModal(false)}
-                                        >
-                                            ✕
-                                        </button>
-                                    </div>
-                                    <form onSubmit={handleCreateProject} className={styles.modalForm}>
-                                        <div className={styles.formGroup}>
-                                            <label className={styles.label}>Project Title</label>
-                                            <input
-                                                type="text"
-                                                className={styles.input}
-                                                required
-                                                placeholder="Enter project name..."
-                                                value={newProjTitle}
-                                                onChange={e => setNewProjTitle(e.target.value)}
-                                            />
-                                        </div>
-                                        <div className={styles.formGroup}>
-                                            <label className={styles.label}>Description</label>
-                                            <textarea
-                                                className={styles.textarea}
-                                                required
-                                                placeholder="What did you build? Explain the stack and features..."
-                                                value={newProjDesc}
-                                                onChange={e => setNewProjDesc(e.target.value)}
-                                            />
-                                        </div>
-                                        <div className={styles.formGroup}>
-                                            <label className={styles.label}>Demo / Repository URL</label>
-                                            <input
-                                                type="url"
-                                                className={styles.input}
-                                                placeholder="https://github.com/... or live URL"
-                                                value={newProjLink}
-                                                onChange={e => setNewProjLink(e.target.value)}
-                                            />
-                                        </div>
-                                        <div className={styles.formGroup}>
-                                            <label className={styles.label}>Visual Thumbnail Image URL</label>
-                                            <input
-                                                type="url"
-                                                className={styles.input}
-                                                placeholder="https://images.unsplash.com/..."
-                                                value={newProjImage}
-                                                onChange={e => setNewProjImage(e.target.value)}
-                                            />
-                                        </div>
-                                        <div className={styles.formGroup}>
-                                            <label className={styles.label}>Tags (comma separated)</label>
-                                            <input
-                                                type="text"
-                                                className={styles.input}
-                                                placeholder="react, firebase, ai, robotics"
-                                                value={newProjTags}
-                                                onChange={e => setNewProjTags(e.target.value)}
-                                            />
-                                        </div>
-                                        <div className={styles.modalFooter}>
-                                            <button
-                                                type="button"
-                                                className={styles.deleteBtn}
-                                                style={{ borderColor: 'var(--border)', color: 'var(--text-muted)' }}
-                                                onClick={() => setShowAddProjModal(false)}
-                                            >
-                                                Cancel
-                                            </button>
-                                            <button
-                                                type="submit"
-                                                className={styles.postBtn}
-                                                disabled={submittingProj}
-                                            >
-                                                {submittingProj ? 'Sharing...' : 'Share Project'}
-                                            </button>
+                    <ShowcaseTab
+                        projectsList={projectsList}
+                        joined={joined}
+                        setShowAddProjModal={setShowAddProjModal}
+                        user={user}
+                        handleLikeProject={handleLikeProject}
+                        showAddProjModal={showAddProjModal}
+                        handleCreateProject={handleCreateProject}
+                        newProjTitle={newProjTitle}
+                        setNewProjTitle={setNewProjTitle}
+                        newProjDesc={newProjDesc}
+                        setNewProjDesc={setNewProjDesc}
+                        newProjLink={newProjLink}
+                        setNewProjLink={setNewProjLink}
+                        newProjImage={newProjImage}
+                        setNewProjImage={setNewProjImage}
+                        newProjTags={newProjTags}
+                        setNewProjTags={setNewProjTags}
+                        submittingProj={submittingProj}
+                    />
+                )}
                                         </div>
                                     </form>
                                 </div>
@@ -1765,115 +1273,18 @@ export default function ClubDetailPage({ params: paramsPromise }) {
 
                 {/* ── MEMBERS TAB ── */}
                 {activeTab === 'members' && (
-                    <div className={styles.tabContent}>
-                        <div className={styles.membersHeader}>
-                            <span className={styles.membersTitle}>Members</span>
-                            <span className={styles.membersSubtitle}>({club.membersCount || members.length} total)</span>
-                        </div>
-                        <div className={styles.memberGrid}>
-                            {members.slice().sort((a, b) => {
-                                // Calculate sort weights
-                                const getWeight = (member) => {
-                                    if (member.id === club.adminId) return 3;
-                                    if (club.memberRoles?.[member.id]) return 2;
-                                    return 1;
-                                };
-                                return getWeight(b) - getWeight(a);
-                            }).map((m, i) => {
-                                const colors = ['#dc2626','#b91c1c','#22c55e','#10b981','#f59e0b','#15803d'];
-                                const bg = colors[i % colors.length];
-                                
-                                let role = 'Member';
-                                if (m.id === club.adminId) role = 'Admin';
-                                else if (club.memberRoles?.[m.id]) role = club.memberRoles[m.id];
-                                
-                                const isAdminRole = role === 'Admin';
-                                const isSpecialRole = role !== 'Member' && role !== 'Admin';
-                                
-                                return (
-                                    <div key={m.id} className={styles.memberCard} style={{ animationDelay: `${i * 50}ms` }}>
-                                        <div className={styles.memberAvatarWrap}>
-                                            <div className={styles.memberAvatar} style={{ background: bg }}>
-                                                {m.photoURL
-                                                    ? <img src={m.photoURL} alt={m.name} style={{ width: 48, height: 48, borderRadius: '50%', objectFit: 'cover' }} />
-                                                    : (m.emoji || m.name?.charAt(0) || '?')}
-                                            </div>
-                                            {role === 'Admin' && <span className={styles.adminCrown}>👑</span>}
-                                        </div>
-                                        <div className={styles.memberInfo}>
-                                            <div className={styles.memberName}>{m.name || 'Member'}</div>
-                                            {m.branch && <div className={styles.memberBranch}>{m.branch} {m.year ? `· ${m.year}` : ''}</div>}
-                                            <span className={`${styles.memberRoleBadge} ${isAdminRole ? styles.adminBadge : isSpecialRole ? styles.coreBadge : ''}`}>
-                                                {isAdminRole ? '⭐ Admin' : isSpecialRole ? `🔶 ${role}` : '• Member'}
-                                            </span>
-                                        </div>
-                                        {isAdmin && m.id !== club.adminId && (
-                                            <button 
-                                                className={styles.assignRoleBtn}
-                                                onClick={() => handleAssignRole(m.id)}
-                                                title="Assign Position Title"
-                                            >
-                                                ⚡ Assign Role
-                                            </button>
-                                        )}
-                                        <span className={styles.memberArrow}>›</span>
-                                    </div>
-                                );
-                            })}
-                        </div>
-                    </div>
+                    <MembersTab
+                        club={club}
+                        members={members}
+                        isAdmin={isAdmin}
+                        handleAssignRole={handleAssignRole}
+                    />
                 )}
 
                 {/* ── ABOUT TAB ── */}
                 {activeTab === 'about' && (
-                    <div className={styles.tabContent}>
-                        <div className={styles.aboutGrid}>
-                            {/* Description */}
-                            <div className={styles.aboutCard} style={{ gridColumn: '1 / -1' }}>
-                                <div className={styles.aboutCardIcon} style={{ background: 'linear-gradient(135deg, #dc2626, #15803d)' }}>📖</div>
-                                <div className={styles.aboutCardTitle}>About the Club</div>
-                                <div className={styles.aboutCardText}>{club.description}</div>
-                            </div>
-
-                            {/* Tags */}
-                            {club.tags?.length > 0 && (
-                                <div className={styles.aboutCard}>
-                                    <div className={styles.aboutCardIcon} style={{ background: 'linear-gradient(135deg, #b91c1c, #22c55e)' }}>🏷️</div>
-                                    <div className={styles.aboutCardTitle}>Tags & Interests</div>
-                                    <div className={styles.aboutTagsRow}>
-                                        {club.tags.map(tag => (
-                                            <span key={tag} className={styles.aboutTag}>{tag}</span>
-                                        ))}
-                                    </div>
-                                </div>
-                            )}
-
-                            {/* Meeting schedule */}
-                            {club.meetSchedule && (
-                                <div className={styles.aboutCard}>
-                                    <div className={styles.aboutCardIcon} style={{ background: 'linear-gradient(135deg, #f59e0b, #ef4444)' }}>📍</div>
-                                    <div className={styles.aboutCardTitle}>Meeting Schedule</div>
-                                    <div className={styles.aboutCardText}>{club.meetSchedule}</div>
-                                </div>
-                            )}
-
-                            {/* Upcoming event */}
-                            {club.upcomingEvent && (
-                                <div className={styles.aboutCard}>
-                                    <div className={styles.aboutCardIcon} style={{ background: 'linear-gradient(135deg, #10b981, #dc2626)' }}>📅</div>
-                                    <div className={styles.aboutCardTitle}>Upcoming Event</div>
-                                    <div className={styles.aboutCardText}>{club.upcomingEvent}</div>
-                                </div>
-                            )}
-
-                            {/* Join / Links */}
-                            {(club.joiningLink || club.discord || club.whatsapp) && (
-                                <div className={styles.aboutCard}>
-                                    <div className={styles.aboutCardIcon} style={{ background: 'linear-gradient(135deg, #5865f2, #15803d)' }}>🔗</div>
-                                    <div className={styles.aboutCardTitle}>Join & Connect</div>
-                                    <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginTop: 8 }}>
-                                        {club.joiningLink && (
-                                            <a href={club.joiningLink.startsWith('http') ? club.joiningLink : `https://${club.joiningLink}`}
+                    <AboutTab club={club} />
+                )}
                                                 target="_blank" rel="noopener noreferrer" className={styles.aboutLinkBtn} style={{ background: 'rgba(220,38,38,0.1)', color: '#dc2626', borderColor: 'rgba(220,38,38,0.3)' }}>
                                                 📋 Registration Form ↗
                                             </a>
@@ -1917,115 +1328,35 @@ export default function ClubDetailPage({ params: paramsPromise }) {
 
                 {/* ── MEMORIES GALLERY TAB ── */}
                 {activeTab === 'gallery' && (
-                    <div className={styles.tabContent}>
-                        <div className={styles.sectionHeaderRow}>
-                            <div>
-                                <h2 className={styles.sectionTitle}>📸 Event Memories Gallery</h2>
-                                <p className={styles.sectionSubtitle}>Highlights, workshops, and milestones captured by our members.</p>
-                            </div>
-                            {isMemberOrAdmin && (
-                                <button 
-                                    className={styles.addPhotoBtn}
-                                    onClick={() => setShowAddPhotoModal(true)}
-                                >
-                                    ✨ Add Memory
-                                </button>
-                            )}
-                        </div>
-
-                        {galleryList.length === 0 ? (
-                            <div className={styles.emptyGalleryState}>
-                                📷 No photos added yet. Click "Add Memory" to share the first club milestone!
-                            </div>
-                        ) : (
-                            <div className={styles.galleryGrid}>
-                                {galleryList.map(item => (
-                                    <div key={item.id} className={styles.galleryCard}>
-                                        <div className={styles.galleryImgWrapper}>
-                                            <img src={item.photoUrl} alt={item.caption || 'Memory'} className={styles.galleryImg} />
-                                            <div className={styles.galleryOverlay}>
-                                                <span className={styles.galleryEventBadge}>📍 {item.eventName}</span>
-                                                {item.caption && <p className={styles.galleryCaptionText}>{item.caption}</p>}
-                                                <div className={styles.galleryFooter}>
-                                                    <span>By {item.uploadedBy}</span>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                ))}
-                            </div>
-                        )}
-                    </div>
+                    <GalleryTab
+                        isMemberOrAdmin={isMemberOrAdmin}
+                        setShowAddPhotoModal={setShowAddPhotoModal}
+                        galleryList={galleryList}
+                        showAddPhotoModal={showAddPhotoModal}
+                        handleAddPhoto={handleAddPhoto}
+                        newPhotoUrl={newPhotoUrl}
+                        setNewPhotoUrl={setNewPhotoUrl}
+                        newPhotoCaption={newPhotoCaption}
+                        setNewPhotoCaption={setNewPhotoCaption}
+                        newPhotoEvent={newPhotoEvent}
+                        setNewPhotoEvent={setNewPhotoEvent}
+                        submittingPhoto={submittingPhoto}
+                        eventsList={eventsList}
+                    />
                 )}
 
                 {/* ── REAL-TIME MEMBER CHAT LOUNGE TAB ── */}
                 {activeTab === 'chat' && isMemberOrAdmin && (
-                    <div className={styles.tabContent}>
-                        <div className={styles.chatLoungeWrapper}>
-                            <div className={styles.chatLoungeHeader}>
-                                <span className={styles.chatLoungeBadge}>🔒 MEMBERS ONLY</span>
-                                <h2 className={styles.chatLoungeTitle}>💬 Club Chat Lounge</h2>
-                                <p className={styles.chatLoungeSubtitle}>Connect in real-time, collaborate, and chat with team members.</p>
-                            </div>
-
-                            <div className={styles.chatMessageStream}>
-                                {chatMessages.length === 0 ? (
-                                    <div className={styles.emptyChatState}>
-                                        💬 This channel is quiet. Be the first to say hello!
-                                    </div>
-                                ) : (
-                                    chatMessages.map(msg => (
-                                        <div key={msg.id} className={`${styles.chatMsgRow} ${msg.senderId === user?.uid ? styles.chatMsgSelf : ''}`}>
-                                            <div className={styles.chatMsgAvatar}>
-                                                {msg.senderName.charAt(0).toUpperCase()}
-                                            </div>
-                                            <div className={styles.chatMsgContentBlock}>
-                                                <div className={styles.chatMsgHeader}>
-                                                    <span className={styles.chatMsgSender}>{msg.senderName}</span>
-                                                    {msg.senderRole && (
-                                                        <span className={`${styles.chatMsgRoleTag} ${msg.senderRole === 'Admin' ? styles.roleAdmin : styles.roleMember}`}>
-                                                            {msg.senderRole === 'Admin' ? '⭐ Admin' : msg.senderRole}
-                                                        </span>
-                                                    )}
-                                                </div>
-                                                <div className={styles.chatMsgText}>{msg.messageText}</div>
-                                                
-                                                {/* Emojis reactions row */}
-                                                <div className={styles.chatMsgReactions}>
-                                                    {['👍', '❤️', '🔥', '😂'].map(emoji => {
-                                                        const userReactedList = msg.reactions?.[emoji] || [];
-                                                        const activeReact = userReactedList.includes(user?.uid);
-                                                        return (
-                                                            <button 
-                                                                key={emoji}
-                                                                className={`${styles.reactionBtn} ${activeReact ? styles.reactionActive : ''}`}
-                                                                onClick={() => handleReactToMessage(msg.id, emoji)}
-                                                            >
-                                                                {emoji} {userReactedList.length > 0 && userReactedList.length}
-                                                            </button>
-                                                        );
-                                                    })}
-                                                </div>
-                                            </div>
-                                        </div>
-                                    ))
-                                )}
-                            </div>
-
-                            <form onSubmit={handleSendChatMessage} className={styles.chatInputForm}>
-                                <input 
-                                    type="text" 
-                                    className={styles.chatInputField}
-                                    placeholder="Type a message to the club..."
-                                    value={newChatMessageText}
-                                    onChange={(e) => setNewChatMessageText(e.target.value)}
-                                    maxLength={400}
-                                />
-                                <button type="submit" className={styles.chatSendBtn}>
-                                    🚀 Send
-                                </button>
-                            </form>
-                        </div>
+                    <ChatTab
+                        isMemberOrAdmin={isMemberOrAdmin}
+                        chatMessages={chatMessages}
+                        user={user}
+                        handleReactToMessage={handleReactToMessage}
+                        handleSendChatMessage={handleSendChatMessage}
+                        newChatMessageText={newChatMessageText}
+                        setNewChatMessageText={setNewChatMessageText}
+                    />
+                )}
                     </div>
                 )}
 
