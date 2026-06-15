@@ -83,6 +83,14 @@ async function packStandaloneCPanel() {
     console.log("  ✓ Copied .env.local");
   }
 
+  // ── 2.6 Copy Firebase Service Account Key to standalone ──
+  const files = await fs.readdir(rootDir);
+  const keyFile = files.find(f => f.startsWith('sutraverse2-firebase-adminsdk-') && f.endsWith('.json'));
+  if (keyFile) {
+    await fs.copy(path.join(rootDir, keyFile), path.join(standaloneDir, keyFile));
+    console.log(`  ✓ Copied Firebase Service Account: ${keyFile}`);
+  }
+
   // ── 3. Clean junk that Turbopack's NFT tracing pulled into standalone ──
   console.log("Cleaning unnecessary files from standalone build...");
 

@@ -3,7 +3,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import Link from 'next/link';
 import { collection, getDocs, query, where, orderBy } from 'firebase/firestore';
-import { db } from '@/lib/firebase';
+import { db, auth } from '@/lib/firebase';
 import { useAuth } from '@/context/AuthContext';
 import { awardDownloadPoints } from '@/lib/points';
 import { ScrollReveal } from '@/components/Animations';
@@ -246,7 +246,29 @@ export default function PyqsPage() {
       await awardDownloadPoints(item.id, item.uploaderUID, user?.uid);
       setPyqs(prev => prev.map(p => p.id === item.id ? { ...p, downloads: (p.downloads || 0) + 1 } : p));
     } catch (e) { console.warn(e.message); }
-    window.open(url, '_blank');
+
+    let finalUrl = url;
+    if (!url.includes('firebasestorage')) {
+      try {
+        let currentUser = auth?.currentUser;
+        if (!currentUser && auth) {
+          const { onAuthStateChanged } = await import('firebase/auth');
+          currentUser = await new Promise((resolve) => {
+            const unsub = onAuthStateChanged(auth, (u) => { unsub(); resolve(u); });
+            setTimeout(() => resolve(null), 3000);
+          });
+        }
+        if (currentUser) {
+          const idToken = await currentUser.getIdToken(true);
+          if (idToken) {
+            finalUrl = `${url}?token=${encodeURIComponent(idToken)}`;
+          }
+        }
+      } catch (tokenErr) {
+        console.warn('Failed to retrieve authentication token:', tokenErr);
+      }
+    }
+    window.open(finalUrl, '_blank');
   };
 
   // ── Auth gate ──────────────────────────────────────────────────────────────

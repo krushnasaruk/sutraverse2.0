@@ -376,13 +376,18 @@ export default function AdminPage() {
             
             const approvedNews = newsList.find(n => n.id === newsId);
             if (approvedNews) {
+                const token = auth.currentUser ? await auth.currentUser.getIdToken() : '';
                 fetch('/api/notifications/generate-and-send', {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
+                    headers: { 
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
                     body: JSON.stringify({
                         contentType: 'Campus Notice',
                         contentTitle: approvedNews.title,
                         contentDetails: approvedNews.content,
+                        contentId: newsId
                     })
                 }).catch(e => console.error('Failed to trigger notification', e));
             }
@@ -498,12 +503,17 @@ export default function AdminPage() {
             
             const approvedFile = files.find(f => f.id === fileId);
             if (approvedFile) {
+                const token = auth.currentUser ? await auth.currentUser.getIdToken() : '';
                 fetch('/api/notifications/generate-and-send', {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
+                    headers: { 
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
                     body: JSON.stringify({
                         contentType: approvedFile.type || 'Study Material',
                         contentTitle: `${approvedFile.subject || 'Subject'} - ${approvedFile.title}`,
+                        contentId: fileId
                     })
                 }).catch(e => console.error('Failed to trigger notification', e));
             }
@@ -660,9 +670,13 @@ export default function AdminPage() {
         
         setActionLoading('broadcast');
         try {
+            const token = auth.currentUser ? await auth.currentUser.getIdToken() : '';
             const res = await fetch('/api/notifications/send', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: { 
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
                 body: JSON.stringify({ title: broadcastTitle, body: broadcastBody })
             });
             const data = await res.json();

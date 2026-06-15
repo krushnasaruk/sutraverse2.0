@@ -5,16 +5,24 @@ import path from 'path';
 
 if (!admin.apps.length) {
     try {
-        const keyPath = path.join(process.cwd(), 'sutraverse2-firebase-adminsdk-fbsvc-de34e6d305.json');
-        if (fs.existsSync(keyPath)) {
+        const files = fs.readdirSync(process.cwd());
+        const keyFile = files.find(f => f.startsWith('sutraverse2-firebase-adminsdk-') && f.endsWith('.json'));
+        if (keyFile) {
+            const keyPath = path.join(process.cwd(), keyFile);
             const serviceAccount = JSON.parse(fs.readFileSync(keyPath, 'utf8'));
             admin.initializeApp({
                 credential: admin.credential.cert(serviceAccount)
             });
         } else {
             // Check fallback path (for different server structures or subdirectories)
-            const fallbackKeyPath = path.join(process.cwd(), '..', 'sutraverse2-firebase-adminsdk-fbsvc-de34e6d305.json');
-            if (fs.existsSync(fallbackKeyPath)) {
+            let fallbackKeyFile = null;
+            try {
+                const parentFiles = fs.readdirSync(path.join(process.cwd(), '..'));
+                fallbackKeyFile = parentFiles.find(f => f.startsWith('sutraverse2-firebase-adminsdk-') && f.endsWith('.json'));
+            } catch (err) {}
+
+            if (fallbackKeyFile) {
+                const fallbackKeyPath = path.join(process.cwd(), '..', fallbackKeyFile);
                 const serviceAccount = JSON.parse(fs.readFileSync(fallbackKeyPath, 'utf8'));
                 admin.initializeApp({
                     credential: admin.credential.cert(serviceAccount)

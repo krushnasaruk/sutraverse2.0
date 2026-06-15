@@ -5,7 +5,7 @@
 
 import { useState, useEffect, useMemo } from 'react';
 import Link from 'next/link';
-import { db } from '@/database/config/firebase';
+import { db, auth } from '@/database/config/firebase';
 import { collection, query, orderBy, onSnapshot, doc, updateDoc, deleteDoc } from 'firebase/firestore';
 import { useAuth } from '@/frontend/context/AuthContext';
 import { ScrollReveal } from '@/frontend/components/ui/Animations';
@@ -97,13 +97,18 @@ export default function NewsPage() {
             // Send push notification
             const approvedNews = newsItems.find(n => n.id === id);
             if (approvedNews) {
+                const token = auth.currentUser ? await auth.currentUser.getIdToken() : '';
                 fetch('/api/notifications/generate-and-send', {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
+                    headers: { 
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
                     body: JSON.stringify({
                         contentType: 'Campus Notice',
                         contentTitle: approvedNews.title,
                         contentDetails: approvedNews.content,
+                        contentId: id
                     })
                 }).catch(e => console.error('Failed to trigger notification', e));
             }

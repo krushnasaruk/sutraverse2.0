@@ -36,6 +36,14 @@ async function packClean() {
     console.log('  ✓ Copied .next/static');
   }
 
+  // Copy Firebase Service Account Key to next-app
+  const files = await fs.readdir(rootDir);
+  const keyFile = files.find(f => f.startsWith('sutraverse2-firebase-adminsdk-') && f.endsWith('.json'));
+  if (keyFile) {
+    await fs.copy(path.join(rootDir, keyFile), path.join(tempDir, 'next-app', keyFile));
+    console.log(`  ✓ Copied Firebase Service Account: ${keyFile}`);
+  }
+
   // Copy the entire public directory (including uploads and pyqs)
   const publicDir = path.join(rootDir, 'public');
   if (fs.existsSync(publicDir)) {

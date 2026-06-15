@@ -128,6 +128,9 @@ export default function AssignmentsPage() {
             const f = d.data();
             if (f.subject === 'BE') f.subject = 'BEE';
             if (f.subject === 'Engineering Mathematics 1') f.subject = 'Engineering Mathematics I';
+            if (f.subject === 'EG') f.subject = 'Engineering Graphics';
+            if (f.subject === 'EM') f.subject = 'Engineering Mechanics';
+            if (f.subject === 'Basic Electronics Engineering' || f.subject === 'BXE') f.subject = 'BEE';
             return { id: d.id, ...f };
           });
         // Filter out files that don't exist on disk
@@ -201,11 +204,21 @@ export default function AssignmentsPage() {
     try { await awardDownloadPoints(item.id, item.uploaderUID, user?.uid); setAssignments(prev => prev.map(a => a.id === item.id ? { ...a, downloads: (a.downloads || 0) + 1 } : a)); } catch (e) {}
     
     let finalUrl = url;
-    if (!url.includes('firebasestorage') && auth?.currentUser) {
+    if (!url.includes('firebasestorage')) {
       try {
-        const idToken = await auth.currentUser.getIdToken();
-        if (idToken) {
-          finalUrl = `${url}?token=${encodeURIComponent(idToken)}`;
+        let currentUser = auth?.currentUser;
+        if (!currentUser && auth) {
+          const { onAuthStateChanged } = await import('firebase/auth');
+          currentUser = await new Promise((resolve) => {
+            const unsub = onAuthStateChanged(auth, (u) => { unsub(); resolve(u); });
+            setTimeout(() => resolve(null), 3000);
+          });
+        }
+        if (currentUser) {
+          const idToken = await currentUser.getIdToken(true);
+          if (idToken) {
+            finalUrl = `${url}?token=${encodeURIComponent(idToken)}`;
+          }
         }
       } catch (tokenErr) {
         console.warn('Failed to retrieve authentication token:', tokenErr);

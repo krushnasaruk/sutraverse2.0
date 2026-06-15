@@ -259,11 +259,21 @@ export default function PyqsPage() {
     } catch (e) { console.warn(e.message); }
 
     let finalUrl = url;
-    if (!url.includes('firebasestorage') && auth?.currentUser) {
+    if (!url.includes('firebasestorage')) {
       try {
-        const idToken = await auth.currentUser.getIdToken();
-        if (idToken) {
-          finalUrl = `${url}?token=${encodeURIComponent(idToken)}`;
+        let currentUser = auth?.currentUser;
+        if (!currentUser && auth) {
+          const { onAuthStateChanged } = await import('firebase/auth');
+          currentUser = await new Promise((resolve) => {
+            const unsub = onAuthStateChanged(auth, (u) => { unsub(); resolve(u); });
+            setTimeout(() => resolve(null), 3000);
+          });
+        }
+        if (currentUser) {
+          const idToken = await currentUser.getIdToken(true);
+          if (idToken) {
+            finalUrl = `${url}?token=${encodeURIComponent(idToken)}`;
+          }
         }
       } catch (tokenErr) {
         console.warn('Failed to retrieve authentication token:', tokenErr);

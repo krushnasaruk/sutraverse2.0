@@ -30,6 +30,14 @@ async function packStandalone() {
     );
   }
 
+  // Copy Firebase Service Account Key to standalone
+  const files = await fs.readdir(rootDir);
+  const keyFile = files.find(f => f.startsWith('sutraverse2-firebase-adminsdk-') && f.endsWith('.json'));
+  if (keyFile) {
+    await fs.copy(path.join(rootDir, keyFile), path.join(standaloneDir, keyFile));
+    console.log(`  ✓ Copied Firebase Service Account: ${keyFile}`);
+  }
+
   console.log("Zipping standalone directory...");
   
   const output = fs.createWriteStream(deployZipPath);

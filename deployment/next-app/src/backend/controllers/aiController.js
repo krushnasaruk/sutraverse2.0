@@ -2,12 +2,17 @@ import { Expo } from "expo-server-sdk";
 
 import { NextResponse } from 'next/server';
 import { GoogleGenerativeAI, SchemaType } from '@google/generative-ai';
+import fs from 'fs';
+import path from 'path';
+import { db } from '@/database/config/firebase';
+import { adminDb } from '@/database/config/firebaseAdmin';
+import { collection, getDocs } from 'firebase/firestore';
 
 
 
 
-// Initialize Gemini API
-var genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || '');
+
+// genAI is initialized lazily inside each route handler
 
 export const handlePost_generatemcq = async (req) => {
     try {
@@ -22,6 +27,7 @@ export const handlePost_generatemcq = async (req) => {
             return NextResponse.json({ error: 'Missing topic or count' }, { status: 400 });
         }
 
+        const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || '');
         // We use gemini-1.5-pro or flash with responseSchema to guarantee JSON output
         const model = genAI.getGenerativeModel({
             model: "gemini-2.5-flash",
@@ -72,29 +78,45 @@ export const handlePost_generatemcq = async (req) => {
 
 
 
-// Initialize Gemini API
-var genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || '');
+// (genAI initialized lazily in handlers)
 
 function findLocalSubject(requestedSubject) {
     const query = requestedSubject.toLowerCase().replace(/[^a-z0-9]/g, '');
     
-    if (query.includes('electrical') || query === 'bee') return 'BEE';
-    if (query.includes('physics')) return 'Engineering Physics';
-    if (query.includes('chemistry')) return 'Engineering Chemistry';
-    if (query.includes('math1') || query.includes('maths1') || query.includes('mathematics1')) return 'Engineering Mathematics 1';
-    if (query.includes('math2') || query.includes('maths2') || query.includes('mathematics2')) return 'Engineering Mathematics 2';
-    if (query.includes('mechanics')) return 'Engineering Mechanics';
-    if (query.includes('electronics')) return 'Electronics';
-    if (query.includes('pps') || query.includes('programming')) return 'PPS';
-    if (query.includes('graphics') || query.includes('drawing')) return 'Engineering Graphics';
+    if (query.includes('electrical') || query === 'bee' || query === 'basicelectricalengineering') return 'BEE';
+    if (query.includes('physics') || query === 'ep' || query === 'engineeringphysics') return 'Engineering Physics';
+    if (query.includes('chemistry') || query === 'ec' || query === 'engineeringchemistry') return 'Engineering Chemistry';
+    if (
+        query.includes('math1') || 
+        query.includes('maths1') || 
+        query.includes('mathematics1') || 
+        query === 'm1' || 
+        query === 'mathi' || 
+        query === 'mathsi' || 
+        query === 'mathematicsi'
+    ) return 'Engineering Mathematics 1';
+    if (
+        query.includes('math2') || 
+        query.includes('maths2') || 
+        query.includes('mathematics2') || 
+        query === 'm2' || 
+        query === 'mathii' || 
+        query === 'mathsii' || 
+        query === 'mathematicsii'
+    ) return 'Engineering Mathematics 2';
+    if (query.includes('mechanics') || query === 'em' || query === 'engineeringmechanics') return 'Engineering Mechanics';
+    if (query.includes('electronics') || query === 'bxe' || query === 'bx' || query === 'basicelectronicsengineering') return 'Electronics';
+    if (query.includes('pps') || query.includes('programming') || query.includes('python')) return 'PPS';
+    if (query.includes('graphics') || query.includes('drawing') || query === 'eg' || query === 'engineeringgraphics') return 'Engineering Graphics';
     
     return null;
 }
 
 export const handlePost_generatestudyguide = async (req) => {
+    let year, branch, subject;
     try {
         const body = await req.json();
-        const { year, branch, subject } = body;
+        ({ year, branch, subject } = body);
 
         if (!subject || !branch || !year) {
             return NextResponse.json({ error: 'Missing required fields: year, branch, or subject.' }, { status: 400 });
@@ -123,6 +145,7 @@ export const handlePost_generatestudyguide = async (req) => {
             return NextResponse.json({ error: 'AI integration is not configured correctly on the server.' }, { status: 500 });
         }
 
+        const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || '');
         const model = genAI.getGenerativeModel({
             model: "gemini-2.5-flash",
         });
@@ -273,11 +296,10 @@ export const handlePost_generatestudyguide = async (req) => {
 
 
 var expo = new Expo();
-var genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || '');
 
 export const handlePost_notificationsgenerateandsend = async (req) => {
   try {
-    const { contentType, contentTitle, contentDetails } = await req.json();
+    const { contentType, contentTitle, contentDetails, contentId } = await req.json();
 
     if (!contentType || !contentTitle) {
       return NextResponse.json({ error: 'Missing content information' }, { status: 400 });
@@ -288,6 +310,7 @@ export const handlePost_notificationsgenerateandsend = async (req) => {
         return NextResponse.json({ error: 'Gemini API key is not configured' }, { status: 500 });
     }
 
+    const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || '');
     // 1. Generate Notification using Gemini
     const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
     const prompt = `
@@ -338,8 +361,8 @@ export const handlePost_notificationsgenerateandsend = async (req) => {
         };
     }
 
-    // 2. Fetch all users from Firestore
-    const usersSnap = await getDocs(collection(db, 'users'));
+    // 2. Fetch all users from Firestore using Admin SDK for high performance
+    const usersSnap = await adminDb.collection('users').get();
     const pushTokens = [];
     
     usersSnap.forEach((doc) => {
@@ -353,6 +376,10 @@ export const handlePost_notificationsgenerateandsend = async (req) => {
       return NextResponse.json({ message: 'No devices registered for push notifications.', generatedPush });
     }
 
+    const targetRoute = contentType === 'Campus Notice'
+        ? '/news'
+        : (contentType === 'PYQ' ? '/pyqs' : `/file-detail/${contentId || ''}`);
+
     // 3. Construct the messages
     const messages = [];
     for (let pushToken of pushTokens) {
@@ -361,21 +388,37 @@ export const handlePost_notificationsgenerateandsend = async (req) => {
         sound: 'default',
         title: generatedPush.title,
         body: generatedPush.body,
-        data: { contentType, contentTitle },
+        data: { contentType, contentTitle, contentId: contentId || '', targetRoute },
       });
     }
 
-    // 4. Chunk and send the messages
+    // 4. Chunk and send the messages in parallel to avoid blocking
     const chunks = expo.chunkPushNotifications(messages);
-    const tickets = [];
-    
-    for (let chunk of chunks) {
-      try {
-        let ticketChunk = await expo.sendPushNotificationsAsync(chunk);
-        tickets.push(...ticketChunk);
-      } catch (error) {
-        console.error('Error sending push chunk:', error);
-      }
+    const results = await Promise.all(
+      chunks.map(async (chunk) => {
+        try {
+          return await expo.sendPushNotificationsAsync(chunk);
+        } catch (error) {
+          console.error('Error sending push chunk:', error);
+          return [];
+        }
+      })
+    );
+    const tickets = results.flat();
+
+    // Save to Firestore notifications collection
+    try {
+        await adminDb.collection('notifications').add({
+            title: generatedPush.title,
+            body: generatedPush.body,
+            type: contentType === 'Campus Notice' ? 'news' : 'update',
+            targetRoute,
+            contentId: contentId || '',
+            recipientId: 'global',
+            timestamp: new Date()
+        });
+    } catch (dbErr) {
+        console.error('Failed to save notification to Firestore:', dbErr);
     }
 
     return NextResponse.json({ 
@@ -396,8 +439,7 @@ export const handlePost_notificationsgenerateandsend = async (req) => {
 
 
 
-// Initialize Gemini API
-var genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || '');
+// (genAI initialized lazily in handlers)
 
 var SUBJECT_MAP = {
     'bee': 'Basic Electrical Engineering',
@@ -548,6 +590,7 @@ export const handlePost_summarizepdf = async (req) => {
 
         console.log(`[API] Sending to Gemini: ${fileName}`);
 
+        const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || '');
         const model = genAI.getGenerativeModel({
             model: "gemini-2.5-flash",
         });

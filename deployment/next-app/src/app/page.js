@@ -64,6 +64,9 @@ export default function HomePage() {
           const f = d.data();
           if (f.subject === 'BE') f.subject = 'BEE';
           if (f.subject === 'Engineering Mathematics 1') f.subject = 'Engineering Mathematics I';
+          if (f.subject === 'EG') f.subject = 'Engineering Graphics';
+          if (f.subject === 'EM') f.subject = 'Engineering Mechanics';
+          if (f.subject === 'Basic Electronics Engineering' || f.subject === 'BXE') f.subject = 'BEE';
           return { id: d.id, ...f };
         });
         
@@ -225,11 +228,22 @@ export default function HomePage() {
     } catch (e) { console.warn('Could not update download count:', e.message); }
 
     let finalUrl = url;
-    if (!url.includes('firebasestorage') && auth?.currentUser) {
+    if (!url.includes('firebasestorage')) {
       try {
-        const idToken = await auth.currentUser.getIdToken();
-        if (idToken) {
-          finalUrl = `${url}?token=${encodeURIComponent(idToken)}`;
+        // Wait for auth state if currentUser is not yet available
+        let currentUser = auth?.currentUser;
+        if (!currentUser && auth) {
+          const { onAuthStateChanged } = await import('firebase/auth');
+          currentUser = await new Promise((resolve) => {
+            const unsub = onAuthStateChanged(auth, (u) => { unsub(); resolve(u); });
+            setTimeout(() => resolve(null), 3000); // 3s timeout
+          });
+        }
+        if (currentUser) {
+          const idToken = await currentUser.getIdToken(true); // force-refresh token
+          if (idToken) {
+            finalUrl = `${url}?token=${encodeURIComponent(idToken)}`;
+          }
         }
       } catch (tokenErr) {
         console.warn('Failed to retrieve authentication token:', tokenErr);
