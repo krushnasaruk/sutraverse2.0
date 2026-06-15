@@ -16,6 +16,14 @@ import { getSPPUGrade, calculateSGPA } from '@/shared/utils/sppuGrading';
 import { getUserLevelAndBadges } from '@/database/queries/points';
 import { getBannerGradient, BANNER_PRESETS } from '@/shared/constants/bannerPresets';
 import styles from './page.module.css';
+import RepositoryTab from './components/RepositoryTab';
+import ClassroomTab from './components/ClassroomTab';
+import SettingsTab from './components/SettingsTab';
+import OverviewTab from './components/OverviewTab';
+import LeaveModal from './components/LeaveModal';
+import QRScannerModal from './components/QRScannerModal';
+import BioScannerModal from './components/BioScannerModal';
+import OnboardingPopup from './components/OnboardingPopup';
 
 const MODEL_URL = 'https://cdn.jsdelivr.net/gh/cgarciagl/face-api.js@0.22.2/weights/';
 
@@ -918,960 +926,146 @@ export default function DashboardPage() {
                     
                     {/* ──── OVERVIEW TAB ──── */}
                     {activeDashboardTab === 'overview' && (
-                        <div className={styles.tabOverviewLayout}>
-                            {/* ═══ QUICK ACCESS DOCK (Collapsible on Mobile) ═══ */}
-                            <section className={styles.dockSection}>
-                                <button 
-                                    className={styles.dockToggle} 
-                                    onClick={() => setDockOpen(prev => !prev)}
-                                >
-                                    <span className={styles.dockToggleLeft}>
-                                        <span className={styles.dockToggleEmoji}>⚡</span>
-                                        Quick Access
-                                    </span>
-                                    <span className={`${styles.dockToggleArrow} ${dockOpen ? styles.dockToggleArrowOpen : ''}`}>▼</span>
-                                </button>
-                                <div className={`${styles.dockCollapsible} ${dockOpen ? styles.dockCollapsibleOpen : ''}`}>
-                                    <div className={styles.dockGrid}>
-                                        {[
-                                            { href: '/community', emoji: '💬', label: 'Community', color: '#b91c1c' },
-                                            { href: '/leaderboard', emoji: '🏆', label: 'Leaderboard', color: '#FFD700' },
-                                            { href: '/subjects', emoji: '📚', label: 'Subjects', color: '#dc2626' },
-                                            { href: '/pyqs', emoji: '📄', label: 'PYQs', color: '#16a34a' },
-                                            { href: '/assistant', emoji: '🤖', label: 'AI Tutor', color: '#166534' },
-                                            { href: `/profile/${user.uid}`, emoji: '👤', label: 'Public Profile', color: '#22c55e' },
-                                        ].map(item => (
-                                            <Link key={item.href} href={item.href} className={styles.dockItem}>
-                                                <div className={styles.dockIcon} style={{ background: `${item.color}15`, color: item.color }}>
-                                                    <span>{item.emoji}</span>
-                                                </div>
-                                                <span className={styles.dockLabel}>{item.label}</span>
-                                            </Link>
-                                        ))}
-                                    </div>
-                                </div>
-                            </section>
-
-                            {/* ═══ TROPHY CASE ═══ */}
-                            {earnedBadges.length > 0 && (
-                                <section className={styles.trophySection}>
-                                    <div className={styles.trophyHeader}>
-                                        <h3 className={styles.trophyTitle}>🏅 Trophy Case</h3>
-                                        <span className={styles.trophyCount}>{earnedBadges.length} earned</span>
-                                    </div>
-                                    <div className={styles.trophyGrid}>
-                                        {earnedBadges.map(b => (
-                                            <div key={b.id} className={styles.trophyCard}>
-                                                <span className={styles.trophyCardIcon}>{b.icon}</span>
-                                                <span className={styles.trophyCardName}>{b.name}</span>
-                                            </div>
-                                        ))}
-                                    </div>
-                                </section>
-                            )}
-
-                            {/* ═══ METRICS ENGINE ═══ */}
-                            <div className={`${styles.bentoTile} glass-panel`} style={{ padding: '24px' }}>
-                                <div style={{display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '8px'}}>
-                                    <div style={{width: '8px', height: '32px', background: 'var(--primary)', borderRadius: '4px'}}></div>
-                                    <h2 className={styles.sectionTitle} style={{ margin: 0, fontSize: '1.5rem', letterSpacing: '0.05em' }}>Metrics Engine</h2>
-                                </div>
-                                <p style={{color: 'var(--text-secondary)', marginBottom: '24px', fontSize: '0.9rem'}}>Live statistics of your contributions and academic power.</p>
-                                
-                                <div className={styles.premiumMetricGrid}>
-                                    <div className={styles.premiumMetricCard}>
-                                        <div className={styles.metricGlow}></div>
-                                        <IconUpload size={28} color="var(--primary-light)" />
-                                        <div className={styles.metricValueBig}>{uploads.length}</div>
-                                        <div className={styles.metricLabelBig}>Total Uploads</div>
-                                    </div>
-                                    <div className={styles.premiumMetricCard}>
-                                        <div className={styles.metricGlow}></div>
-                                        <IconDownload size={28} color="#22c55e" />
-                                        <div className={styles.metricValueBig}>{totalDownloads}</div>
-                                        <div className={styles.metricLabelBig}>Downloads</div>
-                                    </div>
-                                    <div className={styles.premiumMetricCard}>
-                                        <div className={styles.metricGlow}></div>
-                                        <span style={{ fontSize: '1.8rem' }}>⭐</span>
-                                        <div className={styles.metricValueBig}>{userPoints}</div>
-                                        <div className={styles.metricLabelBig}>Total XP</div>
-                                    </div>
-                                    <div className={styles.premiumMetricCard}>
-                                        <div className={styles.metricGlow}></div>
-                                        <span style={{ fontSize: '1.8rem' }}>{currentBadge?.icon || '🌱'}</span>
-                                        <div className={styles.metricValueBig} style={{fontSize: '1.8rem', marginTop: '18px'}}>Lvl {userLevel}</div>
-                                        <div className={styles.metricLabelBig} style={{marginTop: '8px'}}>{currentBadge?.name}</div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
+                        <OverviewTab
+                            setDockOpen={setDockOpen}
+                            dockOpen={dockOpen}
+                            user={user}
+                            earnedBadges={earnedBadges}
+                            uploads={uploads}
+                            totalDownloads={totalDownloads}
+                            userPoints={userPoints}
+                            currentBadge={currentBadge}
+                            userLevel={userLevel}
+                        />
                     )}
 
                     {/* ──── CLASSROOM TAB ──── */}
                     {activeDashboardTab === 'classroom' && user.classId && !loadingClassData && (
-                        <div className={styles.tabClassroomLayout}>
-                            {/* CLASS HUB TILE */}
-                            <div className={`${styles.bentoTile} ${styles.classHubTile} glass-panel`}>
-                                <div className={styles.hubHeader}>
-                                    <div>
-                                        <h2 className={styles.sectionTitle} style={{margin:0}}>Class Hub</h2>
-                                        <p style={{color:'var(--text-secondary)', fontSize:'0.9rem'}}>{user.classId} Dashboard</p>
-                                    </div>
-                                </div>
-                                
-                                <div className={styles.hubGrid}>
-                                    
-                                    {activeLiveSession && (
-                                        <div className={styles.liveSessionBanner} style={{ gridColumn: '1 / -1' }}>
-                                            <div className={styles.livePulseGeo}></div>
-                                            <div>
-                                                <h3 style={{margin:0, color:'var(--neo)'}}>Live Radar Check-In Active</h3>
-                                                <p style={{margin:0, fontSize:'0.85rem', opacity:0.8}}>Teacher is broadcasting within 15m.</p>
-                                            </div>
-                                            {hasCheckedIn ? (
-                                                <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--success)', fontWeight: 'bold' }}>
-                                                    ✅ Secured
-                                                </div>
-                                            ) : (
-                                                <div style={{ marginLeft: 'auto', display: 'flex', gap: '12px' }}>
-                                                    <button onClick={triggerQRScan} className={styles.btnSecondary} style={{padding: '8px 16px', background: 'transparent', border: '1px solid var(--primary)', color: 'var(--primary)'}}>📷 Scan QR</button>
-                                                    <button onClick={triggerVerification} className={styles.btnVerifyGeo}>Bio-Verify</button>
-                                                </div>
-                                            )}
-                                        </div>
-                                    )}
-
-                                    {/* SPPU GRADES MARKSHEET */}
-                                    {sppuSummary.length > 0 && (
-                                        <div style={{gridColumn: '1 / -1', marginTop: '16px'}}>
-                                            <div style={{display:'flex', justifyContent:'space-between', alignItems:'flex-end', marginBottom:'12px'}}>
-                                                <h3 className={styles.sectionTitle} style={{fontSize:'1.1rem', color:'var(--primary-light)', margin:0}}>🎓 SPPU Grade Card</h3>
-                                                <div style={{background:'rgba(59, 130, 246, 0.1)', border:'1px solid var(--primary)', padding:'6px 12px', borderRadius:'8px', color:'var(--primary-light)', fontWeight:'bold'}}>
-                                                    Estimated SGPA: {currentSGPA.toFixed(2)}
-                                                </div>
-                                            </div>
-                                            <div style={{overflowX: 'auto'}}>
-                                                <table style={{width:'100%', minWidth:'600px', borderCollapse:'collapse', background:'rgba(30, 30, 40, 0.4)', borderRadius:'8px', overflow:'hidden', border:'1px solid var(--border)'}}>
-                                                    <thead>
-                                                        <tr style={{background:'rgba(0,0,0,0.3)', borderBottom:'1px solid var(--border)', textAlign:'left'}}>
-                                                            <th style={{padding:'12px 16px', color:'var(--text-secondary)', fontWeight:600}}>Subject</th>
-                                                            <th style={{padding:'12px 16px', color:'var(--text-secondary)', fontWeight:600}}>Breakdown</th>
-                                                            <th style={{padding:'12px 16px', color:'var(--text-secondary)', fontWeight:600}}>Total</th>
-                                                            <th style={{padding:'12px 16px', color:'var(--text-secondary)', fontWeight:600}}>Grade</th>
-                                                        </tr>
-                                                    </thead>
-                                                    <tbody>
-                                                        {sppuSummary.map((sub, idx) => (
-                                                            <tr key={idx} style={{borderBottom:'1px solid rgba(255,255,255,0.05)'}}>
-                                                                <td style={{padding:'16px', fontWeight:'bold', color:'#fff'}}>{sub.subject}</td>
-                                                                <td style={{padding:'16px'}}>
-                                                                    <div style={{display:'flex', gap:'8px', flexWrap:'wrap'}}>
-                                                                        {sub.components.map((comp, cIdx) => (
-                                                                            <span key={cIdx} style={{background:'rgba(0,0,0,0.3)', padding:'4px 8px', borderRadius:'4px', fontSize:'0.8rem', border:'1px solid rgba(255,255,255,0.1)'}}>
-                                                                                <span style={{color:'var(--text-secondary)'}}>{comp.type}:</span> {comp.obtained}/{comp.max}
-                                                                            </span>
-                                                                        ))}
-                                                                    </div>
-                                                                </td>
-                                                                <td style={{padding:'16px'}}>
-                                                                    {sub.totalObtained} / {sub.totalMax}
-                                                                </td>
-                                                                <td style={{padding:'16px'}}>
-                                                                    <div style={{display:'inline-flex', alignItems:'center', justifyContent:'center', width:'36px', height:'36px', borderRadius:'8px', background:`${sub.gradeInfo.color}22`, color:sub.gradeInfo.color, fontWeight:'bold', border:`1px solid ${sub.gradeInfo.color}55`}}>
-                                                                        {sub.gradeInfo.grade}
-                                                                    </div>
-                                                                    <span style={{marginLeft:'8px', fontSize:'0.85rem', color:'var(--text-secondary)'}}>{sub.gradeInfo.points} pts</span>
-                                                                </td>
-                                                            </tr>
-                                                        ))}
-                                                    </tbody>
-                                                </table>
-                                            </div>
-                                        </div>
-                                    )}
-
-                                    {/* OFFICIAL MONTHLY REPORTS */}
-                                    {monthlyReports.length > 0 && (
-                                        <div style={{gridColumn: '1 / -1', marginTop: '16px'}}>
-                                            <h3 className={styles.sectionTitle} style={{fontSize:'1rem', color:'var(--text-secondary)', marginBottom: '12px'}}>📜 Official Grade Reports</h3>
-                                            <div style={{display:'flex', gap:'16px', overflowX:'auto', paddingBottom:'8px'}}>
-                                                {monthlyReports.map(report => {
-                                                    const myStats = report.studentStats[user.email];
-                                                    if (!myStats) return null;
-                                                    
-                                                    return (
-                                                        <div key={report.id} style={{minWidth:'200px', background:'rgba(0,0,0,0.3)', border:'1px solid var(--border-color)', borderRadius:'12px', padding:'16px'}}>
-                                                            <h4 style={{margin:0, color:'var(--primary)'}}>{report.month}</h4>
-                                                            <p style={{margin:'4px 0 12px', fontSize:'0.8rem', color:'var(--text-secondary)'}}>Published by {report.teacherName}</p>
-                                                            
-                                                            <div style={{display:'flex', alignItems:'flex-end', gap:'8px'}}>
-                                                                <span style={{fontSize:'2rem', fontWeight:'900', color: myStats.percentage >= 75 ? 'var(--success)' : myStats.percentage >= 50 ? 'var(--warning)' : 'var(--error)'}}>{myStats.percentage}%</span>
-                                                                <span style={{fontSize:'0.8rem', color:'var(--text-secondary)', marginBottom:'6px'}}>Attendance</span>
-                                                            </div>
-                                                            <div style={{fontSize:'0.8rem', color:'var(--text-secondary)', marginTop:'8px'}}>
-                                                                Present: {myStats.present}/{myStats.totalClasses}
-                                                            </div>
-                                                        </div>
-                                                    )
-                                                })}
-                                            </div>
-                                        </div>
-                                    )}
-
-                                    {/* ACADEMIC DEADLINES WIDGET */}
-                                    {deadlines.length > 0 && (
-                                        <div style={{gridColumn: '1 / -1', marginTop: '16px'}}>
-                                            <h3 className={styles.sectionTitle} style={{fontSize:'1rem', color:'var(--text-secondary)', marginBottom: '12px'}}>📅 Urgent Deadlines & Missions</h3>
-                                            <div style={{display:'flex', gap:'16px', overflowX:'auto', paddingBottom:'8px'}}>
-                                                {deadlines.map(d => {
-                                                    const diff = new Date(d.dueDate) - now;
-                                                    const isCritical = diff < (1000 * 60 * 60 * 24);
-
-                                                    return (
-                                                        <div key={d.id} className="glass-panel" style={{
-                                                            minWidth: '280px', 
-                                                            padding: '16px', 
-                                                            borderLeft: isCritical ? '4px solid var(--error)' : '4px solid var(--warning)'
-                                                        }}>
-                                                            <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start'}}>
-                                                                <h4 style={{margin:0, color:'var(--primary-light)', fontSize: '1.1rem'}}>{d.title}</h4>
-                                                                <div style={{
-                                                                    background: isCritical ? 'rgba(255,0,0,0.1)' : 'rgba(255, 165, 0, 0.1)', 
-                                                                    color: isCritical ? 'var(--error)' : 'var(--warning)', 
-                                                                    padding: '4px 8px', borderRadius: '4px', fontSize: '0.85rem', fontWeight: 'bold'
-                                                                }}>
-                                                                    {formatCountdown(d.dueDate)}
-                                                                </div>
-                                                            </div>
-                                                            <p style={{margin:'8px 0', fontSize:'0.9rem', color:'var(--text-secondary)'}}>{d.description}</p>
-                                                            <div style={{fontSize:'0.8rem', color:'var(--text-secondary)', marginTop:'12px', borderTop: '1px solid var(--border)', paddingTop: '8px'}}>
-                                                                Due limit: {new Date(d.dueDate).toLocaleString()}
-                                                            </div>
-                                                            {d.maxMarks && (
-                                                                <div style={{marginTop: '12px', paddingTop: '12px', borderTop: '1px solid var(--border)'}}>
-                                                                    <h5 style={{margin: '0 0 8px 0'}}>Assignment (Max {d.maxMarks})</h5>
-                                                                    {(() => {
-                                                                        const mySub = mySubmissions.find(s => s.deadlineId === d.id);
-                                                                        if (mySub) {
-                                                                            if (mySub.marks !== undefined) {
-                                                                                return <div style={{color: 'var(--success)', fontWeight:'bold'}}>✨ Graded: {mySub.marks} / {d.maxMarks}</div>;
-                                                                            }
-                                                                            return <div style={{color: 'var(--primary)', fontSize:'0.9rem'}}>✅ Submitted. Pending grading.</div>;
-                                                                        }
-                                                                        if (diff < 0) {
-                                                                            return <div style={{color: 'var(--error)'}}>Deadline Missed</div>;
-                                                                        }
-                                                                        if (submittingAssignment === d.id) {
-                                                                            return <div style={{fontSize:'0.85rem'}}>Uploading: {submissionProgress}%</div>;
-                                                                        }
-                                                                        return (
-                                                                            <form onSubmit={(e) => handleAssignmentSubmit(e, d)} style={{display: 'flex', flexDirection:'column', gap: '8px'}}>
-                                                                                <input type="file" onChange={(e) => setSubmissionFile(e.target.files[0])} accept=".pdf,.doc,.docx,.zip,.png,.jpg" style={{fontSize: '0.8rem'}} required />
-                                                                                <button type="submit" className={styles.saveBtn} style={{padding: '4px 8px', fontSize: '0.8rem', width: 'fit-content'}}>Submit File</button>
-                                                                            </form>
-                                                                        );
-                                                                    })()}
-                                                                </div>
-                                                            )}
-                                                        </div>
-                                                    );
-                                                })}
-                                            </div>
-                                        </div>
-                                    )}
-
-                                    {/* MCQ TESTS WIDGET */}
-                                    {mcqTests.length > 0 && (
-                                        <div style={{gridColumn: '1 / -1', marginTop: '16px'}}>
-                                            <h3 className={styles.sectionTitle} style={{fontSize:'1rem', color:'var(--text-secondary)', marginBottom: '12px'}}>📝 MCQ Tests</h3>
-                                            <div style={{display:'flex', gap:'16px', overflowX:'auto', paddingBottom:'8px'}}>
-                                                {mcqTests.map(test => {
-                                                    const mySub = myMcqSubmissions.find(s => s.testId === test.id);
-                                                    const diff = new Date(test.dueDate) - now;
-                                                    const isCritical = diff < (1000 * 60 * 60 * 24);
-
-                                                    return (
-                                                        <div key={test.id} className="glass-panel" style={{
-                                                            minWidth: '280px',
-                                                            padding: '16px',
-                                                            borderLeft: mySub ? '4px solid #22c55e' : isCritical ? '4px solid #ef4444' : '4px solid #3b82f6'
-                                                        }}>
-                                                            <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start'}}>
-                                                                <h4 style={{margin:0, color:'#f8fafc', fontSize: '1.1rem'}}>{test.title}</h4>
-                                                                <div style={{
-                                                                    background: isCritical ? 'rgba(239,68,68,0.15)' : 'rgba(59,130,246,0.15)',
-                                                                    color: isCritical ? '#ef4444' : '#3b82f6',
-                                                                    padding: '4px 8px', borderRadius: '4px', fontSize: '0.85rem', fontWeight: 'bold'
-                                                                }}>
-                                                                    {formatCountdown(test.dueDate)}
-                                                                </div>
-                                                            </div>
-                                                            <p style={{margin:'8px 0', fontSize:'0.9rem', color:'#94a3b8'}}>{test.questions?.length} Questions</p>
-                                                            <div style={{fontSize:'0.8rem', color:'#64748b', borderTop: '1px solid var(--border)', paddingTop: '8px', marginTop: '8px'}}>
-                                                                Due: {new Date(test.dueDate).toLocaleString()}
-                                                            </div>
-                                                            <div style={{marginTop: '12px'}}>
-                                                                {mySub ? (
-                                                                    <div style={{color: '#22c55e', fontWeight:'bold', fontSize: '1rem'}}>
-                                                                        ✅ Score: {mySub.score} / {mySub.totalQuestions}
-                                                                    </div>
-                                                                ) : diff < 0 ? (
-                                                                    <div style={{color: '#ef4444'}}>Test Expired</div>
-                                                                ) : (
-                                                                    <a href={`/dashboard/mcq/${test.id}`} style={{
-                                                                        display: 'inline-block',
-                                                                        background: '#3b82f6',
-                                                                        color: '#fff',
-                                                                        padding: '8px 16px',
-                                                                        borderRadius: '6px',
-                                                                        textDecoration: 'none',
-                                                                        fontSize: '0.9rem',
-                                                                        fontWeight: 600
-                                                                    }}>Start Test →</a>
-                                                                )}
-                                                            </div>
-                                                        </div>
-                                                    );
-                                                })}
-                                            </div>
-                                        </div>
-                                    )}
-
-                                    {/* Attendance Ring */}
-                                    <div className={styles.attendanceBox}>
-                                        <h3>Live Attendance</h3>
-                                        <div className={styles.ringWrapper}>
-                                            <svg viewBox="0 0 36 36" className={styles.circularChart}>
-                                                <path className={styles.circleBg}
-                                                    d="M18 2.0845
-                                                    a 15.9155 15.9155 0 0 1 0 31.831
-                                                    a 15.9155 15.9155 0 0 1 0 -31.831"
-                                                />
-                                                {attendanceStats.total > 0 && (
-                                                    <path className={styles.circleFill}
-                                                        strokeDasharray={`${attendanceStats.percentage}, 100`}
-                                                        style={{ stroke: ringColor }}
-                                                        d="M18 2.0845
-                                                        a 15.9155 15.9155 0 0 1 0 31.831
-                                                        a 15.9155 15.9155 0 0 1 0 -31.831"
-                                                    />
-                                                )}
-                                            </svg>
-                                            <div className={styles.ringText}>
-                                                <span className={styles.ringPercent}>{attendanceStats.percentage}%</span>
-                                            </div>
-                                        </div>
-                                        <div className={styles.attStatsRow}>
-                                            <div className={styles.attStat}><span style={{color:'var(--success)'}}>P:</span> {attendanceStats.present}</div>
-                                            <div className={styles.attStat}><span style={{color:'var(--error)'}}>A:</span> {attendanceStats.absent}</div>
-                                            <div className={styles.attStat}><span style={{color:'var(--warning)'}}>L:</span> {attendanceStats.late}</div>
-                                            <div className={styles.attStat}><span style={{color:'var(--primary-light)'}}>E:</span> {attendanceStats.excused}</div>
-                                        </div>
-                                        
-                                        {/* Timeline & Streak Module */}
-                                        <div className={styles.streakModule}>
-                                            <div className={styles.streakBadge}>
-                                                🔥 {currentStreak} Day Streak
-                                            </div>
-                                            {attendanceHistory.length > 0 && (
-                                                <div className={styles.timeline}>
-                                                    {attendanceHistory.slice().reverse().map((rec, i) => (
-                                                        <div 
-                                                            key={i} 
-                                                            className={`${styles.timelineDot} ${styles[`dot_${rec.status}`]}`}
-                                                            title={`${rec.date}: ${rec.status}`}
-                                                        />
-                                                    ))}
-                                                </div>
-                                            )}
-                                        </div>
-
-                                        {attendanceStats.percentage < 75 && attendanceStats.total > 0 && (
-                                            <p className={styles.attWarning}>⚠️ Warning: Attendance is below 75%.</p>
-                                        )}
-
-                                        <button className={styles.btnSecondary} onClick={() => setLeaveModalOpen(true)} style={{ width: '100%', marginTop: '16px' }}>
-                                            ✉️ Request Leave
-                                        </button>
-                                    </div>
-
-                                    {/* Inbox & Announcements Box */}
-                                    <div className={styles.announcementsBox}>
-                                        <div className={styles.boxTabsContainer}>
-                                            <h3>Class Updates</h3>
-                                        </div>
-                                        
-                                        <div className={styles.announcementList}>
-                                            {myLeaveRequests.length > 0 && (
-                                                <div className={styles.leaveRequestsList}>
-                                                    {myLeaveRequests.map(req => (
-                                                        <div key={req.id} className={`${styles.announcementCard} ${styles[`request_${req.status}`]}`}>
-                                                            <div className={styles.annMeta}>
-                                                                <span className={styles.annTeacher}>Leave Request ({req.date})</span>
-                                                                <span className={`${styles.statusPill} ${styles[`pill_${req.status}`]}`}>
-                                                                    {req.status}
-                                                                </span>
-                                                            </div>
-                                                            <p className={styles.annMessage}>{req.reason}</p>
-                                                        </div>
-                                                    ))}
-                                                </div>
-                                            )}
-                                            {announcements.length > 0 ? announcements.map(ann => (
-                                                <div key={ann.id} className={styles.announcementCard}>
-                                                    <div className={styles.annMeta}>
-                                                        <span className={styles.annTeacher}>{ann.teacherName}</span>
-                                                        <span className={styles.annDate}>
-                                                            {new Date(ann.timestamp).toLocaleDateString()}
-                                                        </span>
-                                                    </div>
-                                                    <p className={styles.annMessage}>{ann.message}</p>
-                                                </div>
-                                            )) : (
-                                                <div className={styles.emptyAnnouncements}>No announcements yet.</div>
-                                            )}
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
+                        <ClassroomTab
+                            user={user}
+                            activeLiveSession={activeLiveSession}
+                            hasCheckedIn={hasCheckedIn}
+                            triggerQRScan={triggerQRScan}
+                            triggerVerification={triggerVerification}
+                            sppuSummary={sppuSummary}
+                            currentSGPA={currentSGPA}
+                            monthlyReports={monthlyReports}
+                            deadlines={deadlines}
+                            now={now}
+                            formatCountdown={formatCountdown}
+                            mySubmissions={mySubmissions}
+                            submittingAssignment={submittingAssignment}
+                            submissionProgress={submissionProgress}
+                            handleAssignmentSubmit={handleAssignmentSubmit}
+                            setSubmissionFile={setSubmissionFile}
+                            mcqTests={mcqTests}
+                            myMcqSubmissions={myMcqSubmissions}
+                            attendanceStats={attendanceStats}
+                            ringColor={ringColor}
+                            currentStreak={currentStreak}
+                            attendanceHistory={attendanceHistory}
+                            setLeaveModalOpen={setLeaveModalOpen}
+                            myLeaveRequests={myLeaveRequests}
+                            announcements={announcements}
+                        />
                     )}
 
                     {/* ──── REPOSITORY TAB ──── */}
                     {activeDashboardTab === 'repository' && (
-                        <div className={styles.tabRepositoryLayout}>
-                            {/* Teacher Added Material Tile */}
-                            {user.classId && classMaterials.length > 0 && (
-                                <div className={`${styles.bentoTile} ${styles.uploadsTile} glass-panel`} style={{marginBottom: '20px'}}>
-                                    <h2 className={styles.sectionTitle} style={{color: 'var(--secondary)'}}>📘 Teacher Materials</h2>
-                                    <p style={{color: 'var(--text-secondary)', marginBottom: '16px', fontSize: '0.9rem'}}>Curated directly for {user.classId}.</p>
-                                    <div className={styles.uploadsList}>
-                                        {classMaterials.map((item) => (
-                                            <div key={item.id} className={styles.uploadItem}>
-                                                <div className={`${styles.uploadIcon} ${getTypeClass(item.type)}`}>{getUploadIcon(item.type)}</div>
-                                                <div className={styles.uploadDetails}>
-                                                    <a href={item.fileUrl} target="_blank" rel="noopener noreferrer" className={styles.uploadTitle} style={{textDecoration: 'none', color: 'inherit'}}>{item.title}</a>
-                                                    <div className={styles.uploadMeta}>
-                                                        {item.type} · {item.subject} · Authored By {item.uploaderName}
-                                                    </div>
-                                                </div>
-                                                <a href={item.fileUrl} target="_blank" rel="noopener noreferrer" className={styles.downloadLink} style={{color: 'var(--secondary)'}}>
-                                                    <IconDownload size={18} />
-                                                </a>
-                                            </div>
-                                        ))}
-                                    </div>
-                                </div>
-                            )}
-
-                            {/* Tile 3: My Uploads */}
-                            <div className={`${styles.bentoTile} ${styles.uploadsTile} glass-panel`}>
-                                <h2 className={styles.sectionTitle}><IconFolder size={24} /> My Repository</h2>
-                                {loadingUploads ? (
-                                    <div className={styles.emptyState}><div className={styles.emptyText}>Syncing...</div></div>
-                                ) : uploads.length === 0 ? (
-                                    <div className={styles.emptyStateGamified}>
-                                        <div className={styles.bountyIcon}>🎯</div>
-                                        <div className={styles.emptyText} style={{ fontSize: '1.25rem', color: '#fff' }}>Bounty Available: First Contributor</div>
-                                        <div className={styles.emptySub} style={{ margin: '12px 0 24px', opacity: 0.8 }}>
-                                            Your personal repository is currently empty. Upload your first PDF to unlock the <strong style={{ color: 'var(--primary-light)' }}>🎓 Foundation</strong> badge and earn <strong style={{ color: 'var(--accent)' }}>50 Points</strong>!
-                                        </div>
-                                        <Link href="/subjects" className={styles.btnBounty}>
-                                            Claim Bounty →
-                                        </Link>
-                                    </div>
-                                ) : (
-                                    <div className={styles.uploadsList}>
-                                        {uploads.map((item) => (
-                                            <div key={item.id} className={styles.uploadItem}>
-                                                <div className={`${styles.uploadIcon} ${getTypeClass(item.type)}`}>{getUploadIcon(item.type)}</div>
-                                                <div className={styles.uploadDetails}>
-                                                    <div className={styles.uploadTitle}>{item.title}</div>
-                                                    <div className={styles.uploadMeta}>
-                                                        {item.type} · {item.subject} · {item.createdAt ? new Date(item.createdAt).toLocaleDateString() : '—'}
-                                                        {' · '}{getStatusBadge(item.status)}
-                                                    </div>
-                                                </div>
-                                                <div className={styles.uploadStats}>
-                                                    <span><IconDownload size={14} /> {item.downloads || 0}</span>
-                                                    <span><IconStar size={14} /> {item.rating || '—'}</span>
-                                                </div>
-                                            </div>
-                                        ))}
-                                    </div>
-                                )}
-                            </div>
-                        </div>
+                        <RepositoryTab
+                            user={user}
+                            classMaterials={classMaterials}
+                            getTypeClass={getTypeClass}
+                            getUploadIcon={getUploadIcon}
+                            loadingUploads={loadingUploads}
+                            uploads={uploads}
+                            getStatusBadge={getStatusBadge}
+                        />
                     )}
 
                     {/* ──── SETTINGS TAB ──── */}
                     {activeDashboardTab === 'settings' && (
-                        <div className={styles.tabSettingsLayout}>
-                            {/* Tile 1: Academic Profile / Editing */}
-                            <div className={`${styles.bentoTile} ${editing ? styles.editingTile : ''} glass-panel`}>
-                                {!editing ? (
-                                    <div className={styles.profileSection}>
-                                        <div className={styles.profileSectionHeader}>
-                                            <h2 className={styles.sectionTitle}><IconNotes size={24} /> Profile Engine</h2>
-                                            <button className={styles.editBtn} onClick={startEditing}>Configure</button>
-                                        </div>
-                                        {user.branch ? (
-                                            <div className={styles.premiumGrid}>
-                                                <div className={styles.premiumFieldCard}>
-                                                    <span className={styles.fieldTitle}>Display Name</span>
-                                                    <span className={styles.fieldValueMain}>{user.name || 'Not set'}</span>
-                                                </div>
-                                                <div className={styles.premiumFieldCard}>
-                                                    <span className={styles.fieldTitle}>College</span>
-                                                    <span className={styles.fieldValueMain}>{user.college || 'Not set'}</span>
-                                                </div>
-                                                <div className={styles.premiumFieldCard}>
-                                                    <span className={styles.fieldTitle}>Branch</span>
-                                                    <span className={styles.fieldValueMain}>{user.branch}</span>
-                                                </div>
-                                                <div className={styles.premiumFieldCard}>
-                                                    <span className={styles.fieldTitle}>Year</span>
-                                                    <span className={styles.fieldValueMain}>{user.year}</span>
-                                                </div>
-                                                <div className={styles.premiumFieldCard}>
-                                                    <span className={styles.fieldTitle}>Semester</span>
-                                                    <span className={styles.fieldValueMain}>{user.semester}</span>
-                                                </div>
-                                            </div>
-                                        ) : (
-                                            <div className={styles.profileSetupCard}>
-                                                <span className={styles.setupIcon}>🎯</span>
-                                                <h3 className={styles.setupTitle}>Complete Your Profile</h3>
-                                                <p className={styles.setupDesc}>
-                                                    Set up your academic profile to unlock personalized notes, exam prep, and class features.
-                                                </p>
-                                                <div className={styles.setupProgressWrap}>
-                                                    <div className={styles.setupProgressLabel}>
-                                                        <span>Progress</span>
-                                                        <span>{Math.round(([user.name, user.college, user.branch, user.year, user.semester].filter(Boolean).length / 5) * 100)}%</span>
-                                                    </div>
-                                                    <div className={styles.setupProgressTrack}>
-                                                        <div className={styles.setupProgressFill} style={{ width: `${Math.round(([user.name, user.college, user.branch, user.year, user.semester].filter(Boolean).length / 5) * 100)}%` }}></div>
-                                                    </div>
-                                                </div>
-                                                <div className={styles.setupChecklist}>
-                                                    {[
-                                                        { label: 'Name', done: !!user.name },
-                                                        { label: 'College', done: !!user.college },
-                                                        { label: 'Branch', done: !!user.branch },
-                                                        { label: 'Year', done: !!user.year },
-                                                        { label: 'Semester', done: !!user.semester },
-                                                    ].map(c => (
-                                                        <span key={c.label} className={`${styles.setupCheckItem} ${c.done ? styles.setupCheckDone : styles.setupCheckPending}`}>
-                                                            {c.done ? '✓' : '○'} {c.label}
-                                                        </span>
-                                                    ))}
-                                                </div>
-                                                <button className={styles.setupBtn} onClick={startEditing}>
-                                                    ⚙️ Set Up Now
-                                                </button>
-                                            </div>
-                                        )}
-                                        {user.subjects && user.subjects.length > 0 && (
-                                            <div className={styles.subjectChips}>
-                                                {user.subjects.map(s => <span key={s} className={styles.subjectChip}>{s}</span>)}
-                                            </div>
-                                        )}
-                                    </div>
-                                ) : (
-                                    <div className={styles.profileSection}>
-                                        <h2 className={styles.sectionTitle} style={{marginBottom:'20px'}}>Configure Profile</h2>
-                                        
-                                        {/* Avatar Upload Section */}
-                                        <div className={styles.avatarUploadSection}>
-                                            <div className={styles.avatarUploadPreview}>
-                                                {avatarPreview ? (
-                                                    <img src={avatarPreview} alt="Preview" />
-                                                ) : user.photoURL ? (
-                                                    <img src={user.photoURL} alt={user.name} referrerPolicy="no-referrer" />
-                                                ) : (
-                                                    <div className={styles.avatarUploadFallback}>
-                                                        {user.name ? user.name.charAt(0).toUpperCase() : '?'}
-                                                    </div>
-                                                )}
-                                            </div>
-                                            <div className={styles.avatarUploadControls}>
-                                                <input 
-                                                    ref={fileInputRef}
-                                                    type="file" 
-                                                    accept="image/*" 
-                                                    onChange={handleAvatarSelect}
-                                                    style={{ display: 'none' }}
-                                                />
-                                                <button 
-                                                    type="button"
-                                                    className={styles.avatarUploadBtn}
-                                                    onClick={() => fileInputRef.current?.click()}
-                                                >
-                                                    📷 {avatarPreview ? 'Change Photo' : 'Upload Photo'}
-                                                </button>
-                                                <p className={styles.avatarUploadHint}>JPEG, PNG, or WebP · Max 5MB</p>
-                                            </div>
-                                        </div>
-
-                                        <div className={styles.glassForm}>
-                                            <div className={styles.modernInputWrap}>
-                                                <label className={styles.modernLabel}>Display Name</label>
-                                                <input type="text" maxLength={40} className={styles.premiumInput} value={editName} onChange={(e) => setEditName(e.target.value)} placeholder="Your name" />
-                                            </div>
-                                            <div className={styles.modernInputWrap}>
-                                                <label className={styles.modernLabel}>Short Bio</label>
-                                                <input type="text" maxLength={60} className={styles.premiumInput} value={editBio} onChange={(e) => setEditBio(e.target.value)} placeholder="e.g. Code wizard & coffee consumer" />
-                                            </div>
-                                            <div className={styles.formGroupRow}>
-                                                <div className={styles.modernInputWrap}>
-                                                    <label className={styles.modernLabel}>Student Phone</label>
-                                                    <input type="tel" className={styles.premiumInput} value={editStudentPhone} onChange={(e) => setEditStudentPhone(e.target.value)} placeholder="+1234567890" />
-                                                </div>
-                                                <div className={styles.modernInputWrap}>
-                                                    <label className={styles.modernLabel}>Parent Phone</label>
-                                                    <input type="tel" className={styles.premiumInput} value={editParentPhone} onChange={(e) => setEditParentPhone(e.target.value)} placeholder="+1987654321" />
-                                                </div>
-                                            </div>
-                                            <div className={styles.formGroupRow}>
-                                                <div className={styles.modernInputWrap}>
-                                                    <label className={styles.modernLabel}>College</label>
-                                                    <select className={`${styles.premiumInput} ${styles.premiumSelect}`} value={editCollege} onChange={(e) => setEditCollege(e.target.value)}>
-                                                        <option value="">Select</option>
-                                                        {COLLEGES.map(c => <option key={c} value={c}>{c}</option>)}
-                                                    </select>
-                                                </div>
-                                                <div className={styles.modernInputWrap}>
-                                                    <label className={styles.modernLabel}>Branch</label>
-                                                    <select className={`${styles.premiumInput} ${styles.premiumSelect}`} value={editBranch} onChange={(e) => { setEditBranch(e.target.value); setEditSemester(''); }}>
-                                                        <option value="">Select</option>
-                                                        {BRANCHES.map(b => <option key={b} value={b}>{b}</option>)}
-                                                    </select>
-                                                </div>
-                                            </div>
-                                            <div className={styles.formGroupRow}>
-                                                <div className={styles.modernInputWrap}>
-                                                    <label className={styles.modernLabel}>Year</label>
-                                                    <select className={`${styles.premiumInput} ${styles.premiumSelect}`} value={editYear} onChange={(e) => { setEditYear(e.target.value); setEditSemester(''); }}>
-                                                        <option value="">Select</option>
-                                                        {YEARS.map(y => <option key={y} value={y}>{y}</option>)}
-                                                    </select>
-                                                </div>
-                                                <div className={styles.modernInputWrap}>
-                                                    <label className={styles.modernLabel}>Semester</label>
-                                                    <select className={`${styles.premiumInput} ${styles.premiumSelect}`} value={editSemester} onChange={(e) => setEditSemester(e.target.value)} disabled={!editYear}>
-                                                        <option value="">Select</option>
-                                                        {availableSemesters.map(s => <option key={s} value={s}>{s}</option>)}
-                                                    </select>
-                                                </div>
-                                            </div>
-
-                                            {/* Subjects Selector */}
-                                            {editBranch && editSemester && (
-                                                <div className={styles.modernInputWrap}>
-                                                    <label className={styles.modernLabel}>Select Subjects</label>
-                                                    <div style={{display:'flex', gap:'8px', flexWrap:'wrap', marginTop:'8px'}}>
-                                                        {getSubjects(editBranch, editSemester).map(sub => {
-                                                            const isSelected = selectedSubjects.includes(sub);
-                                                            return (
-                                                                <button
-                                                                    key={sub}
-                                                                    type="button"
-                                                                    onClick={() => handleSubjectToggle(sub)}
-                                                                    className={`${styles.subjectSelectBtn} ${isSelected ? styles.subjectSelectActive : ''}`}
-                                                                >
-                                                                    {sub} {isSelected && '✓'}
-                                                                </button>
-                                                            );
-                                                        })}
-                                                    </div>
-                                                </div>
-                                            )}
-
-                                            {/* Banner Customize swatch */}
-                                            <div className={styles.modernInputWrap} style={{marginTop:'16px'}}>
-                                                <label className={styles.modernLabel}>Profile Banner Accent</label>
-                                                <div className={styles.bannerPickerGrid} style={{marginTop:'8px'}}>
-                                                    {BANNER_PRESETS.map(p => (
-                                                        <div 
-                                                            key={p.id} 
-                                                            className={`${styles.bannerSwatch} ${editBanner === p.id ? styles.bannerSwatchActive : ''}`}
-                                                            style={{ background: p.gradient }}
-                                                            onClick={() => setEditBanner(p.id)}
-                                                            title={p.label}
-                                                        >
-                                                            {editBanner === p.id && '✓'}
-                                                        </div>
-                                                    ))}
-                                                </div>
-                                            </div>
-
-                                            {/* Badge Showcase selector */}
-                                            <div className={styles.modernInputWrap} style={{marginTop:'20px'}}>
-                                                <label className={styles.modernLabel}>Pin Pinned Badges (Max 3)</label>
-                                                <div className={styles.badgePickerGrid}>
-                                                    {earnedBadges.map(badge => {
-                                                        const isSelected = editShowcase.includes(badge.id);
-                                                        return (
-                                                            <div 
-                                                                key={badge.id}
-                                                                className={`${styles.badgePickerItem} ${isSelected ? styles.badgePickerActive : ''}`}
-                                                                onClick={() => {
-                                                                    setEditShowcase(prev => {
-                                                                        if (prev.includes(badge.id)) return prev.filter(id => id !== badge.id);
-                                                                        if (prev.length >= 3) return prev;
-                                                                        return [...prev, badge.id];
-                                                                    });
-                                                                }}
-                                                            >
-                                                                <span style={{fontSize:'1.8rem'}}>{badge.icon}</span>
-                                                                <span style={{fontSize:'0.75rem', fontWeight:'bold'}}>{badge.name}</span>
-                                                                {isSelected && <div className={styles.badgePickerCheck}>✓</div>}
-                                                            </div>
-                                                        );
-                                                    })}
-                                                </div>
-                                            </div>
-
-                                            {/* ── Facial Geometry Enrollment Radar (Embedded in Config) ── */}
-                                            <div style={{marginTop:'30px', borderTop:'1px solid var(--border)', paddingTop:'24px'}}>
-                                                <div style={{display:'flex', alignItems:'center', gap:'10px', marginBottom:'8px'}}>
-                                                    <span style={{fontSize:'1.3rem'}}>🧬</span>
-                                                    <h3 style={{margin:0, color:'#fff', fontFamily:'var(--font-heading)'}}>Biometric Identity Registry</h3>
-                                                </div>
-                                                <p style={{color:'var(--text-secondary)', fontSize:'0.85rem', marginBottom:'16px'}}>Register your unique facial node-map to authorize hands-free attendance check-ins.</p>
-                                                
-                                                {isEnrolled ? (
-                                                    <div style={{display:'flex', justifyContent:'space-between', alignItems:'center', background:'rgba(34,197,94,0.1)', border:'1px solid var(--success)', padding:'14px 20px', borderRadius:'12px'}}>
-                                                        <div>
-                                                            <span style={{color:'var(--success)', fontWeight:'bold', fontSize:'0.9rem'}}>✅ Registered Node Profile Secured</span>
-                                                            <div style={{fontSize:'0.75rem', color:'var(--text-secondary)', marginTop:'2px'}}>Mathematics encoded. Fully functional for radar checks.</div>
-                                                        </div>
-                                                        <button type="button" onClick={() => setEnrollmentStatus('restart')} className={styles.btnSecondary} style={{padding:'8px 16px', borderRadius:'12px', fontSize:'0.85rem'}}>Recalibrate</button>
-                                                    </div>
-                                                ) : (
-                                                    <div style={{display:'flex', flexDirection:'column', gap:'16px', background:'var(--bg-elevated)', padding:'24px', borderRadius:'16px', border:'1px solid var(--primary-glow)'}}>
-                                                        {(enrollmentStatus === 'loading' || enrollmentStatus === 'acquiring' || enrollmentStatus === 'restart') && (
-                                                            <div style={{width:'100%', height:'240px', borderRadius:'12px', overflow:'hidden', position:'relative', boxShadow:'0 0 20px var(--primary-glow)'}}>
-                                                                <Webcam audio={false} ref={enrollWebcamRef} screenshotFormat="image/jpeg" videoConstraints={{ facingMode: "user" }} style={{width:'100%', height:'100%', objectFit:'cover'}} />
-                                                                {enrollmentStatus === 'acquiring' && (
-                                                                    <div style={{position:'absolute', top:0, left:0, right:0, bottom:0, background:'linear-gradient(to bottom, var(--primary-glow), transparent)', border:'2px solid var(--primary)', animation:'scan 2s infinite linear'}} />
-                                                                )}
-                                                            </div>
-                                                        )}
-                                                        
-                                                        {enrollmentStatus === '' || enrollmentStatus === 'restart' ? (
-                                                            <button type="button" onClick={enrollBiometrics} className={styles.btnVerifyGeo} style={{width:'100%', padding:'16px', borderRadius:'12px', fontSize:'1rem', fontWeight:'bold', letterSpacing:'1px', textTransform:'uppercase'}}>Initialize ML Scanner</button>
-                                                        ) : enrollmentStatus === 'loading' ? (
-                                                            <div style={{textAlign:'center', color:'var(--neo)', padding:'12px', background:'rgba(99,102,241,0.1)', borderRadius:'12px'}}>Downloading AI Math Models (Wait)...</div>
-                                                        ) : enrollmentStatus === 'acquiring' ? (
-                                                            <div style={{textAlign:'center', color:'var(--warning)', padding:'12px', background:'rgba(245,158,11,0.1)', borderRadius:'12px'}}>Extracting 128-point face topography... Hold still.</div>
-                                                        ) : enrollmentStatus === 'success' ? (
-                                                            <div style={{textAlign:'center', color:'var(--success)', fontWeight:'bold', padding:'12px', background:'rgba(34,197,94,0.1)', borderRadius:'12px'}}>✅ Registration Complete! Math embedded.</div>
-                                                        ) : (
-                                                            <div style={{textAlign:'center', color:'var(--error)', padding:'12px', background:'rgba(239,68,68,0.1)', borderRadius:'12px'}}>❌ {enrollmentStatus.split('error: ')[1]} <br/><span style={{cursor:'pointer', textDecoration:'underline', display:'inline-block', marginTop:'8px', fontWeight:'bold'}} onClick={() => setEnrollmentStatus('restart')}>Try Again</span></div>
-                                                        )}
-                                                    </div>
-                                                )}
-                                            </div>
-
-                                            <div className={styles.editActions} style={{marginTop:'30px'}}>
-                                                <button className={styles.cancelBtn} onClick={() => setEditing(false)}>Cancel</button>
-                                                <button className={styles.saveBtn} onClick={saveProfile} disabled={saving || uploadingAvatar}>
-                                                    {uploadingAvatar ? 'Uploading Photo...' : saving ? 'Saving...' : 'Save Configuration'}
-                                                </button>
-                                            </div>
-                                        </div>
-                                    </div>
-                                )}
-                            </div>
-
-                            {/* Tile 2: Performance Engine */}
-                            <div className={`${styles.bentoTile} glass-panel`} style={{ marginTop: '20px' }}>
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '8px' }}>
-                                    <span style={{ fontSize: '1.3rem' }}>⚡</span>
-                                    <h3 style={{ margin: 0, color: '#fff', fontFamily: 'var(--font-heading)' }}>Performance Engine</h3>
-                                </div>
-                                <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', marginBottom: '16px' }}>
-                                    Optimize rendering for low-end laptops, Chromebooks, or budget mobile devices.
-                                </p>
-                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'var(--bg-input)', border: '1px solid var(--border)', padding: '14px 20px', borderRadius: '12px' }}>
-                                    <div>
-                                        <span style={{ color: '#fff', fontWeight: 'bold', fontSize: '0.9rem' }}>Ultra-Performance Mode</span>
-                                        <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginTop: '2px' }}>
-                                            Disables backdrop blurs, floating ambient orbs, and GPU-intensive transitions.
-                                        </div>
-                                    </div>
-                                    <button 
-                                        type="button" 
-                                        onClick={togglePerformanceMode} 
-                                        className={performanceMode === 'low' ? styles.saveBtn : styles.btnSecondary} 
-                                        style={{ padding: '8px 16px', borderRadius: '12px', fontSize: '0.85rem', margin: 0, width: 'auto' }}
-                                    >
-                                        {performanceMode === 'low' ? 'Enabled (Fast)' : 'Disabled (Fancy)'}
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
+                        <SettingsTab
+                            editing={editing}
+                            user={user}
+                            startEditing={startEditing}
+                            avatarPreview={avatarPreview}
+                            handleAvatarSelect={handleAvatarSelect}
+                            fileInputRef={fileInputRef}
+                            editName={editName}
+                            setEditName={setEditName}
+                            editBio={editBio}
+                            setEditBio={setEditBio}
+                            editStudentPhone={editStudentPhone}
+                            setEditStudentPhone={setEditStudentPhone}
+                            editParentPhone={editParentPhone}
+                            setEditParentPhone={setEditParentPhone}
+                            editCollege={editCollege}
+                            setEditCollege={setEditCollege}
+                            editBranch={editBranch}
+                            setEditBranch={setEditBranch}
+                            editYear={editYear}
+                            setEditYear={setEditYear}
+                            editSemester={editSemester}
+                            setEditSemester={setEditSemester}
+                            availableSemesters={availableSemesters}
+                            selectedSubjects={selectedSubjects}
+                            handleSubjectToggle={handleSubjectToggle}
+                            editBanner={editBanner}
+                            setEditBanner={setEditBanner}
+                            earnedBadges={earnedBadges}
+                            editShowcase={editShowcase}
+                            setEditShowcase={setEditShowcase}
+                            isEnrolled={isEnrolled}
+                            enrollmentStatus={enrollmentStatus}
+                            setEnrollmentStatus={setEnrollmentStatus}
+                            enrollWebcamRef={enrollWebcamRef}
+                            enrollBiometrics={enrollBiometrics}
+                            setEditing={setEditing}
+                            saveProfile={saveProfile}
+                            saving={saving}
+                            uploadingAvatar={uploadingAvatar}
+                            performanceMode={performanceMode}
+                            togglePerformanceMode={togglePerformanceMode}
+                        />
                     )}
                 </div>
             </div>
 
             {/* LEAVE REQUEST MODAL */}
-            {leaveModalOpen && (
-                <div className={styles.modalOverlay} onClick={(e) => { if (e.target === e.currentTarget) setLeaveModalOpen(false); }}>
-                    <div className={`${styles.modalContent} glass-panel`}>
-                        <h2 style={{ marginBottom: '8px' }}>Request Leave of Absence</h2>
-                        <p style={{ color: 'var(--text-secondary)', marginBottom: '24px', fontSize: '0.9rem' }}>This request will be sent directly to your teacher for approval.</p>
-                        
-                        <form onSubmit={submitLeaveRequest}>
-                            <div className={styles.formGroup}>
-                                <label>Date of Absence</label>
-                                <input 
-                                    type="date" 
-                                    value={leaveDate} 
-                                    onChange={e => setLeaveDate(e.target.value)} 
-                                    required 
-                                    className={styles.inputField} 
-                                />
-                            </div>
-                            <div className={styles.formGroup} style={{ marginTop: '16px' }}>
-                                <label>Reason</label>
-                                <textarea 
-                                    value={leaveReason} 
-                                    onChange={e => setLeaveReason(e.target.value)} 
-                                    required 
-                                    placeholder="Briefly explain your reason (e.g., Medical, Event, Transport Issue)"
-                                    className={styles.inputField} 
-                                    rows={4} 
-                                />
-                            </div>
-                            
-                            <div className={styles.modalActions} style={{ marginTop: '24px', display: 'flex', gap: '12px', justifyContent: 'flex-end' }}>
-                                <button type="button" className={styles.cancelBtn} onClick={() => setLeaveModalOpen(false)}>Cancel</button>
-                                <button type="submit" className={styles.saveBtn} disabled={leaveSubmitting}>
-                                    {leaveSubmitting ? 'Submitting...' : 'Submit Request'}
-                                </button>
-                            </div>
-                        </form>
-                    </div>
-                </div>
-            )}
+            <LeaveModal
+                leaveModalOpen={leaveModalOpen}
+                setLeaveModalOpen={setLeaveModalOpen}
+                submitLeaveRequest={submitLeaveRequest}
+                leaveDate={leaveDate}
+                setLeaveDate={setLeaveDate}
+                leaveReason={leaveReason}
+                setLeaveReason={setLeaveReason}
+                leaveSubmitting={leaveSubmitting}
+            />
 
             {/* LIVE QR SCANNER MODAL */}
-            {showQRScanner && (
-                <div className={styles.modalOverlay}>
-                    <div className={`${styles.modalContent} ${styles.scannerModal} glass-panel`}>
-                        <h2>Scan Teacher's QR</h2>
-                        <p style={{marginBottom: '16px', color: 'var(--text-secondary)'}}>Point your camera at the dynamic QR code on the board.</p>
-                        
-                        <div className={styles.webcamWrapper}>
-                            <Webcam
-                                audio={false}
-                                ref={webcamRef}
-                                screenshotFormat="image/jpeg"
-                                videoConstraints={{ facingMode: "environment" }}
-                                className={styles.webcamVideo}
-                            />
-                            {qrStatus === 'scanning' && <div className={styles.scannerLine}></div>}
-                        </div>
-
-                        <div className={styles.scanStatusBox}>
-                            {qrStatus === 'scanning' && <p style={{color: 'var(--primary-light)'}}>Locating QR Code...</p>}
-                            {qrStatus === 'success' && <p style={{color: 'var(--success)', fontWeight:'bold'}}>✅ QR Verified! Checked In.</p>}
-                            {qrStatus.startsWith('error') && <p style={{color: 'var(--error)'}}>❌ {qrStatus.split('error: ')[1]}</p>}
-                        </div>
-
-                        <div className={styles.modalActions}>
-                            <button className={styles.cancelBtn} onClick={() => setShowQRScanner(false)} style={{width: '100%'}}>Cancel</button>
-                        </div>
-                    </div>
-                </div>
-            )}
+            <QRScannerModal
+                showQRScanner={showQRScanner}
+                setShowQRScanner={setShowQRScanner}
+                webcamRef={webcamRef}
+                qrStatus={qrStatus}
+            />
 
             {/* LIVE BIO SCANNER MODAL */}
-            {showScanner && (
-                <div className={styles.modalOverlay}>
-                    <div className={`${styles.modalContent} ${styles.scannerModal} glass-panel`}>
-                        <h2>Bio-Metric Check-In</h2>
-                        <p style={{marginBottom: '16px', color: 'var(--text-secondary)'}}>Scanning face and triangulating coordinates...</p>
-                        
-                        <div className={styles.webcamWrapper}>
-                            <Webcam
-                                audio={false}
-                                ref={webcamRef}
-                                screenshotFormat="image/jpeg"
-                                videoConstraints={{ facingMode: "user" }}
-                                className={styles.webcamVideo}
-                            />
-                            <div className={styles.scannerLine}></div>
-                        </div>
+            <BioScannerModal
+                showScanner={showScanner}
+                setShowScanner={setShowScanner}
+                webcamRef={webcamRef}
+                scanStatus={scanStatus}
+                handleFacialScanAndGeo={handleFacialScanAndGeo}
+            />
 
-                        <div className={styles.scanStatusBox}>
-                            {scanStatus === '' && <p>Align face in frame, allow location access, and hold still.</p>}
-                            {scanStatus === 'verifying' && <p style={{color: 'var(--warning)'}}>Verifying ML Identity and GPS Math...</p>}
-                            {scanStatus === 'success' && <p style={{color: 'var(--success)', fontWeight:'bold'}}>✅ Verified! Lightning Check-In Complete.</p>}
-                            {scanStatus.startsWith('loading') && <p style={{color: 'var(--neo)'}}>Downloading Deep Learning weights...</p>}
-                            {scanStatus.startsWith('error') && <p style={{color: 'var(--error)'}}>❌ {scanStatus.split('error: ')[1]}</p>}
-                        </div>
-
-                        <div className={styles.modalActions}>
-                            <button className={styles.cancelBtn} onClick={() => setShowScanner(false)}>Cancel</button>
-                            <button 
-                                className={styles.saveBtn} 
-                                onClick={handleFacialScanAndGeo}
-                                disabled={scanStatus === 'verifying' || scanStatus === 'success'}
-                                style={{ background: 'var(--neo)', color: '#000', fontWeight: '800' }}
-                            >
-                                {scanStatus === 'verifying' ? 'Extracting Bio-Data...' : 'Extract Bio-Data'}
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            )}
-
-            {/* ═══ ONBOARDING POPUP (Mobile, First Visit) ═══ */}
-            {showOnboarding && (
-                <div className={styles.onboardingOverlay} onClick={() => { setShowOnboarding(false); localStorage.setItem('dashboard_onboarding_seen', 'true'); }}>
-                    <div className={styles.onboardingCard} onClick={(e) => e.stopPropagation()}>
-                        <div className={styles.onboardingHeader}>
-                            <span className={styles.onboardingEmoji}>👋</span>
-                            <h3 className={styles.onboardingTitle}>Welcome to Your Dashboard!</h3>
-                            <p className={styles.onboardingSubtitle}>Here&apos;s how to navigate</p>
-                        </div>
-                        <div className={styles.onboardingTips}>
-                            <div className={styles.onboardingTip}>
-                                <div className={styles.onboardingTipIcon}>⚡</div>
-                                <div className={styles.onboardingTipText}>
-                                    <span className={styles.onboardingTipTitle}>Quick Access Dock</span>
-                                    <span className={styles.onboardingTipDesc}>Tap &quot;Quick Access&quot; to jump to any page instantly</span>
-                                </div>
-                            </div>
-                            <div className={styles.onboardingTip}>
-                                <div className={styles.onboardingTipIcon}>🧭</div>
-                                <div className={styles.onboardingTipText}>
-                                    <span className={styles.onboardingTipTitle}>Bottom Navigation</span>
-                                    <span className={styles.onboardingTipDesc}>Use the bottom bar for Home, Subjects, Upload, AI &amp; Community</span>
-                                </div>
-                            </div>
-                            <div className={styles.onboardingTip}>
-                                <div className={styles.onboardingTipIcon}>🏠</div>
-                                <div className={styles.onboardingTipText}>
-                                    <span className={styles.onboardingTipTitle}>Your Hub Lives Here</span>
-                                    <span className={styles.onboardingTipDesc}>Profile, class data, grades &amp; attendance — all in one place</span>
-                                </div>
-                            </div>
-                        </div>
-                        <button 
-                            className={styles.onboardingBtn} 
-                            onClick={() => { setShowOnboarding(false); localStorage.setItem('dashboard_onboarding_seen', 'true'); }}
-                        >
-                            Got it! 🚀
-                        </button>
-                    </div>
-                </div>
-            )}
+            {/* ONBOARDING POPUP */}
+            <OnboardingPopup
+                showOnboarding={showOnboarding}
+                setShowOnboarding={setShowOnboarding}
+            />
         </div>
     );
 }
