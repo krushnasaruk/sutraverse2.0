@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { Expo } from 'expo-server-sdk';
 import { collection, getDocs } from 'firebase/firestore';
 import { db } from '@/database/config/firebase';
+import { adminDb } from '@/database/config/firebaseAdmin';
 import { requireUser } from '@/backend/middlewares/requireUser';
 
 
@@ -23,8 +24,22 @@ export const handlePost_notificationssend = async (request) => {
       return NextResponse.json({ error: 'Title and body are required' }, { status: 400 });
     }
 
-    // 1. Fetch all users from Firestore
-    const usersSnap = await getDocs(collection(db, 'users'));
+    // Save to Firestore notifications collection
+    try {
+        await adminDb.collection('notifications').add({
+            title,
+            body,
+            type: 'alert',
+            targetRoute: '/news',
+            recipientId: 'global',
+            timestamp: new Date()
+        });
+    } catch (dbErr) {
+        console.error('Failed to save notification to Firestore:', dbErr);
+    }
+
+    // 1. Fetch all users from Firestore using Admin SDK for high performance
+    const usersSnap = await adminDb.collection('users').get();
     const pushTokens = [];
     
     usersSnap.forEach((doc) => {
@@ -50,18 +65,19 @@ export const handlePost_notificationssend = async (request) => {
       });
     }
 
-    // 3. Chunk and send the messages
+    // 3. Chunk and send the messages in parallel to avoid blocking
     const chunks = expo.chunkPushNotifications(messages);
-    const tickets = [];
-    
-    for (let chunk of chunks) {
-      try {
-        let ticketChunk = await expo.sendPushNotificationsAsync(chunk);
-        tickets.push(...ticketChunk);
-      } catch (error) {
-        console.error('Error sending push chunk:', error);
-      }
-    }
+    const results = await Promise.all(
+      chunks.map(async (chunk) => {
+        try {
+          return await expo.sendPushNotificationsAsync(chunk);
+        } catch (error) {
+          console.error('Error sending push chunk:', error);
+          return [];
+        }
+      })
+    );
+    const tickets = results.flat();
 
     return NextResponse.json({ success: true, sentCount: messages.length, tickets });
   } catch (error) {
