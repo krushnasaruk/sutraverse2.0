@@ -1,0 +1,291 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // Helper function to check if user is admin
+    function isAdmin() {
+      return request.auth != null && 
+        exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.isAdmin == true;
+    }
+
+    // Helper function to check if user is teacher
+    function isTeacher() {
+      return request.auth != null && 
+        exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'teacher';
+    }
+
+    match /files/{fileId} {
+      allow read: if request.auth != null;
+      allow create: if request.auth != null && (
+        isAdmin() || (
+          request.resource.data.status == 'pending' &&
+          request.resource.data.uploaderUID == request.auth.uid
+        )
+      );
+      allow delete: if request.auth != null && (
+        request.auth.uid == resource.data.uploaderUID || isAdmin()
+      );
+      allow update: if request.auth != null && (
+        isAdmin() || (
+          request.auth.uid == resource.data.uploaderUID &&
+          request.resource.data.status == resource.data.status &&
+          request.resource.data.uploaderUID == resource.data.uploaderUID &&
+          !request.resource.data.diff(resource.data).affectedKeys().hasAny(['status', 'uploaderUID', 'downloads', 'rating', 'points'])
+        ) || (
+          request.resource.data.diff(resource.data).affectedKeys().hasOnly(['downloads', 'reported', 'reportsCount', 'isReported', 'reportCount'])
+        )
+      );
+    }
+
+    match /users/{userId} {
+      allow read: if request.auth != null;
+      allow create: if request.auth != null && request.auth.uid == userId &&
+        (!request.resource.data.keys().contains('isAdmin') || request.resource.data.isAdmin == false) &&
+        (!request.resource.data.keys().contains('role') || request.resource.data.role == 'student');
+      
+      allow update: if request.auth != null && (
+        isAdmin() || (
+          request.auth.uid == userId &&
+          !request.resource.data.diff(resource.data).affectedKeys().hasAny(['isAdmin', 'role', 'assignments'])
+        )
+      );
+      
+      allow delete: if isAdmin();
+    }
+
+    match /branding/{doc} {
+      allow read: if request.auth != null;
+      allow write: if isAdmin();
+    }
+
+    match /posts/{postId} {
+      allow read: if request.auth != null;
+      allow create: if request.auth != null && request.resource.data.authorId == request.auth.uid;
+      allow update: if request.auth != null && (
+        isAdmin() || (
+          request.auth.uid == resource.data.authorId &&
+          !request.resource.data.diff(resource.data).affectedKeys().hasAny(['authorId', 'authorEmail'])
+        ) ||
+        request.resource.data.diff(resource.data).affectedKeys().hasOnly(['likes', 'commentsCount'])
+      );
+      allow delete: if request.auth != null && (request.auth.uid == resource.data.authorId || isAdmin());
+    }
+
+    match /comments/{commentId} {
+      allow read: if request.auth != null;
+      allow create: if request.auth != null && request.resource.data.authorId == request.auth.uid;
+      allow update, delete: if request.auth != null && (
+        isAdmin() || (
+          request.auth.uid == resource.data.authorId &&
+          !request.resource.data.diff(resource.data).affectedKeys().hasAny(['authorId', 'authorEmail'])
+        )
+      );
+    }
+
+    match /clubs/{clubId} {
+      allow read: if request.auth != null;
+      allow create: if request.auth != null && (request.resource.data.adminId == request.auth.uid || isAdmin());
+      allow update, delete: if request.auth != null && (request.auth.uid == resource.data.adminId || isAdmin());
+    }
+
+    match /news/{newsId} {
+      allow read: if request.auth != null;
+      allow write: if isAdmin();
+    }
+
+    match /subjects/{subjectId} {
+      allow read: if request.auth != null;
+      allow write: if isAdmin();
+    }
+
+    match /youtube/{videoId} {
+      allow read: if request.auth != null;
+      allow write: if isAdmin();
+    }
+
+    match /youtube_lectures/{videoId} {
+      allow read: if request.auth != null;
+      allow write: if isAdmin();
+    }
+
+    match /roster/{email} {
+      allow read: if request.auth != null;
+      allow write: if isAdmin();
+    }
+    
+    match /notifications/{notificationId} {
+      allow read: if request.auth != null && (
+        !resource.data.keys().contains('recipientId') ||
+        resource.data.recipientId == null ||
+        resource.data.recipientId == "" ||
+        resource.data.recipientId == "global" ||
+        resource.data.recipientId == request.auth.uid ||
+        resource.data.recipientEmail == request.auth.token.email ||
+        isAdmin()
+      );
+      allow create: if request.auth != null;
+      allow update, delete: if request.auth != null && (
+        !resource.data.keys().contains('recipientId') ||
+        resource.data.recipientId == null ||
+        resource.data.recipientId == "" ||
+        resource.data.recipientId == "global" ||
+        request.auth.uid == resource.data.recipientId ||
+        resource.data.recipientEmail == request.auth.token.email ||
+        isAdmin()
+      );
+    }
+
+    // Additional collections for student portal/teacher portal/clubs
+
+    match /clubAnnouncements/{id} {
+      allow read: if request.auth != null;
+      allow create: if request.auth != null && (request.resource.data.authorId == request.auth.uid || isAdmin());
+      allow update, delete: if request.auth != null && (resource.data.authorId == request.auth.uid || isAdmin());
+    }
+
+    match /clubQA/{id} {
+      allow read: if request.auth != null;
+      allow create: if request.auth != null && request.resource.data.userId == request.auth.uid;
+      allow update: if request.auth != null;
+      allow delete: if request.auth != null && (resource.data.userId == request.auth.uid || isAdmin());
+    }
+
+    match /clubEvents/{id} {
+      allow read: if request.auth != null;
+      allow create, delete: if isAdmin() || (request.auth != null && exists(/databases/$(database)/documents/clubs/$(request.resource.data.clubId)) && get(/databases/$(database)/documents/clubs/$(request.resource.data.clubId)).data.adminId == request.auth.uid);
+      allow update: if request.auth != null;
+    }
+
+    match /clubProjects/{id} {
+      allow read: if request.auth != null;
+      allow create: if request.auth != null && request.resource.data.createdBy == request.auth.uid;
+      allow update: if request.auth != null;
+      allow delete: if request.auth != null && (resource.data.createdBy == request.auth.uid || isAdmin());
+    }
+
+    match /clubApplications/{id} {
+      allow read: if request.auth != null && (
+        resource.data.userId == request.auth.uid || 
+        (exists(/databases/$(database)/documents/clubs/$(resource.data.clubId)) && get(/databases/$(database)/documents/clubs/$(resource.data.clubId)).data.adminId == request.auth.uid) || 
+        isAdmin()
+      );
+      allow create: if request.auth != null && request.resource.data.userId == request.auth.uid;
+      allow update: if request.auth != null && (
+        (exists(/databases/$(database)/documents/clubs/$(resource.data.clubId)) && get(/databases/$(database)/documents/clubs/$(resource.data.clubId)).data.adminId == request.auth.uid) || 
+        isAdmin()
+      );
+      allow delete: if request.auth != null && (
+        resource.data.userId == request.auth.uid || 
+        (exists(/databases/$(database)/documents/clubs/$(resource.data.clubId)) && get(/databases/$(database)/documents/clubs/$(resource.data.clubId)).data.adminId == request.auth.uid) || 
+        isAdmin()
+      );
+    }
+
+    match /clubGallery/{id} {
+      allow read: if request.auth != null;
+      allow create: if request.auth != null && (
+        (exists(/databases/$(database)/documents/clubs/$(request.resource.data.clubId)) && get(/databases/$(database)/documents/clubs/$(request.resource.data.clubId)).data.adminId == request.auth.uid) || 
+        isAdmin()
+      );
+      allow delete: if request.auth != null && (
+        (exists(/databases/$(database)/documents/clubs/$(request.resource.data.clubId)) && get(/databases/$(database)/documents/clubs/$(request.resource.data.clubId)).data.adminId == request.auth.uid) || 
+        isAdmin()
+      );
+    }
+
+    match /clubChat/{id} {
+      allow read: if request.auth != null && (
+        (exists(/databases/$(database)/documents/clubs/$(resource.data.clubId)) && 
+         (request.auth.uid in get(/databases/$(database)/documents/clubs/$(resource.data.clubId)).data.members || 
+          get(/databases/$(database)/documents/clubs/$(resource.data.clubId)).data.adminId == request.auth.uid)) || 
+        isAdmin()
+      );
+      allow create: if request.auth != null && request.resource.data.senderId == request.auth.uid;
+      allow update, delete: if request.auth != null && (resource.data.senderId == request.auth.uid || isAdmin());
+    }
+
+    match /attendance/{id} {
+      allow read: if request.auth != null && (
+        resource.data.classId == get(/databases/$(database)/documents/users/$(request.auth.uid)).data.classId ||
+        isTeacher() ||
+        isAdmin()
+      );
+      allow write: if isAdmin() || isTeacher();
+    }
+
+    match /submissions/{id} {
+      allow read: if request.auth != null && (resource.data.studentEmail == request.auth.token.email || isTeacher() || isAdmin());
+      allow create: if request.auth != null && request.resource.data.studentEmail == request.auth.token.email;
+      allow update: if request.auth != null && (isTeacher() || isAdmin() || (resource.data.studentEmail == request.auth.token.email && request.resource.data.studentEmail == resource.data.studentEmail && !request.resource.data.diff(resource.data).affectedKeys().hasAny(['marks', 'gradedAt'])));
+      allow delete: if request.auth != null && (resource.data.studentEmail == request.auth.token.email || isAdmin());
+    }
+
+    match /mcqSubmissions/{id} {
+      allow read: if request.auth != null && (resource.data.studentEmail == request.auth.token.email || isTeacher() || isAdmin());
+      allow create: if request.auth != null && request.resource.data.studentEmail == request.auth.token.email;
+      allow update: if request.auth != null && (isTeacher() || isAdmin());
+      allow delete: if request.auth != null && (resource.data.studentEmail == request.auth.token.email || isAdmin());
+    }
+
+    match /deadlines/{id} {
+      allow read: if request.auth != null;
+      allow write: if isAdmin() || isTeacher();
+    }
+
+    match /mcqTests/{id} {
+      allow read: if request.auth != null;
+      allow write: if isAdmin() || isTeacher();
+    }
+
+    match /classDiary/{id} {
+      allow read: if request.auth != null;
+      allow write: if isAdmin() || isTeacher();
+    }
+
+    match /feedbackForms/{id} {
+      allow read: if request.auth != null;
+      allow write: if isAdmin() || isTeacher();
+    }
+
+    match /feedbackResponses/{id} {
+      allow read: if request.auth != null && (resource.data.studentEmail == request.auth.token.email || isTeacher() || isAdmin());
+      allow create: if request.auth != null && request.resource.data.studentEmail == request.auth.token.email;
+      allow update, delete: if isAdmin() || isTeacher();
+    }
+
+    match /roomBookings/{id} {
+      allow read: if request.auth != null;
+      allow write: if request.auth != null && (isTeacher() || isAdmin());
+    }
+
+    match /equipmentRequests/{id} {
+      allow read: if request.auth != null;
+      allow write: if request.auth != null && (isTeacher() || isAdmin());
+    }
+
+    match /liveCheckins/{id} {
+      allow read: if request.auth != null && (resource.data.studentEmail == request.auth.token.email || isTeacher() || isAdmin());
+      allow create: if request.auth != null && request.resource.data.studentEmail == request.auth.token.email;
+      allow write: if isAdmin() || isTeacher();
+    }
+
+    match /announcements/{id} {
+      allow read: if request.auth != null;
+      allow write: if isAdmin() || isTeacher();
+    }
+
+    match /leaveRequests/{id} {
+      allow read: if request.auth != null && (resource.data.studentEmail == request.auth.token.email || isTeacher() || isAdmin());
+      allow create: if request.auth != null && request.resource.data.studentEmail == request.auth.token.email;
+      allow update: if request.auth != null && (isTeacher() || isAdmin() || resource.data.studentEmail == request.auth.token.email);
+      allow delete: if request.auth != null && (resource.data.studentEmail == request.auth.token.email || isAdmin());
+    }
+
+    // Catch-all: block all other collections by default (Least Privilege)
+    match /{document=**} {
+      allow read, write: if false; 
+    }
+  }
+}
