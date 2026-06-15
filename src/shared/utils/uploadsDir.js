@@ -1,5 +1,6 @@
 import path from 'path';
 import os from 'os';
+import fs from 'fs';
 
 /**
  * Returns the persistent uploads directory path.
@@ -25,9 +26,9 @@ export function getUploadsDir() {
     // Use true system home directory (os.userInfo().homedir) as it is unaffected by Passenger's HOME override
     let homeDir;
     try {
-        homeDir = require('os').userInfo().homedir;
+        homeDir = os.userInfo().homedir;
     } catch (e) {
-        homeDir = require('os').homedir();
+        homeDir = os.homedir();
     }
 
     const possibleNames = ['user-uploads', 'user uploads', 'user_uploads', 'uploads'];
@@ -35,23 +36,23 @@ export function getUploadsDir() {
     for (const name of possibleNames) {
         // 1. In home dir (Primary persistent location)
         const p3 = path.join(homeDir, name);
-        if (require('fs').existsSync(p3)) return p3;
+        if (fs.existsSync(p3)) return p3;
 
         // 2. Adjacent to app dir (Secondary persistent location)
         const p2 = path.join(appDir, '..', name);
-        if (require('fs').existsSync(p2)) return p2;
+        if (fs.existsSync(p2)) return p2;
 
         // 3. Inside app dir
         const p1 = path.join(appDir, name);
-        if (require('fs').existsSync(p1)) return p1;
+        if (fs.existsSync(p1)) return p1;
 
         // 4. In public/
         const p4 = path.join(appDir, 'public', name);
-        if (require('fs').existsSync(p4)) return p4;
+        if (fs.existsSync(p4)) return p4;
 
         // 5. Standalone public/
         const p5 = path.join(appDir, '..', '..', 'public', name);
-        if (require('fs').existsSync(p5)) return p5;
+        if (fs.existsSync(p5)) return p5;
     }
 
     // Default fallback

@@ -198,9 +198,39 @@ export const handleGet_downloadsfilepath = async (req, ctx) => {
         
         if (isDevOrLocal) {
             const productionDomain = process.env.PRODUCTION_URL || 'https://sutraverse.co.in';
-            const redirectUrl = `${productionDomain}/api/downloads/${encodeURIComponent(relativePath).replace(/%2F/g, '/')}`;
-            console.log(`Local file not found. Redirecting to production fallback: ${redirectUrl}`);
-            return NextResponse.redirect(redirectUrl, 307);
+            const searchParams = req.nextUrl?.searchParams?.toString() || '';
+            const querySuffix = searchParams ? `?${searchParams}` : '';
+            const proxyUrl = `${productionDomain}/api/downloads/${encodeURIComponent(relativePath).replace(/%2F/g, '/')}${querySuffix}`;
+            console.log(`[downloads] Local file not found. Proxying from production: ${proxyUrl}`);
+            
+            try {
+                const proxyRes = await fetch(proxyUrl, {
+                    redirect: 'follow',
+                    headers: {
+                        'User-Agent': 'Sutraverse-Dev-Proxy/1.0',
+                    },
+                });
+                
+                if (!proxyRes.ok) {
+                    console.warn(`[downloads] Production proxy returned ${proxyRes.status} for: ${relativePath}`);
+                    return new NextResponse(`File not available (production returned ${proxyRes.status})`, { status: proxyRes.status });
+                }
+                
+                const contentType = proxyRes.headers.get('content-type') || 'application/octet-stream';
+                const contentDisposition = proxyRes.headers.get('content-disposition') || `attachment; filename="${filenameOnly}"`;
+                const contentLength = proxyRes.headers.get('content-length');
+                
+                const response = new NextResponse(proxyRes.body);
+                response.headers.set('Content-Type', contentType);
+                response.headers.set('Content-Disposition', contentDisposition);
+                if (contentLength) response.headers.set('Content-Length', contentLength);
+                response.headers.set('X-Content-Type-Options', 'nosniff');
+                response.headers.set('X-Served-By', 'dev-proxy');
+                return response;
+            } catch (proxyErr) {
+                console.error(`[downloads] Production proxy failed:`, proxyErr.message);
+                return new NextResponse(`File not found locally and production proxy failed: ${proxyErr.message}`, { status: 502 });
+            }
         }
 
         // Collect debug info only in non-production environments
