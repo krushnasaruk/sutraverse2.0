@@ -10,6 +10,9 @@ import styles from './page.module.css';
 import Link from 'next/link';
 import { IconShield, IconCheck, IconX, IconEye, IconLock, IconFolder, IconUser, IconCalendar, IconFlag, IconPen } from '@/frontend/components/ui/Icons';
 import YouTubeAdmin from './YouTubeAdmin';
+import UserAdmin from './components/UserAdmin';
+import BrandingAdmin from './components/BrandingAdmin';
+import BroadcastSection from './components/BroadcastSection';
 
 // Add your admin email(s) here
 const ADMIN_EMAILS = ['sutraverse11@gmail.com'];
@@ -376,13 +379,18 @@ export default function AdminPage() {
             
             const approvedNews = newsList.find(n => n.id === newsId);
             if (approvedNews) {
+                const token = auth.currentUser ? await auth.currentUser.getIdToken() : '';
                 fetch('/api/notifications/generate-and-send', {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
+                    headers: { 
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
                     body: JSON.stringify({
                         contentType: 'Campus Notice',
                         contentTitle: approvedNews.title,
                         contentDetails: approvedNews.content,
+                        contentId: newsId
                     })
                 }).catch(e => console.error('Failed to trigger notification', e));
             }
@@ -498,12 +506,17 @@ export default function AdminPage() {
             
             const approvedFile = files.find(f => f.id === fileId);
             if (approvedFile) {
+                const token = auth.currentUser ? await auth.currentUser.getIdToken() : '';
                 fetch('/api/notifications/generate-and-send', {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
+                    headers: { 
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
                     body: JSON.stringify({
                         contentType: approvedFile.type || 'Study Material',
                         contentTitle: `${approvedFile.subject || 'Subject'} - ${approvedFile.title}`,
+                        contentId: fileId
                     })
                 }).catch(e => console.error('Failed to trigger notification', e));
             }
@@ -660,9 +673,13 @@ export default function AdminPage() {
         
         setActionLoading('broadcast');
         try {
+            const token = auth.currentUser ? await auth.currentUser.getIdToken() : '';
             const res = await fetch('/api/notifications/send', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: { 
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
                 body: JSON.stringify({ title: broadcastTitle, body: broadcastBody })
             });
             const data = await res.json();
@@ -988,62 +1005,17 @@ export default function AdminPage() {
                         )}
                     </div>
                 ) : tab === 'users' ? (
-                    <div style={{marginTop: '20px'}}>
-                        <div style={{marginBottom: '20px'}}>
-                            <input 
-                                type="text" 
-                                placeholder="Search by name or email..." 
-                                value={searchQuery}
-                                onChange={(e) => setSearchQuery(e.target.value)}
-                                className={styles.searchBar}
-                            />
-                        </div>
-                        {loading ? (
-                            <div className={styles.loadingState}>Fetching active accounts...</div>
-                        ) : usersList.length === 0 ? (
-                            <div className={styles.emptyState}>No users found.</div>
-                        ) : (
-                            <div className={styles.fileList}>
-                                {usersList
-                                    .filter(u => `${u.name||''} ${u.email||''}`.toLowerCase().includes(searchQuery.toLowerCase()))
-                                    .map(u => (
-                                    <div key={u.id} className={styles.fileCard} style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center'}}>
-                                        <div className={styles.fileInfo}>
-                                            <div className={styles.fileTitle}>{u.name || 'No Name Set'}</div>
-                                            <div className={styles.fileMeta}>
-                                                <span className={styles.metaTag}><IconUser size={14} /> {u.email}</span>
-                                                <span className={styles.metaTag} style={{color: u.role === 'teacher' ? 'var(--neo)' : 'var(--text-secondary)'}}>Role: {u.role || 'student'}</span>
-                                                {u.role === 'student' && u.classId && <span className={styles.metaTag}>Class: {u.classId}</span>}
-                                                {u.isAdmin && <span className={styles.metaTag} style={{color: 'var(--primary)'}}>★ Admin</span>}
-                                            </div>
-                                            {u.role === 'teacher' && u.assignments?.length > 0 && (
-                                                <div style={{marginTop: '8px', fontSize: '0.8rem', color: 'var(--text-secondary)'}}>
-                                                    {u.assignments.map((a, i) => (
-                                                        <div key={i} style={{display: 'flex', gap: '8px', alignItems: 'center', marginBottom:'4px'}}>
-                                                            <span>• {a.classId} ({a.subject}) {a.isTG && <strong style={{color:'var(--primary)'}}>[TG]</strong>} {a.isClassTeacher && <strong style={{color:'var(--error)'}}>[Class Teacher]</strong>} {a.isHOD && <strong style={{color:'var(--success)'}}>[HOD]</strong>}</span>
-                                                            <button 
-                                                                onClick={() => removeTeacherAssignment(u.id, i)}
-                                                                style={{background:'none', border:'none', color:'var(--error)', cursor:'pointer', fontSize:'0.75rem'}}
-                                                            >✕</button>
-                                                        </div>
-                                                    ))}
-                                                </div>
-                                            )}
-                                        </div>
-                                        <div className={styles.fileActions} style={{flexDirection: 'column', gap: '6px', alignItems: 'flex-end'}}>
-                                            <button 
-                                                className={`${styles.actionBtn} ${styles.editBtn}`}
-                                                onClick={() => openEditUserModal(u)}
-                                                disabled={actionLoading === u.id}
-                                            >
-                                                <IconPen size={16} /> Edit Profile & Roles
-                                            </button>
-                                        </div>
-                                    </div>
-                                ))}
-                            </div>
-                        )}
-                    </div>
+                    <UserAdmin
+                        usersList={usersList}
+                        setUsersList={setUsersList}
+                        loading={loading}
+                        searchQuery={searchQuery}
+                        setSearchQuery={setSearchQuery}
+                        openEditUserModal={openEditUserModal}
+                        actionLoading={actionLoading}
+                        setActionLoading={setActionLoading}
+                        removeTeacherAssignment={removeTeacherAssignment}
+                    />
                 ) : tab === 'youtube' ? (
                     <YouTubeAdmin />
                 ) : tab === 'branding' ? (
