@@ -7,6 +7,10 @@
     "icon": "./assets/images/icon.png",
     "scheme": "sutras",
     "userInterfaceStyle": "automatic",
+    "notification": {
+      "icon": "./assets/images/android-icon-monochrome.png",
+      "color": "#4f46e5"
+    },
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.krushnasaruk.sutras"

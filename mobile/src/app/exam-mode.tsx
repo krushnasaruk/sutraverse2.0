@@ -6,13 +6,14 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { useTheme } from '../context/ThemeContext';
 import { useAuth } from '../context/AuthContext';
 import { BlurView } from 'expo-blur';
+import { BASE_URL } from '../config';
 
 const { width: SW } = Dimensions.get('window');
 
 export default function ExamModeScreen() {
   const { colors, theme } = useTheme();
   const router = useRouter();
-  const { user } = useAuth();
+  const { user, getToken } = useAuth();
 
   const scrollY = useRef(new Animated.Value(0)).current;
 
@@ -48,9 +49,13 @@ export default function ExamModeScreen() {
     }
     setIsGenerating(true);
     try {
-      const response = await fetch('https://sutraverse.co.in/api/generate-study-guide', {
+      const token = await getToken();
+      const response = await fetch(`${BASE_URL}/api/generate-study-guide`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
         body: JSON.stringify({
           year: userYear,
           branch: userBranch,

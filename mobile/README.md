@@ -1,56 +1,92 @@
-# Welcome to your Expo app 👋
+# Sutras Mobile App (Android & iOS)
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+Sutras is a React Native mobile application built using **Expo** and **Expo Router**. It serves as the mobile companion to the Sutras platform, featuring AI-powered tools, community features, and student resources.
 
-## Get started
+## 🚀 Quick Start
 
-1. Install dependencies
+### 1. Prerequisites
+Ensure you have the following installed:
+- [Node.js](https://nodejs.org/) (v18 or newer)
+- [Android Studio](https://developer.android.com/studio) (for Android development)
+- [Java Development Kit (JDK)](https://adoptium.net/) (v17 recommended for React Native)
+- [Watchman](https://facebook.github.io/watchman/docs/install) (for macOS users)
 
-   ```bash
-   npm install
-   ```
-
-2. Start the app
-
-   ```bash
-   npx expo start
-   ```
-
-In the output, you'll find options to open the app in a
-
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
-
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
-
-## Get a fresh project
-
-When you're ready, run:
-
+### 2. Installation
+Navigate to the mobile directory and install dependencies:
 ```bash
-npm run reset-project
+cd mobile
+npm install
 ```
 
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
+### 3. Running the App
+Start the Expo development server:
+```bash
+npx expo start
+```
+- Press **`a`** to open the app in an Android emulator.
+- Press **`i`** to open the app in an iOS simulator.
+- Use the **Expo Go** app on your physical device to scan the QR code.
 
-### Other setup steps
+---
 
-- To set up ESLint for linting, run `npx expo lint`, or follow our guide on ["Using ESLint and Prettier"](https://docs.expo.dev/guides/using-eslint/)
-- If you'd like to set up unit testing, follow our guide on ["Unit Testing with Jest"](https://docs.expo.dev/develop/unit-testing/)
-- Learn more about the TypeScript setup in this template in our guide on ["Using TypeScript"](https://docs.expo.dev/guides/typescript/)
+## 🛠️ Android Studio Integration
 
-## Learn more
+To work on the native Android code or create production builds, you may need to use Android Studio.
 
-To learn more about developing your project with Expo, look at the following resources:
+### 1. Generate Native Files
+If the `android` folder is missing, generate it using:
+```bash
+npx expo prebuild
+```
 
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
+### 2. Opening in Android Studio
+1. Open **Android Studio**.
+2. Select **"Open an existing project"**.
+3. Navigate to the `mobile/android` directory and select it.
+4. Wait for Gradle to finish syncing.
 
-## Join the community
+### 3. Running from Android Studio
+Once the project is loaded, you can run the app directly from the "Run" button in Android Studio, selecting your target device/emulator.
 
-Join our community of developers creating universal apps.
+---
 
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+## 📁 Project Structure
+
+- `src/app/` - File-based routing (Expo Router).
+- `src/components/` - Reusable UI components.
+- `src/context/` - Global state (Auth, etc.).
+- `src/lib/` - Service initializations (Firebase, API).
+- `assets/` - Images, fonts, and splash screen resources.
+
+## 🎨 Design System
+
+The app follows a modern UI/UX design inspired by apps like Blinkit and Unstop. 
+For detailed information on colors, typography, and component patterns, see:
+👉 [**Design System Guide (README_DESIGN.md)**](./README_DESIGN.md)
+
+---
+
+## 🛡️ Features
+
+- **AI Copilot:** Integration with Google Gemini for smart assistance.
+- **Firebase Auth:** Secure user authentication.
+- **Firestore:** Real-time database for community and notifications.
+- **Expo Notifications:** Push notification support.
+- **File Sharing:** Support for PDFs and study guides.
+
+## 📝 Troubleshooting
+
+- **Gradle Sync Issues:** Ensure your `local.properties` file in the `android` folder has the correct `sdk.dir` path.
+- **Clear Cache:** If you face weird build errors, try:
+  ```bash
+  npx expo start -c
+  ```
+- **Android Build Failure:** Try cleaning the gradle build:
+  ```bash
+  cd android && ./gradlew clean && cd ..
+  ```
+
+---
+
+## 📄 License
+Part of the Sutras College Project.

@@ -20,7 +20,7 @@ const BADGES = [
 const MENU_ITEMS = [
   { icon: 'cloud-download', label: 'My Downloads', color: '#34c759', id: 'downloads', route: '/(tabs)/downloads' },
   { icon: 'trophy', label: 'Campus Leaderboard', color: '#ffcc00', id: 'ranks', route: '/leaderboard' },
-  { icon: 'notifications', label: 'Notice Board', color: '#ff3b30', id: 'notif', route: '/news' },
+  { icon: 'notifications', label: 'Notifications', color: '#ff3b30', id: 'notif', route: '/notifications' },
   { icon: 'shield-checkmark', label: 'Privacy & Security', color: '#34c759', id: 'privacy' },
   { icon: 'help-circle', label: 'Help & Support', color: '#0066cc', id: 'help' },
 ];
@@ -123,9 +123,18 @@ export default function ProfileScreen() {
           )}
         </Animated.View>
         <Text style={[styles.topTitle, { color: colors.textPrimary }]}>Profile</Text>
-        <TouchableOpacity onPress={toggleTheme} style={[styles.themeBtn, { backgroundColor: colors.bgCard, borderColor: colors.dividerSoft, borderWidth: 1 }]} activeOpacity={0.7}>
-          <Ionicons name={theme === 'dark' ? "sunny-outline" : "moon-outline"} size={18} color={colors.textPrimary} />
-        </TouchableOpacity>
+        <View style={{ flexDirection: 'row', gap: 8 }}>
+          <TouchableOpacity 
+            onPress={() => router.push('/notifications' as any)} 
+            style={[styles.themeBtn, { backgroundColor: colors.bgCard, borderColor: colors.dividerSoft, borderWidth: 1 }]} 
+            activeOpacity={0.7}
+          >
+            <Ionicons name="notifications-outline" size={18} color={colors.textPrimary} />
+          </TouchableOpacity>
+          <TouchableOpacity onPress={toggleTheme} style={[styles.themeBtn, { backgroundColor: colors.bgCard, borderColor: colors.dividerSoft, borderWidth: 1 }]} activeOpacity={0.7}>
+            <Ionicons name={theme === 'dark' ? "sunny-outline" : "moon-outline"} size={18} color={colors.textPrimary} />
+          </TouchableOpacity>
+        </View>
       </View>
 
       <Animated.ScrollView

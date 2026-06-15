@@ -3,10 +3,11 @@ import { StyleSheet, Text, View, ScrollView, TouchableOpacity, ActivityIndicator
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
-import { collection, getDocs, query, orderBy, limit } from 'firebase/firestore';
-import { db } from '../lib/firebase';
+import { collection, getDocs, query, orderBy, limit, where } from 'firebase/firestore';
+import { db, auth } from '../lib/firebase';
 import { useTheme } from '../context/ThemeContext';
 import { BlurView } from 'expo-blur';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 interface Notification {
   id: string;
@@ -15,6 +16,8 @@ interface Notification {
   type: 'news' | 'update' | 'alert' | 'info';
   createdAt: string;
   read: boolean;
+  targetRoute?: string;
+  pinned?: boolean;
 }
 
 const TYPE_CONFIG: Record<string, { icon: string; color: string; bg: string; label: string }> = {
@@ -57,35 +60,88 @@ export default function NotificationsScreen() {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
 
+  // AsyncStorage persistent states
+  const [readIds, setReadIds] = useState<string[]>([]);
+  const [pinnedIds, setPinnedIds] = useState<string[]>([]);
+  const [deletedIds, setDeletedIds] = useState<string[]>([]);
+
+  const loadLocalStates = async () => {
+    try {
+      const [savedRead, savedPinned, savedDeleted] = await Promise.all([
+        AsyncStorage.getItem('sutras_read_notifications'),
+        AsyncStorage.getItem('sutras_pinned_notifications'),
+        AsyncStorage.getItem('sutras_deleted_notifications'),
+      ]);
+      if (savedRead) setReadIds(JSON.parse(savedRead));
+      if (savedPinned) setPinnedIds(JSON.parse(savedPinned));
+      if (savedDeleted) setDeletedIds(JSON.parse(savedDeleted));
+    } catch (err) {
+      console.error('Error loading AsyncStorage states:', err);
+    }
+  };
+
   const fetchNotifications = async () => {
     try {
-      const q = query(collection(db, 'news'), orderBy('createdAt', 'desc'), limit(30));
-      const snap = await getDocs(q);
-      const data: Notification[] = snap.docs.map(doc => {
+      const currentUser = auth.currentUser;
+      const userUid = currentUser ? currentUser.uid : '';
+      const userEmail = currentUser ? currentUser.email : '';
+
+      // Run parallel query lookups targeting global, uid-specific, and email-specific notifications.
+      // This complies with Firestore rules and avoids composite index requirements.
+      const [globalSnap, privateSnap, emailSnap] = await Promise.all([
+        getDocs(query(collection(db, 'notifications'), where('recipientId', '==', 'global'), limit(50))),
+        userUid ? getDocs(query(collection(db, 'notifications'), where('recipientId', '==', userUid), limit(50))) : Promise.resolve({ docs: [] }),
+        userEmail ? getDocs(query(collection(db, 'notifications'), where('recipientEmail', '==', userEmail), limit(50))) : Promise.resolve({ docs: [] })
+      ]);
+
+      const combinedDocs = [
+        ...globalSnap.docs,
+        ...((privateSnap && privateSnap.docs) || []),
+        ...((emailSnap && emailSnap.docs) || [])
+      ];
+
+      // De-duplicate documents by ID
+      const seenIds = new Set<string>();
+      const uniqueDocs = combinedDocs.filter(doc => {
+        if (seenIds.has(doc.id)) return false;
+        seenIds.add(doc.id);
+        return true;
+      });
+
+      const data: Notification[] = uniqueDocs.map(doc => {
         const d = doc.data();
+        let dateVal = '';
+        if (d.timestamp) {
+          dateVal = d.timestamp.toDate ? d.timestamp.toDate().toISOString() : new Date(d.timestamp).toISOString();
+        }
         return {
           id: doc.id,
           title: d.title || 'Notification',
-          body: d.content || d.body || d.description || '',
-          type: d.type || 'news',
-          createdAt: d.createdAt || '',
+          body: d.body || '',
+          type: d.type || 'info',
+          targetRoute: d.targetRoute || '',
+          createdAt: dateVal,
           read: false,
         };
       });
-      if (data.length > 0) {
-        setNotifications(data);
-      } else {
-        throw new Error('empty');
-      }
+
+      // Sort combined results by timestamp descending
+      data.sort((a, b) => {
+        const timeA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+        const timeB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+        return timeB - timeA;
+      });
+
+      setNotifications(data);
     } catch (err) {
-      // Empty state — no fake data
+      console.error('Error fetching notifications:', err);
       setNotifications([]);
     }
   };
 
   useEffect(() => {
     setLoading(true);
-    fetchNotifications().finally(() => setLoading(false));
+    Promise.all([loadLocalStates(), fetchNotifications()]).finally(() => setLoading(false));
   }, []);
 
   const onRefresh = async () => {
@@ -94,11 +150,81 @@ export default function NotificationsScreen() {
     setRefreshing(false);
   };
 
-  const markAsRead = (id: string) => {
-    setNotifications(prev => prev.map(n => n.id === id ? { ...n, read: true } : n));
+  const togglePin = async (id: string) => {
+    try {
+      let updatedPinned;
+      if (pinnedIds.includes(id)) {
+        updatedPinned = pinnedIds.filter(x => x !== id);
+      } else {
+        updatedPinned = [...pinnedIds, id];
+      }
+      setPinnedIds(updatedPinned);
+      await AsyncStorage.setItem('sutras_pinned_notifications', JSON.stringify(updatedPinned));
+    } catch (err) {
+      console.error('Error saving pinned state:', err);
+    }
   };
 
-  const unreadCount = notifications.filter(n => !n.read).length;
+  const deleteNotification = async (id: string) => {
+    try {
+      const updatedDeleted = [...deletedIds, id];
+      setDeletedIds(updatedDeleted);
+      await AsyncStorage.setItem('sutras_deleted_notifications', JSON.stringify(updatedDeleted));
+    } catch (err) {
+      console.error('Error deleting notification:', err);
+    }
+  };
+
+  const markAsRead = async (id: string) => {
+    if (readIds.includes(id)) return;
+    try {
+      const updatedRead = [...readIds, id];
+      setReadIds(updatedRead);
+      await AsyncStorage.setItem('sutras_read_notifications', JSON.stringify(updatedRead));
+    } catch (err) {
+      console.error('Error marking as read:', err);
+    }
+  };
+
+  const markAllAsRead = async () => {
+    try {
+      const allIds = notifications.map(n => n.id);
+      const uniqueRead = Array.from(new Set([...readIds, ...allIds]));
+      setReadIds(uniqueRead);
+      await AsyncStorage.setItem('sutras_read_notifications', JSON.stringify(uniqueRead));
+    } catch (err) {
+      console.error('Error marking all as read:', err);
+    }
+  };
+
+  const handleNotifPress = async (notif: Notification) => {
+    await markAsRead(notif.id);
+    if (notif.targetRoute) {
+      try {
+        router.push(notif.targetRoute as any);
+      } catch (err) {
+        console.error('Navigation failed:', err);
+      }
+    }
+  };
+
+  // Filter out deleted items, map unread/pinned flags, and sort pinned items to the top
+  const processedNotifications = notifications
+    .filter(n => !deletedIds.includes(n.id))
+    .map(n => ({
+      ...n,
+      read: readIds.includes(n.id),
+      pinned: pinnedIds.includes(n.id)
+    }))
+    .sort((a, b) => {
+      if (a.pinned && !b.pinned) return -1;
+      if (!a.pinned && b.pinned) return 1;
+      const timeA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+      const timeB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+      return timeB - timeA;
+    });
+
+  const unreadCount = processedNotifications.filter(n => !n.read).length;
 
   return (
     <View style={[styles.container, { backgroundColor: colors.bgMain }]}>
@@ -138,7 +264,7 @@ export default function NotificationsScreen() {
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color={colors.primary} />
         </View>
-      ) : notifications.length === 0 ? (
+      ) : processedNotifications.length === 0 ? (
         /* ═══ EMPTY STATE ═══ */
         <View style={styles.emptyState}>
           <View style={[styles.emptyIconWrap, { backgroundColor: colors.bgCard }]}>
@@ -146,7 +272,7 @@ export default function NotificationsScreen() {
           </View>
           <Text style={[styles.emptyTitle, { color: colors.textPrimary }]}>No Notifications Yet</Text>
           <Text style={[styles.emptyDesc, { color: colors.textMuted }]}>
-            When there are campus updates, news, or alerts, they'll appear here.
+            When there are campus updates, study materials, or alerts, they'll appear here.
           </Text>
           <TouchableOpacity onPress={onRefresh} style={[styles.refreshBtn, { borderColor: colors.border }]}>
             <Ionicons name="refresh" size={16} color={colors.primary} />
@@ -166,54 +292,93 @@ export default function NotificationsScreen() {
           )}
           scrollEventThrottle={16}
         >
-          {/* Unread count */}
+          {/* Unread count and mark all read */}
           {unreadCount > 0 && (
             <View style={styles.topInfoRow}>
               <Text style={[styles.topInfoText, { color: colors.textMuted }]}>
                 {unreadCount} unread notification{unreadCount !== 1 ? 's' : ''}
               </Text>
-              <TouchableOpacity onPress={() => setNotifications(prev => prev.map(n => ({ ...n, read: true })))}>
+              <TouchableOpacity onPress={markAllAsRead}>
                 <Text style={[styles.markAllText, { color: colors.primary }]}>Mark all read</Text>
               </TouchableOpacity>
             </View>
           )}
 
-          {notifications.map((notif) => {
+          {processedNotifications.map((notif) => {
             const cfg = TYPE_CONFIG[notif.type] || TYPE_CONFIG.info;
             return (
-              <TouchableOpacity
+              <View
                 key={notif.id}
                 style={[
                   styles.notifCard,
                   { backgroundColor: colors.bgCard, borderColor: colors.border },
-                  !notif.read && { borderLeftWidth: 3, borderLeftColor: cfg.color }
+                  !notif.read && { borderLeftWidth: 3, borderLeftColor: cfg.color },
+                  notif.pinned && { borderLeftWidth: 3, borderLeftColor: '#eab308' }
                 ]}
-                onPress={() => markAsRead(notif.id)}
-                activeOpacity={0.7}
               >
                 <View style={styles.notifRow}>
-                  <View style={[styles.notifIconWrap, { backgroundColor: cfg.bg }]}>
-                    <Ionicons name={cfg.icon as any} size={20} color={cfg.color} />
-                  </View>
-                  <View style={styles.notifContent}>
-                    <View style={styles.notifTitleRow}>
-                      <Text style={[styles.notifTitle, { color: colors.textPrimary }]} numberOfLines={1}>{notif.title}</Text>
-                      {!notif.read && <View style={[styles.unreadDot, { backgroundColor: cfg.color }]} />}
-                    </View>
-                    {notif.body ? (
-                      <Text style={[styles.notifBody, { color: colors.textSecondary }]} numberOfLines={2}>{notif.body}</Text>
-                    ) : null}
-                    <View style={styles.notifFooter}>
-                      <View style={[styles.typePill, { backgroundColor: cfg.bg }]}>
-                        <Text style={[styles.typePillText, { color: cfg.color }]}>{cfg.label}</Text>
+                  {/* Left Column - Main Details (Pressable to deep link) */}
+                  <TouchableOpacity
+                    style={styles.notifMainContent}
+                    onPress={() => handleNotifPress(notif)}
+                    activeOpacity={0.7}
+                  >
+                    <View style={styles.notifMainRow}>
+                      <View style={[styles.notifIconWrap, { backgroundColor: cfg.bg }]}>
+                        <Ionicons name={cfg.icon as any} size={20} color={cfg.color} />
                       </View>
-                      {notif.createdAt ? (
-                        <Text style={[styles.timeText, { color: colors.textMuted }]}>{timeAgo(notif.createdAt)}</Text>
-                      ) : null}
+                      <View style={{ flex: 1 }}>
+                        <View style={styles.notifTitleRow}>
+                          <Text
+                            style={[
+                              styles.notifTitle,
+                              { color: colors.textPrimary },
+                              !notif.read && { fontWeight: '900' }
+                            ]}
+                            numberOfLines={1}
+                          >
+                            {notif.title}
+                          </Text>
+                          {notif.pinned && (
+                            <Ionicons name="pin" size={12} color="#eab308" style={{ marginLeft: 4 }} />
+                          )}
+                          {!notif.read && <View style={[styles.unreadDot, { backgroundColor: cfg.color }]} />}
+                        </View>
+                        {notif.body ? (
+                          <Text style={[styles.notifBody, { color: colors.textSecondary }]} numberOfLines={2}>{notif.body}</Text>
+                        ) : null}
+                        <View style={styles.notifFooter}>
+                          <View style={[styles.typePill, { backgroundColor: cfg.bg }]}>
+                            <Text style={[styles.typePillText, { color: cfg.color }]}>{cfg.label}</Text>
+                          </View>
+                          {notif.createdAt ? (
+                            <Text style={[styles.timeText, { color: colors.textMuted }]}>{timeAgo(notif.createdAt)}</Text>
+                          ) : null}
+                        </View>
+                      </View>
                     </View>
+                  </TouchableOpacity>
+
+                  {/* Right Column - Client Quick Controls */}
+                  <View style={[styles.notifActions, { borderLeftColor: colors.dividerSoft }]}>
+                    <TouchableOpacity onPress={() => togglePin(notif.id)} style={styles.actionBtn}>
+                      <Ionicons
+                        name={notif.pinned ? "pin" : "pin-outline"}
+                        size={16}
+                        color={notif.pinned ? "#eab308" : colors.textMuted}
+                      />
+                    </TouchableOpacity>
+                    {!notif.read && (
+                      <TouchableOpacity onPress={() => markAsRead(notif.id)} style={styles.actionBtn}>
+                        <Ionicons name="checkmark-done" size={16} color={colors.primary} />
+                      </TouchableOpacity>
+                    )}
+                    <TouchableOpacity onPress={() => deleteNotification(notif.id)} style={styles.actionBtn}>
+                      <Ionicons name="trash-outline" size={16} color={colors.textMuted} />
+                    </TouchableOpacity>
                   </View>
                 </View>
-              </TouchableOpacity>
+              </View>
             );
           })}
         </Animated.ScrollView>
@@ -257,15 +422,28 @@ const styles = StyleSheet.create({
   notifCard: {
     marginHorizontal: 20, marginBottom: 8, borderRadius: 16, borderWidth: 1, overflow: 'hidden',
   },
-  notifRow: { flexDirection: 'row', padding: 14 },
+  notifRow: { flexDirection: 'row', padding: 14, alignItems: 'center' },
+  notifMainContent: { flex: 1 },
+  notifMainRow: { flexDirection: 'row' },
   notifIconWrap: { width: 40, height: 40, borderRadius: 12, justifyContent: 'center', alignItems: 'center', marginRight: 12 },
-  notifContent: { flex: 1 },
-  notifTitleRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-  notifTitle: { fontSize: 14, fontWeight: '700', flex: 1, marginRight: 8 },
-  unreadDot: { width: 8, height: 8, borderRadius: 4 },
+  notifTitleRow: { flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap' },
+  notifTitle: { fontSize: 14, fontWeight: '700', flexShrink: 1, marginRight: 4 },
+  unreadDot: { width: 8, height: 8, borderRadius: 4, marginLeft: 4 },
   notifBody: { fontSize: 12, fontWeight: '500', lineHeight: 17, marginTop: 4 },
   notifFooter: { flexDirection: 'row', alignItems: 'center', marginTop: 8, gap: 8 },
   typePill: { paddingHorizontal: 8, paddingVertical: 3, borderRadius: 6 },
   typePillText: { fontSize: 9, fontWeight: '800' },
   timeText: { fontSize: 10, fontWeight: '600' },
+
+  // Quick Controls Column
+  notifActions: {
+    flexDirection: 'column',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginLeft: 10,
+    paddingLeft: 10,
+    borderLeftWidth: StyleSheet.hairlineWidth,
+    minHeight: 60,
+  },
+  actionBtn: { padding: 4, marginVertical: 2 },
 });

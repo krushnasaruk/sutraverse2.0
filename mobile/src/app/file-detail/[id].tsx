@@ -11,6 +11,7 @@ import { useAuth } from '../../context/AuthContext';
 import { useTheme } from '../../context/ThemeContext';
 import { useDownloads } from '../../context/DownloadsContext';
 import { BlurView } from 'expo-blur';
+import { BASE_URL } from '../../config';
 
 const { width: SW } = Dimensions.get('window');
 
@@ -81,9 +82,8 @@ export default function FileDetailScreen() {
   }, [id]);
 
   const resolveUrl = (rawUrl: string) => {
-    if (!rawUrl) return "https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf";
+    if (!rawUrl) return `${BASE_URL}/api/downloads/dummy.pdf`;
     let url = rawUrl;
-    const BASE_URL = 'https://sutraverse.co.in';
 
     if (url.includes('firebasestorage.googleapis.com')) {
       return url;
