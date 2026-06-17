@@ -29,21 +29,25 @@ export const maxDuration = 300;
  
 
 export const handlePost_upload = async (request) => {
+    console.log('[Upload API] Request received');
     try {
         // Enforce Authentication Check via Firebase Admin SDK
         const authHeader = request.headers.get('Authorization');
         if (!authHeader || !authHeader.startsWith('Bearer ')) {
+            console.error('[Upload API] Missing or invalid Authorization header');
             return NextResponse.json({ error: 'Unauthorized: Authentication required' }, { status: 401 });
         }
 
         const idToken = authHeader.split('Bearer ')[1];
         try {
             const decodedToken = await adminAuth.verifyIdToken(idToken);
+            console.log(`[Upload API] Authenticated user: ${decodedToken.email}`);
             if (!decodedToken.email_verified) {
+                console.warn(`[Upload API] Email not verified for ${decodedToken.email}`);
                 return NextResponse.json({ error: 'Forbidden: Email verification required' }, { status: 403 });
             }
         } catch (authErr) {
-            console.error('Upload verification failed:', authErr.message);
+            console.error('[Upload API] Auth verification failed:', authErr.message);
             return NextResponse.json({ error: 'Unauthorized: Invalid authentication token' }, { status: 401 });
         }
 
@@ -51,10 +55,12 @@ export const handlePost_upload = async (request) => {
         const file = formData.get('file');
 
         if (!file || typeof file === 'string') {
+            console.error('[Upload API] No file provided in form data');
             return NextResponse.json({ error: 'No file provided' }, { status: 400 });
         }
 
         const context = formData.get('context') || 'general';
+        console.log(`[Upload API] Context: ${context}, File: ${file.name}, Size: ${file.size}`);
 
         // Validate file size (100 MB max for general, 5 MB for avatars)
         const MAX_SIZE = context === 'avatar' ? 5 * 1024 * 1024 : 100 * 1024 * 1024;
@@ -84,7 +90,18 @@ export const handlePost_upload = async (request) => {
         const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, '_');
 
         const subject = formData.get('subject') || 'Unsorted';
-        const year = formData.get('year') || 'First Year';
+        let year = formData.get('year') || 'First Year';
+        const collegeId = formData.get('collegeId') || 'DPCOE';
+
+        // Normalize year to match physical folder structure
+        if (year === '1st Year') year = 'First Year';
+        else if (year === '2nd Year') year = 'Second Year';
+        else if (year === '3rd Year') year = 'Third Year';
+        else if (year === '4th Year') year = 'Fourth Year';
+
+        // Ensure subject and collegeId don't have slashes that break the path
+        const safeSubject = String(subject).replace(/[\/\\\?%*:|"<>]/g, '-').trim();
+        const safeCollege = String(collegeId).replace(/[\/\\\?%*:|"<>]/g, '-').trim();
 
         let subDir = '';
         if (context === 'avatar') {
@@ -97,7 +114,7 @@ export const handlePost_upload = async (request) => {
             // Map context exactly to our standard folder names: Assignments, PYQ, Notes
             const typeFolder = context === 'Assignment' ? 'Assignments' : context;
             // E.g., DPCOE/First Year/Notes/Chemistry
-            subDir = path.join('DPCOE', year, typeFolder, subject);
+            subDir = path.join(safeCollege, year, typeFolder, safeSubject);
         } else {
             subDir = 'others';
         }
@@ -106,14 +123,22 @@ export const handlePost_upload = async (request) => {
 
         const baseUploadsDir = getUploadsDir();
         const uploadsDir = subDir ? path.join(baseUploadsDir, subDir) : baseUploadsDir;
-        await mkdir(uploadsDir, { recursive: true });
 
-        // Stream the file directly to disk to prevent Memory bloat / Out Of Memory errors
-        // This is significantly faster for cPanel environments
+        console.log(`[Upload API] Target path: ${path.join(uploadsDir, fileName)}`);
+
+        try {
+            await mkdir(uploadsDir, { recursive: true });
+        } catch (mkdirErr) {
+            console.error(`[Upload API] mkdir failed:`, mkdirErr);
+            throw new Error('Failed to create destination directory.');
+        }
+
         const filePath = path.join(uploadsDir, fileName);
         const readStream = Readable.fromWeb(file.stream());
         const writeStream = createWriteStream(filePath);
         await pipeline(readStream, writeStream);
+
+        console.log(`[Upload API] Successfully saved: ${fileName}`);
 
         const relativePath = subDir ? `${subDir}/${fileName}` : fileName;
         const fileURL = `/api/downloads/${relativePath}`;
