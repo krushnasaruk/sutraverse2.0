@@ -101,7 +101,33 @@ export default function SubjectsPage() {
   }, []);
 
   /* ── Derived data ────────────────────────────────────────────────────── */
-  const subjects = getSubjectsByYear(branch, year);
+  const subjects = useMemo(() => {
+    const allPossible = getSubjectsByYear(branch, year);
+    if (loading) return allPossible;
+
+    const grouped = {};
+    allPossible.forEach(s => (grouped[s] = []));
+    allFiles.forEach(file => {
+      let raw = (file.subject || 'Other').trim();
+      if (raw.toUpperCase() === 'BE') raw = 'BEE';
+      const lowerRaw = raw.toLowerCase();
+
+      let found = allPossible.find(vs => vs.toLowerCase() === lowerRaw);
+      if (!found) {
+        const sortedSubjects = [...allPossible].sort((a, b) => b.length - a.length);
+        found = sortedSubjects.find(vs => {
+          const vsL = vs.toLowerCase();
+          return vsL.includes(lowerRaw) || lowerRaw.includes(vsL);
+        });
+      }
+      const bucket = found || raw;
+      if (!grouped[bucket]) grouped[bucket] = [];
+      grouped[bucket].push(file);
+    });
+
+    // ONLY show subjects that have at least one file
+    return allPossible.filter(s => grouped[s] && grouped[s].length > 0);
+  }, [branch, year, allFiles, loading]);
 
   const subjectContent = useMemo(() => {
     const grouped = {};
