@@ -100,10 +100,10 @@ export default function HomePage() {
         });
 
         setPlatformStats({
-            notes: notesCount > 0 ? notesCount : 1, 
-            pyqs: pyqsCount > 0 ? pyqsCount : 1,
-            subjects: subjectsSet.size > 0 ? subjectsSet.size : 5,
-            students: uploadersSet.size > 0 ? uploadersSet.size * 2 : 10 
+            notes: notesCount,
+            pyqs: pyqsCount,
+            subjects: subjectsSet.size,
+            students: uploadersSet.size
         });
       } catch (e) {
         console.warn('Stats fetch error:', e);
@@ -139,15 +139,7 @@ export default function HomePage() {
         unsubNews = onSnapshot(newsQ, (snapshot) => {
             if (cancelled) return;
             const data = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
-            if (data.length === 0) {
-                setLatestNews([
-                    { id: 'n1', title: 'Midterm Schedules Released', type: 'Urgent', timestamp: { toDate: () => new Date() } },
-                    { id: 'n2', title: 'Annual Tech Symposium 2026', type: 'Event', timestamp: { toDate: () => new Date(Date.now() - 86400000) } },
-                    { id: 'n3', title: 'Spring Career Fair — May 15th', type: 'Event', timestamp: { toDate: () => new Date(Date.now() - 86400000 * 3) } },
-                ]);
-            } else {
-                setLatestNews(data);
-            }
+            setLatestNews(data);
         });
     } catch (e) {
         setLatestNews([
@@ -163,14 +155,7 @@ export default function HomePage() {
         unsubPosts = onSnapshot(postsQ, (snapshot) => {
             if (cancelled) return;
             const data = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
-            if (data.length === 0) {
-                setCommunityPosts([
-                    { id: 'p1', authorName: 'Rahul Dev', content: '🚀 Just submitted my final year project — an AI-powered campus chatbot!', likes: ['u1','u2','u3','u4'], commentsCount: 7 },
-                    { id: 'p2', authorName: 'Alice Johnson', content: 'Does anyone have the notes from yesterday\'s DSA lecture?', likes: ['u1','u2'], commentsCount: 3 },
-                ]);
-            } else {
-                setCommunityPosts(data);
-            }
+            setCommunityPosts(data);
         });
     } catch (e) {
         setCommunityPosts([]);
