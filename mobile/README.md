@@ -1,4 +1,9 @@
-# Sutras Mobile App (Android & iOS)
+# 📚 Sutras Mobile App (Android & iOS)
+
+> [!IMPORTANT]
+> **React Native to Flutter Migration Plan Active**:
+> We are planning a migration from React Native/Expo to Flutter. All PRD, TRD, UI/UX Design tokens, App Flows, Backend Firestore Schemas, and the step-by-step migration guide are documented in:
+> 👉 [**Flutter Migration Specification (README_FLUTTER_MIGRATION.md)**](./README_FLUTTER_MIGRATION.md)
 
 Sutras is a React Native mobile application built using **Expo** and **Expo Router**. It serves as the mobile companion to the Sutras platform, featuring AI-powered tools, community features, and student resources.
 
