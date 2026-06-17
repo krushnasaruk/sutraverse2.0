@@ -152,6 +152,7 @@ export default function UploadPage() {
             formData.append('context', fileType); // Use Notes, PYQ, or Assignment
             formData.append('subject', subject || 'Unsorted');
             formData.append('year', year || user?.year || '1st Year');
+            formData.append('collegeId', user?.collegeId || 'DPCOE');
 
             const xhr = new XMLHttpRequest();
 
