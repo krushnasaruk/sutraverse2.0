@@ -88,7 +88,22 @@ export default function YouTubePage() {
   }, []);
 
   /* ── Derived data ──────────────────────────────────────────────────── */
-  const subjects = getSubjectsByYear(branch, year);
+  const subjects = useMemo(() => {
+    const allPossible = getSubjectsByYear(branch, year);
+    if (loading) return allPossible;
+
+    const grouped = {};
+    allPossible.forEach(s => (grouped[s] = []));
+    allLectures.forEach(lecture => {
+      if (allPossible.includes(lecture.subject)) {
+        if (!grouped[lecture.subject]) grouped[lecture.subject] = [];
+        grouped[lecture.subject].push(lecture);
+      }
+    });
+
+    // ONLY show subjects that have at least one verified lecture
+    return allPossible.filter(s => grouped[s] && grouped[s].length > 0);
+  }, [branch, year, allLectures, loading]);
 
   const subjectContent = useMemo(() => {
     const grouped = {};
