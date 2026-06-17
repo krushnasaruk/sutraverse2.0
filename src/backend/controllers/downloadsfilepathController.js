@@ -176,7 +176,7 @@ export const handleGet_downloadsfilepath = async (req, ctx) => {
         console.log(`[downloads] Fallback paths exhausted for "${relativePath}". Trying recursive search for "${filenameOnly}"...`);
         
         // Search in uploadsDir first (includes nested user_uploads)
-        foundPath = findFileRecursive(uploadsBase, filenameOnly, 3); // Max depth 3
+        foundPath = findFileRecursive(uploadsBase, filenameOnly, 5); // Increased max depth to 5
 
         if (foundPath) {
             console.log(`[downloads] Recursive search found file at: ${foundPath}`);
