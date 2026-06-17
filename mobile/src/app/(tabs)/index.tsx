@@ -3,7 +3,7 @@ import { StyleSheet, Text, View, ScrollView, TouchableOpacity, ActivityIndicator
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
-import { collection, getDocs, query, orderBy, limit, where } from 'firebase/firestore';
+import { collection, getDocs, query, orderBy, limit, where, getCountFromServer } from 'firebase/firestore';
 import { db } from '../../lib/firebase';
 import { useAuth } from '../../context/AuthContext';
 import { useTheme } from '../../context/ThemeContext';
@@ -50,6 +50,7 @@ export default function HomeScreen() {
 
   const [loading, setLoading] = useState(true);
   const [recentFiles, setRecentFiles] = useState<NoteFile[]>([]);
+  const [stats, setStats] = useState({ notes: 0, students: 0, pyqs: 0, clubs: 0 });
 
   useEffect(() => {
     Animated.parallel([
@@ -59,19 +60,20 @@ export default function HomeScreen() {
   }, []);
 
   useEffect(() => {
-    const fetchRecentFiles = async () => {
+    const fetchData = async () => {
       setLoading(true);
       try {
-        const q = query(
+        // 1. Fetch recent files for the list
+        const qRecent = query(
           collection(db, 'files'),
           where('status', '==', 'approved'),
           orderBy('createdAt', 'desc'),
-          limit(30)
+          limit(6)
         );
-        const snapshot = await getDocs(q);
+        const snapshotRecent = await getDocs(qRecent);
         const validSubjects = new Set(getAllSubjects().map(s => s.toLowerCase()));
         
-        const validDocs = snapshot.docs
+        const validDocs = snapshotRecent.docs
           .map(doc => ({ id: doc.id, ...doc.data() }) as NoteFile)
           .filter(file => validSubjects.has((file.subject || '').trim().toLowerCase()))
           .filter(file => {
@@ -79,13 +81,28 @@ export default function HomeScreen() {
             return !t.includes('2025 PYQ') && !t.includes('60MARKS');
           });
 
-        setRecentFiles(validDocs.slice(0, 6));
+        setRecentFiles(validDocs);
+
+        // 2. Fetch platform stats accurately
+        const filesCol = collection(db, 'files');
+        const notesCountSnap = await getCountFromServer(query(filesCol, where('type', '==', 'Notes'), where('status', '==', 'approved')));
+        const pyqsCountSnap = await getCountFromServer(query(filesCol, where('type', '==', 'PYQ'), where('status', '==', 'approved')));
+        const clubsCountSnap = await getCountFromServer(collection(db, 'clubs'));
+        const usersCountSnap = await getCountFromServer(collection(db, 'users'));
+
+        setStats({
+          notes: notesCountSnap.data().count,
+          pyqs: pyqsCountSnap.data().count,
+          students: usersCountSnap.data().count,
+          clubs: clubsCountSnap.data().count
+        });
+
       } catch (err) {
-        console.warn('Error fetching recent files:', err);
+        console.warn('Error fetching data:', err);
         setRecentFiles([]);
       } finally { setLoading(false); }
     };
-    fetchRecentFiles();
+    fetchData();
   }, []);
 
   const getGreeting = () => {
@@ -143,7 +160,26 @@ export default function HomeScreen() {
             <Text style={[styles.heroName, { color: colors.textPrimary }]}>
               {displayName} 👋
             </Text>
-            <Text style={[styles.heroSub, { color: colors.textMuted }]}>
+
+            {/* ═══ PLATFORM STATS ═══ */}
+            <View style={styles.statsContainer}>
+              <View style={styles.statItem}>
+                <Text style={[styles.statValue, { color: colors.primary }]}>{stats.notes}+</Text>
+                <Text style={[styles.statLabel, { color: colors.textMuted }]}>Notes</Text>
+              </View>
+              <View style={styles.statDivider} />
+              <View style={styles.statItem}>
+                <Text style={[styles.statValue, { color: '#34c759' }]}>{stats.pyqs}+</Text>
+                <Text style={[styles.statLabel, { color: colors.textMuted }]}>PYQs</Text>
+              </View>
+              <View style={styles.statDivider} />
+              <View style={styles.statItem}>
+                <Text style={[styles.statValue, { color: '#ff9500' }]}>{stats.students}+</Text>
+                <Text style={[styles.statLabel, { color: colors.textMuted }]}>Students</Text>
+              </View>
+            </View>
+
+            <Text style={[styles.heroSub, { color: colors.textMuted, marginTop: 12 }]}>
               What would you like to study today?
             </Text>
 
@@ -304,6 +340,21 @@ const styles = StyleSheet.create({
   heroGreeting: { fontSize: 15, fontWeight: '500', letterSpacing: -0.2 },
   heroName: { fontSize: 32, fontWeight: '700', letterSpacing: -0.5, marginTop: 2 },
   heroSub: { fontSize: 17, fontWeight: '400', letterSpacing: -0.374, marginTop: 6, lineHeight: 24 },
+
+  statsContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(255,255,255,0.03)',
+    borderRadius: 16,
+    paddingVertical: 12,
+    marginTop: 20,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.05)',
+  },
+  statItem: { flex: 1, alignItems: 'center' },
+  statValue: { fontSize: 18, fontWeight: '800' },
+  statLabel: { fontSize: 11, fontWeight: '600', marginTop: 2, textTransform: 'uppercase', opacity: 0.8 },
+  statDivider: { width: 1, height: 24, backgroundColor: 'rgba(255,255,255,0.1)' },
 
   searchBar: {
     flexDirection: 'row', alignItems: 'center', height: 48, borderRadius: 9999,
