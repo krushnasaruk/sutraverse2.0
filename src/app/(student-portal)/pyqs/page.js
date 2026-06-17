@@ -134,8 +134,21 @@ export default function PyqsPage() {
   }, [user, authLoading, hasLoadedPrefs]);
 
   const activeBranchSubjects = useMemo(() => {
-    return getSubjectsByYear(branch, year);
-  }, [branch, year]);
+    const allPossible = getSubjectsByYear(branch, year);
+    if (loading) return allPossible;
+
+    const countMap = {};
+    pyqs.forEach(p => {
+      const key = normalizeSubjectName(p.subject) || 'Other';
+      countMap[key] = (countMap[key] || 0) + 1;
+    });
+
+    // ONLY show subjects that have at least one paper in the result set
+    return allPossible.filter(s => {
+      const normS = normalizeSubjectName(s);
+      return countMap[normS] > 0;
+    });
+  }, [branch, year, pyqs, loading]);
 
   // ── Fetch ──────────────────────────────────────────────────────────────────
   useEffect(() => {
