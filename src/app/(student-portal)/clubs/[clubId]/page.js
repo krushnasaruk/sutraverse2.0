@@ -1019,73 +1019,6 @@ export default function ClubDetailPage({ params: paramsPromise }) {
                         club={club}
                     />
                 )}
-                                                            return (
-                                                                <div
-                                                                    key={reply.replyId}
-                                                                    className={`${styles.qaReplyCard} ${reply.isOfficial ? styles.qaReplyOfficial : ''}`}
-                                                                >
-                                                                    {reply.isOfficial && (
-                                                                        <div className={styles.officialBadge}>
-                                                                            ✨ Verified Answer
-                                                                        </div>
-                                                                    )}
-                                                                    <div className={styles.qaReplyHeader}>
-                                                                        <div className={styles.qaReplyAuthorRow}>
-                                                                            <span className={styles.qaReplyAuthor}>{reply.authorName}</span>
-                                                                            <span className={`${styles.memberRoleBadge} ${isReplyAdmin ? styles.adminBadge : isSpecialRole ? styles.coreBadge : ''}`} style={{ fontSize: '0.65rem', padding: '2px 6px' }}>
-                                                                                {isReplyAdmin ? '⭐ Admin' : isSpecialRole ? `🔶 ${reply.authorRole}` : reply.authorRole === 'Member' ? '• Member' : 'Visitor'}
-                                                                            </span>
-                                                                        </div>
-                                                                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                                                            <span className={styles.qaReplyTime}>{formatDate(reply.createdAt)}</span>
-                                                                            {isAdmin && (
-                                                                                <button
-                                                                                    className={`${styles.verifyBtn} ${reply.isOfficial ? styles.verifyBtnActive : ''}`}
-                                                                                    onClick={() => handleVerifyReply(qa.id, reply.replyId)}
-                                                                                    title={reply.isOfficial ? 'Unverify Answer' : 'Mark as Official Answer'}
-                                                                                >
-                                                                                    {reply.isOfficial ? '✓ Verified' : 'Verify'}
-                                                                                </button>
-                                                                            )}
-                                                                        </div>
-                                                                    </div>
-                                                                    <div className={styles.qaReplyText}>{reply.text}</div>
-                                                                </div>
-                                                            );
-                                                        })}
-                                                    </div>
-                                                )}
-
-                                                {/* Write Reply Box */}
-                                                {user && (
-                                                    <div className={styles.replyBox}>
-                                                        <input
-                                                            type="text"
-                                                            className={styles.replyInput}
-                                                            placeholder="Write a reply..."
-                                                            value={newReply[qa.id] || ''}
-                                                            onChange={e => setNewReply(prev => ({ ...prev, [qa.id]: e.target.value }))}
-                                                            onKeyDown={e => {
-                                                                if (e.key === 'Enter') handlePostReply(qa.id);
-                                                            }}
-                                                        />
-                                                        <button
-                                                            className={styles.replySubmitBtn}
-                                                            onClick={() => handlePostReply(qa.id)}
-                                                            disabled={!newReply[qa.id]?.trim()}
-                                                        >
-                                                            Send
-                                                        </button>
-                                                    </div>
-                                                )}
-                                            </div>
-                                        </div>
-                                    );
-                                })}
-                            </div>
-                        )}
-                    </div>
-                )}
 
                 {/* ── EVENTS TAB ── */}
                 {activeTab === 'events' && (
@@ -1112,66 +1045,7 @@ export default function ClubDetailPage({ params: paramsPromise }) {
                         submittingEvent={submittingEvent}
                     />
                 )}
-                                                    className={styles.input}
-                                                    required
-                                                    value={newEventTime}
-                                                    onChange={e => setNewEventTime(e.target.value)}
-                                                />
-                                            </div>
-                                        </div>
-                                        <div className={styles.formGroup}>
-                                            <label className={styles.label}>Venue / Link</label>
-                                            <input
-                                                type="text"
-                                                className={styles.input}
-                                                required
-                                                placeholder="e.g. Seminar Hall B, or Zoom link"
-                                                value={newEventVenue}
-                                                onChange={e => setNewEventVenue(e.target.value)}
-                                            />
-                                        </div>
-                                        <div className={styles.formGroup}>
-                                            <label className={styles.label}>Visual Theme</label>
-                                            <div className={styles.bannerPickerGrid}>
-                                                {[
-                                                    { id: 'fire', color: 'linear-gradient(135deg, #f59e0b, #dc2626)' },
-                                                    { id: 'forest', color: 'linear-gradient(135deg, #22c55e, #15803d)' },
-                                                    { id: 'sky', color: 'linear-gradient(135deg, #06b6d4, #3b82f6)' },
-                                                    { id: 'sunset', color: 'linear-gradient(135deg, #f97316, #b91c1c)' },
-                                                    { id: 'purple', color: 'linear-gradient(135deg, #a855f7, #6366f1)' }
-                                                ].map(preset => (
-                                                    <div
-                                                        key={preset.id}
-                                                        className={`${styles.bannerSwatch} ${newEventGradient === preset.id ? styles.bannerSwatchActive : ''}`}
-                                                        style={{ background: preset.color }}
-                                                        onClick={() => setNewEventGradient(preset.id)}
-                                                    />
-                                                ))}
-                                            </div>
-                                        </div>
-                                        <div className={styles.modalFooter}>
-                                            <button
-                                                type="button"
-                                                className={styles.deleteBtn}
-                                                style={{ borderColor: 'var(--border)', color: 'var(--text-muted)' }}
-                                                onClick={() => setShowAddEventModal(false)}
-                                            >
-                                                Cancel
-                                            </button>
-                                            <button
-                                                type="submit"
-                                                className={styles.postBtn}
-                                                disabled={submittingEvent}
-                                            >
-                                                {submittingEvent ? 'Scheduling...' : 'Schedule Event'}
-                                            </button>
-                                        </div>
-                                    </form>
-                                </div>
-                            </div>
-                        )}
-                    </div>
-                )}
+
 
                 {/* ── SHOWCASE TAB ── */}
                 {activeTab === 'showcase' && (
@@ -1196,80 +1070,7 @@ export default function ClubDetailPage({ params: paramsPromise }) {
                         submittingProj={submittingProj}
                     />
                 )}
-                                        </div>
-                                    </form>
-                                </div>
-                            </div>
-                        )}
 
-                        {/* Add Photo Modal */}
-                        {showAddPhotoModal && (
-                            <div className={styles.modalOverlay}>
-                                <div className={styles.modalContent}>
-                                    <div className={styles.modalHeader}>
-                                        <h3>📸 Add Event Memory Photo</h3>
-                                        <button
-                                            className={styles.closeModalBtn}
-                                            onClick={() => setShowAddPhotoModal(false)}
-                                        >
-                                            ✕
-                                        </button>
-                                    </div>
-                                    <form onSubmit={handleUploadPhoto} className={styles.modalForm}>
-                                        <div className={styles.formGroup}>
-                                            <label className={styles.label}>Memory Photo URL</label>
-                                            <input
-                                                type="url"
-                                                className={styles.input}
-                                                required
-                                                placeholder="https://images.unsplash.com/..."
-                                                value={newPhotoUrl}
-                                                onChange={e => setNewPhotoUrl(e.target.value)}
-                                            />
-                                        </div>
-                                        <div className={styles.formGroup}>
-                                            <label className={styles.label}>Event / Location Name</label>
-                                            <input
-                                                type="text"
-                                                className={styles.input}
-                                                placeholder="e.g. Annual Hackathon 2026, Core Meetup"
-                                                value={newPhotoEvent}
-                                                onChange={e => setNewPhotoEvent(e.target.value)}
-                                            />
-                                        </div>
-                                        <div className={styles.formGroup}>
-                                            <label className={styles.label}>Caption</label>
-                                            <textarea
-                                                className={styles.textarea}
-                                                placeholder="Write a short description or memory detail..."
-                                                value={newPhotoCaption}
-                                                onChange={e => setNewPhotoCaption(e.target.value)}
-                                                rows={3}
-                                            />
-                                        </div>
-                                        <div className={styles.modalFooter}>
-                                            <button
-                                                type="button"
-                                                className={styles.deleteBtn}
-                                                style={{ borderColor: 'var(--border)', color: 'var(--text-muted)' }}
-                                                onClick={() => setShowAddPhotoModal(false)}
-                                            >
-                                                Cancel
-                                            </button>
-                                            <button
-                                                type="submit"
-                                                className={styles.postBtn}
-                                                disabled={submittingPhoto}
-                                            >
-                                                {submittingPhoto ? 'Adding...' : 'Add Memory'}
-                                            </button>
-                                        </div>
-                                    </form>
-                                </div>
-                            </div>
-                        )}
-                    </div>
-                )}
 
                 {/* ── MEMBERS TAB ── */}
                 {activeTab === 'members' && (
@@ -1285,46 +1086,7 @@ export default function ClubDetailPage({ params: paramsPromise }) {
                 {activeTab === 'about' && (
                     <AboutTab club={club} />
                 )}
-                                                target="_blank" rel="noopener noreferrer" className={styles.aboutLinkBtn} style={{ background: 'rgba(220,38,38,0.1)', color: '#dc2626', borderColor: 'rgba(220,38,38,0.3)' }}>
-                                                📋 Registration Form ↗
-                                            </a>
-                                        )}
-                                        {club.discord && (
-                                            <a href={club.discord.startsWith('http') ? club.discord : `https://${club.discord}`}
-                                                target="_blank" rel="noopener noreferrer" className={styles.aboutLinkBtn} style={{ background: 'rgba(88,101,242,0.1)', color: '#5865f2', borderColor: 'rgba(88,101,242,0.3)' }}>
-                                                💬 Discord Server ↗
-                                            </a>
-                                        )}
-                                        {club.whatsapp && (
-                                            <a href={club.whatsapp.startsWith('http') ? club.whatsapp : `https://${club.whatsapp}`}
-                                                target="_blank" rel="noopener noreferrer" className={styles.aboutLinkBtn} style={{ background: 'rgba(34,197,94,0.1)', color: '#16a34a', borderColor: 'rgba(34,197,94,0.3)' }}>
-                                                📱 WhatsApp Group ↗
-                                            </a>
-                                        )}
-                                    </div>
-                                </div>
-                            )}
 
-                            {/* Supervisor */}
-                            {club.supervisorName && (
-                                <div className={styles.aboutCard}>
-                                    <div className={styles.aboutCardIcon} style={{ background: 'linear-gradient(135deg, #22c55e, #b91c1c)' }}>🎓</div>
-                                    <div className={styles.aboutCardTitle}>Faculty Supervisor</div>
-                                    <div className={styles.aboutCardText}>
-                                        <strong>{club.supervisorName}</strong>
-                                        {club.supervisorEmail && (
-                                            <div style={{ marginTop: 4 }}>
-                                                <a href={`mailto:${club.supervisorEmail}`} className={styles.discordLink}>
-                                                    ✉️ {club.supervisorEmail}
-                                                </a>
-                                            </div>
-                                        )}
-                                    </div>
-                                </div>
-                            )}
-                        </div>
-                    </div>
-                )}
 
                 {/* ── MEMORIES GALLERY TAB ── */}
                 {activeTab === 'gallery' && (
@@ -1357,8 +1119,7 @@ export default function ClubDetailPage({ params: paramsPromise }) {
                         setNewChatMessageText={setNewChatMessageText}
                     />
                 )}
-                    </div>
-                )}
+
 
                 {/* ── SETTINGS TAB ── */}
                 {activeTab === 'settings' && isAdmin && (

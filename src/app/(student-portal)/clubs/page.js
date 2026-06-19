@@ -6,6 +6,7 @@ import { db } from '@/database/config/firebase';
 import { collection, getDocs } from 'firebase/firestore';
 import { useAuth } from '@/frontend/context/AuthContext';
 import { ScrollReveal } from '@/frontend/components/ui/Animations';
+import { Skeleton } from '@/frontend/components/ui/Skeleton/Skeleton';
 import styles from './page.module.css';
 
 
@@ -179,9 +180,37 @@ export default function ClubsPage() {
     }), [clubs]);
 
     if (loading) return (
-        <div className={styles.loadingWrapper}>
-            <div className={styles.loadingOrb}></div>
-            <p className={styles.loadingText}>Loading clubs...</p>
+        <div className={styles.pageWrapper}>
+            <div className={styles.container}>
+                <div className={styles.heroSection}>
+                    <Skeleton width="180px" height="24px" borderRadius="20px" className={styles.heroBadge} />
+                    <Skeleton width="300px" height="48px" style={{ marginTop: '20px' }} />
+                    <div className={styles.statsStrip} style={{ marginTop: '30px' }}>
+                        {[1,2,3].map(i => <Skeleton key={i} width="100px" height="40px" borderRadius="12px" />)}
+                    </div>
+                </div>
+                <div className={styles.clubsGrid} style={{ marginTop: '40px' }}>
+                    {[...Array(6)].map((_, i) => (
+                        <div key={i} className={styles.clubCard} style={{ padding: '0', overflow: 'hidden' }}>
+                            <Skeleton width="100%" height="6px" />
+                            <div style={{ padding: '24px' }}>
+                                <div style={{ display: 'flex', gap: '16px', marginBottom: '20px' }}>
+                                    <Skeleton width="50px" height="50px" borderRadius="14px" />
+                                    <div style={{ flex: 1 }}>
+                                        <Skeleton width="60px" height="12px" style={{ marginBottom: '8px' }} />
+                                        <Skeleton width="100px" height="16px" />
+                                    </div>
+                                </div>
+                                <Skeleton count={3} variant="text" />
+                                <div style={{ marginTop: '24px', display: 'flex', justifyContent: 'space-between' }}>
+                                    <Skeleton width="120px" height="20px" borderRadius="10px" />
+                                    <Skeleton width="60px" height="20px" borderRadius="10px" />
+                                </div>
+                            </div>
+                        </div>
+                    ))}
+                </div>
+            </div>
         </div>
     );
 
