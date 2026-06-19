@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { IconFolder, IconDownload, IconStar } from '@/frontend/components/ui/Icons';
+import { Skeleton } from '@/frontend/components/ui/Skeleton/Skeleton';
 import styles from '../page.module.css';
 
 export default function RepositoryTab({
@@ -43,7 +44,17 @@ export default function RepositoryTab({
             <div className={`${styles.bentoTile} ${styles.uploadsTile} glass-panel`}>
                 <h2 className={styles.sectionTitle}><IconFolder size={24} /> My Repository</h2>
                 {loadingUploads ? (
-                    <div className={styles.emptyState}><div className={styles.emptyText}>Syncing...</div></div>
+                    <div className={styles.uploadsList}>
+                        {[1, 2, 3].map(i => (
+                            <div key={i} className={styles.uploadItem}>
+                                <Skeleton width="42px" height="42px" borderRadius="12px" />
+                                <div style={{ flex: 1, marginLeft: '12px' }}>
+                                    <Skeleton width="60%" height="16px" style={{ marginBottom: '8px' }} />
+                                    <Skeleton width="40%" height="12px" />
+                                </div>
+                            </div>
+                        ))}
+                    </div>
                 ) : uploads.length === 0 ? (
                     <div className={styles.emptyStateGamified}>
                         <div className={styles.bountyIcon}>🎯</div>

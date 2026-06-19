@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { IconUpload, IconDownload } from '@/frontend/components/ui/Icons';
+import { Skeleton } from '@/frontend/components/ui/Skeleton/Skeleton';
 import styles from '../page.module.css';
 
 export default function OverviewTab({
@@ -13,7 +14,8 @@ export default function OverviewTab({
     totalDownloads,
     userPoints,
     currentBadge,
-    userLevel
+    userLevel,
+    loadingUploads
 }) {
     return (
         <div className={styles.tabOverviewLayout}>
@@ -51,7 +53,14 @@ export default function OverviewTab({
             </section>
 
             {/* ═══ TROPHY CASE ═══ */}
-            {earnedBadges.length > 0 && (
+            {loadingUploads ? (
+                 <section className={styles.trophySection}>
+                    <Skeleton width="120px" height="24px" style={{ marginBottom: '16px' }} />
+                    <div className={styles.trophyGrid}>
+                        {[1, 2, 3].map(i => <Skeleton key={i} width="80px" height="80px" borderRadius="16px" />)}
+                    </div>
+                 </section>
+            ) : earnedBadges.length > 0 && (
                 <section className={styles.trophySection}>
                     <div className={styles.trophyHeader}>
                         <h3 className={styles.trophyTitle}>🏅 Trophy Case</h3>
@@ -77,30 +86,36 @@ export default function OverviewTab({
                 <p style={{color: 'var(--text-secondary)', marginBottom: '24px', fontSize: '0.9rem'}}>Live statistics of your contributions and academic power.</p>
 
                 <div className={styles.premiumMetricGrid}>
-                    <div className={styles.premiumMetricCard}>
-                        <div className={styles.metricGlow}></div>
-                        <IconUpload size={28} color="var(--primary-light)" />
-                        <div className={styles.metricValueBig}>{uploads.length}</div>
-                        <div className={styles.metricLabelBig}>Total Uploads</div>
-                    </div>
-                    <div className={styles.premiumMetricCard}>
-                        <div className={styles.metricGlow}></div>
-                        <IconDownload size={28} color="#22c55e" />
-                        <div className={styles.metricValueBig}>{totalDownloads}</div>
-                        <div className={styles.metricLabelBig}>Downloads</div>
-                    </div>
-                    <div className={styles.premiumMetricCard}>
-                        <div className={styles.metricGlow}></div>
-                        <span style={{ fontSize: '1.8rem' }}>⭐</span>
-                        <div className={styles.metricValueBig}>{userPoints}</div>
-                        <div className={styles.metricLabelBig}>Total XP</div>
-                    </div>
-                    <div className={styles.premiumMetricCard}>
-                        <div className={styles.metricGlow}></div>
-                        <span style={{ fontSize: '1.8rem' }}>{currentBadge?.icon || '🌱'}</span>
-                        <div className={styles.metricValueBig} style={{fontSize: '1.8rem', marginTop: '18px'}}>Lvl {userLevel}</div>
-                        <div className={styles.metricLabelBig} style={{marginTop: '8px'}}>{currentBadge?.name}</div>
-                    </div>
+                    {loadingUploads ? (
+                        [1, 2, 3, 4].map(i => <Skeleton key={i} width="100%" height="140px" borderRadius="20px" />)
+                    ) : (
+                        <>
+                            <div className={styles.premiumMetricCard}>
+                                <div className={styles.metricGlow}></div>
+                                <IconUpload size={28} color="var(--primary-light)" />
+                                <div className={styles.metricValueBig}>{uploads.length}</div>
+                                <div className={styles.metricLabelBig}>Total Uploads</div>
+                            </div>
+                            <div className={styles.premiumMetricCard}>
+                                <div className={styles.metricGlow}></div>
+                                <IconDownload size={28} color="#22c55e" />
+                                <div className={styles.metricValueBig}>{totalDownloads}</div>
+                                <div className={styles.metricLabelBig}>Downloads</div>
+                            </div>
+                            <div className={styles.premiumMetricCard}>
+                                <div className={styles.metricGlow}></div>
+                                <span style={{ fontSize: '1.8rem' }}>⭐</span>
+                                <div className={styles.metricValueBig}>{userPoints}</div>
+                                <div className={styles.metricLabelBig}>Total XP</div>
+                            </div>
+                            <div className={styles.premiumMetricCard}>
+                                <div className={styles.metricGlow}></div>
+                                <span style={{ fontSize: '1.8rem' }}>{currentBadge?.icon || '🌱'}</span>
+                                <div className={styles.metricValueBig} style={{fontSize: '1.8rem', marginTop: '18px'}}>Lvl {userLevel}</div>
+                                <div className={styles.metricLabelBig} style={{marginTop: '8px'}}>{currentBadge?.name}</div>
+                            </div>
+                        </>
+                    )}
                 </div>
             </div>
         </div>

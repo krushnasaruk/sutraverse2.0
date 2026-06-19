@@ -1,5 +1,6 @@
 'use client';
 
+import { Skeleton } from '@/frontend/components/ui/Skeleton/Skeleton';
 import styles from '../page.module.css';
 
 export default function ClassroomTab({
@@ -27,7 +28,8 @@ export default function ClassroomTab({
     attendanceHistory,
     setLeaveModalOpen,
     myLeaveRequests,
-    announcements
+    announcements,
+    loadingClassData
 }) {
     return (
         <div className={styles.tabClassroomLayout}>
@@ -41,9 +43,19 @@ export default function ClassroomTab({
                 </div>
 
                 <div className={styles.hubGrid}>
-
-                    {activeLiveSession && (
-                        <div className={styles.liveSessionBanner} style={{ gridColumn: '1 / -1' }}>
+                    {loadingClassData ? (
+                        <>
+                            <div style={{ gridColumn: '1 / -1' }}>
+                                <Skeleton width="100%" height="200px" borderRadius="16px" />
+                            </div>
+                            <div style={{ gridColumn: '1 / -1' }}>
+                                <Skeleton width="100%" height="300px" borderRadius="16px" />
+                            </div>
+                        </>
+                    ) : (
+                        <>
+                            {activeLiveSession && (
+                                <div className={styles.liveSessionBanner} style={{ gridColumn: '1 / -1' }}>
                             <div className={styles.livePulseGeo}></div>
                             <div>
                                 <h3 style={{margin:0, color:'var(--neo)'}}>Live Radar Check-In Active</h3>

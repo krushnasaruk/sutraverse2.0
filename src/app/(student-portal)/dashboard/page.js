@@ -936,11 +936,12 @@ export default function DashboardPage() {
                             userPoints={userPoints}
                             currentBadge={currentBadge}
                             userLevel={userLevel}
+                            loadingUploads={loadingUploads}
                         />
                     )}
 
                     {/* ──── CLASSROOM TAB ──── */}
-                    {activeDashboardTab === 'classroom' && user.classId && !loadingClassData && (
+                    {activeDashboardTab === 'classroom' && user.classId && (
                         <ClassroomTab
                             user={user}
                             activeLiveSession={activeLiveSession}
@@ -967,6 +968,7 @@ export default function DashboardPage() {
                             setLeaveModalOpen={setLeaveModalOpen}
                             myLeaveRequests={myLeaveRequests}
                             announcements={announcements}
+                            loadingClassData={loadingClassData}
                         />
                     )}
 
