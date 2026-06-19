@@ -33,6 +33,8 @@ export default function HomePage() {
   const [latestNews, setLatestNews] = useState([]);
   const [communityPosts, setCommunityPosts] = useState([]);
   const [clubsCount, setClubsCount] = useState(0);
+  const [loadingNews, setLoadingNews] = useState(true);
+  const [loadingPosts, setLoadingPosts] = useState(true);
   const router = useRouter();
   const { user } = useAuth();
   const { branding } = useCollege();
@@ -140,12 +142,10 @@ export default function HomePage() {
             if (cancelled) return;
             const data = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
             setLatestNews(data);
+            setLoadingNews(false);
         });
     } catch (e) {
-        setLatestNews([
-            { id: 'n1', title: 'Midterm Schedules Released', type: 'Urgent' },
-            { id: 'n2', title: 'Annual Tech Symposium 2026', type: 'Event' },
-        ]);
+        setLoadingNews(false);
     }
 
     // Community posts
@@ -156,9 +156,10 @@ export default function HomePage() {
             if (cancelled) return;
             const data = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
             setCommunityPosts(data);
+            setLoadingPosts(false);
         });
     } catch (e) {
-        setCommunityPosts([]);
+        setLoadingPosts(false);
     }
 
     fetchRecent();
@@ -391,7 +392,13 @@ export default function HomePage() {
       {/* ══════════════════════════════════════════════════ */}
       {/* ═══ LIVE NEWS TICKER ════════════════════════════ */}
       {/* ══════════════════════════════════════════════════ */}
-      {latestNews.length > 0 && (
+      {loadingNews ? (
+        <section className={styles.tickerSection}>
+          <div className={styles.tickerBar}>
+            <Skeleton width="100%" height="40px" />
+          </div>
+        </section>
+      ) : latestNews.length > 0 && (
         <section className={styles.tickerSection}>
           <div className={styles.tickerBar}>
             <div className={styles.tickerLabel}>
@@ -463,6 +470,56 @@ export default function HomePage() {
                     </div>
                   </div>
                 </div>
+              </ScrollReveal>
+            ))
+          )}
+        </div>
+      </section>
+
+      {/* ══════════════════════════════════════════════════ */}
+      {/* ═══ COMMUNITY FEED PREVIEW ═══════════════════════ */}
+      {/* ══════════════════════════════════════════════════ */}
+      <section className={styles.communitySection}>
+        <ScrollReveal>
+          <div className={styles.sectionHeader}>
+            <h2 className={styles.sectionTitle}>💬 Community Pulse</h2>
+            <Link href="/community" className={styles.sectionLink}>Join discussion →</Link>
+          </div>
+        </ScrollReveal>
+
+        <div className={styles.communityGrid}>
+          {loadingPosts ? (
+            [1, 2, 3].map(i => (
+              <div key={i} className={styles.communityCard}>
+                <Skeleton variant="avatar-row" />
+                <Skeleton count={2} variant="text" style={{ marginTop: '12px' }} />
+              </div>
+            ))
+          ) : communityPosts.length === 0 ? (
+            <div className={styles.emptyGrid}>No posts yet.</div>
+          ) : (
+            communityPosts.map((post, i) => (
+              <ScrollReveal key={post.id} delay={i * 100}>
+                <Link href={`/community/${post.id}`} className={styles.communityCard}>
+                  <div className={styles.postHeader}>
+                    <div className={styles.postAvatar}>
+                      {post.authorAvatar ? (
+                        <img src={post.authorAvatar} alt="" />
+                      ) : (
+                        <span>{getInitials(post.authorName)}</span>
+                      )}
+                    </div>
+                    <div className={styles.postAuthorInfo}>
+                      <div className={styles.postAuthorName}>{post.authorName}</div>
+                      <div className={styles.postTime}>Live</div>
+                    </div>
+                  </div>
+                  <p className={styles.postContentPreview}>{post.content}</p>
+                  <div className={styles.postFooter}>
+                    <span>❤️ {post.likes?.length || 0}</span>
+                    <span>💬 {post.commentsCount || 0}</span>
+                  </div>
+                </Link>
               </ScrollReveal>
             ))
           )}
