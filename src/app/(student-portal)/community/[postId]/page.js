@@ -6,6 +6,7 @@ import { db } from '@/database/config/firebase';
 import { doc, getDoc, collection, addDoc, query, where, orderBy, onSnapshot, serverTimestamp, updateDoc, arrayUnion, arrayRemove, increment } from 'firebase/firestore';
 import { useAuth } from '@/frontend/context/AuthContext';
 import { awardCommunityReplyPoints } from '@/database/queries/points';
+import { Skeleton } from '@/frontend/components/ui/Skeleton/Skeleton';
 import styles from './page.module.css';
 
 export default function PostPage({ params: paramsPromise }) {
@@ -109,6 +110,33 @@ export default function PostPage({ params: paramsPromise }) {
     }
 
     const hasLiked = post.likes?.includes(user?.uid);
+
+    if (loading) {
+        return (
+            <div className={styles.pageWrapper}>
+                <div className={styles.container}>
+                    <Skeleton width="120px" height="20px" style={{ marginBottom: '24px' }} />
+                    <div className={styles.postCard}>
+                        <div className={styles.postHeader}>
+                            <Skeleton variant="avatar-row" size={42} />
+                        </div>
+                        <div className={styles.postContent}>
+                            <Skeleton count={3} variant="text" />
+                        </div>
+                    </div>
+                    <div className={styles.commentsSection}>
+                        <Skeleton width="150px" height="24px" style={{ marginBottom: '20px' }} />
+                        {[1, 2].map(i => (
+                            <div key={i} className={styles.comment}>
+                                <Skeleton width="40%" height="14px" style={{ marginBottom: '10px' }} />
+                                <Skeleton width="100%" height="30px" />
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            </div>
+        );
+    }
 
     return (
         <div className={styles.pageWrapper}>

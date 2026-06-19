@@ -6,12 +6,14 @@ import { db } from '@/database/config/firebase';
 import { collection, addDoc, query, orderBy, onSnapshot, serverTimestamp, doc, updateDoc, arrayUnion, arrayRemove } from 'firebase/firestore';
 import { useAuth } from '@/frontend/context/AuthContext';
 import { ScrollReveal } from '@/frontend/components/ui/Animations';
+import { Skeleton } from '@/frontend/components/ui/Skeleton/Skeleton';
 import { awardCommunityPostPoints } from '@/database/queries/points';
 import styles from './page.module.css';
 
 export default function CommunityPage() {
     const { user, loading: authLoading } = useAuth();
     const [posts, setPosts] = useState([]);
+    const [loading, setLoading] = useState(true);
     const [newPost, setNewPost] = useState('');
     const [submitting, setSubmitting] = useState(false);
 
@@ -24,8 +26,10 @@ export default function CommunityPage() {
             }));
             
             setPosts(postsData);
+            setLoading(false);
         }, (error) => {
             console.error("Error fetching posts:", error);
+            setLoading(false);
         });
 
         return () => unsubscribe();
@@ -191,7 +195,25 @@ export default function CommunityPage() {
 
                         {/* ── FEED ── */}
                         <div className={styles.feed}>
-                            {posts.length === 0 ? (
+                            {loading ? (
+                                <>
+                                    {[1, 2, 3].map(i => (
+                                        <div key={i} className={styles.postCard}>
+                                            <div className={styles.postHeader}>
+                                                <Skeleton variant="avatar-row" size={42} />
+                                            </div>
+                                            <div className={styles.postContent}>
+                                                <Skeleton count={2} variant="text" />
+                                            </div>
+                                            <div className={styles.interactionBar}>
+                                                <Skeleton width="60px" height="30px" borderRadius="15px" />
+                                                <Skeleton width="60px" height="30px" borderRadius="15px" />
+                                                <Skeleton width="60px" height="30px" borderRadius="15px" />
+                                            </div>
+                                        </div>
+                                    ))}
+                                </>
+                            ) : posts.length === 0 ? (
                                 <div style={{ textAlign: 'center', padding: '60px 20px', color: 'var(--text-muted)' }}>
                                     <div style={{ fontSize: '3rem', marginBottom: '12px' }}>💬</div>
                                     <div style={{ fontWeight: 700, fontSize: '1.1rem', color: 'var(--text-primary)', marginBottom: '6px' }}>No posts yet</div>
