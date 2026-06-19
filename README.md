@@ -20,7 +20,7 @@ The codebase received an overall rating of **7.5 / 10** following recent optimiz
 | **Feature Completeness**| `9.0 / 10` | Full AI features, community hub, and biometrics implemented and modularized. |
 
 > [!NOTE]
-> Recent improvements include: **Massive refactoring of Clubs & Dashboard**, **5+ new unit test suites**, **Shared utility migration**, and **Project root cleanup**.
+> Recent improvements include: **Massive refactoring of Clubs page**, **Implementation of Skeleton loading states across Dashboard & Homepage**, **Community feed previews on Homepage**, and **Project root cleanup**.
 
 ---
 
