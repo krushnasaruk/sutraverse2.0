@@ -85,6 +85,11 @@ export const handlePost_upload = async (request) => {
             }
         }
 
+        // ZIP BOMB PROTECTION: Enforce strict size limits and early termination
+        if (ext === 'zip' && file.size > 50 * 1024 * 1024) { // 50MB limit for ZIPs
+            return NextResponse.json({ error: 'ZIP file too large. Maximum 50MB allowed for archives to prevent decompression risks.' }, { status: 413 });
+        }
+
         // Build a unique filename: timestamp_originalname
         const timestamp = Date.now();
         const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, '_');

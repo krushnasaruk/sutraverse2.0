@@ -107,6 +107,7 @@ export default function DashboardPage() {
     const [scanStatus, setScanStatus] = useState(''); // 'scanning', 'verifying', 'success', 'error'
     const [showQRScanner, setShowQRScanner] = useState(false);
     const [qrStatus, setQrStatus] = useState('');
+    const [enteredPin, setEnteredPin] = useState('');
     const webcamRef = useRef(null);
 
     // Deadlines Tracking State
@@ -390,6 +391,12 @@ export default function DashboardPage() {
 
     const handleFacialScanAndGeo = async () => {
         if (!activeLiveSession) return;
+
+        if (enteredPin !== activeLiveSession.sessionPin) {
+            setScanStatus('error: Invalid Session PIN. Ask your teacher for the 4-digit code.');
+            return;
+        }
+
         if (!user.faceDescriptor) {
             setScanStatus('error: No biometric data found! Enroll your face in Profile settings first.');
             return;
@@ -1061,6 +1068,8 @@ export default function DashboardPage() {
                 webcamRef={webcamRef}
                 scanStatus={scanStatus}
                 handleFacialScanAndGeo={handleFacialScanAndGeo}
+                enteredPin={enteredPin}
+                setEnteredPin={setEnteredPin}
             />
 
             {/* ONBOARDING POPUP */}

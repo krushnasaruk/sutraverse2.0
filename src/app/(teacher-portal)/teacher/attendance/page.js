@@ -23,6 +23,7 @@ export default function AttendancePage() {
     const [radarSearching, setRadarSearching] = useState(false);
     const [geoVerifiedStudents, setGeoVerifiedStudents] = useState([]);
     const [qrToken, setQrToken] = useState('');
+    const [sessionPin, setSessionPin] = useState('');
 
     // Red List
     const [defaulters, setDefaulters] = useState([]);
@@ -183,10 +184,21 @@ export default function AttendancePage() {
                 const { latitude, longitude, accuracy } = pos.coords;
                 if (accuracy > 40) { setStatus({ text: `GPS weak (${Math.round(accuracy)}m)`, type: 'error' }); setRadarSearching(false); return; }
                 try {
-                    await setDoc(doc(db, 'liveSessions', selectedClass.classId), { active: true, teacherLat: latitude, teacherLng: longitude, accuracy, classId: selectedClass.classId, date: attendanceDate, timestamp: new Date().toISOString() });
+                    const newPin = Math.floor(1000 + Math.random() * 9000).toString();
+                    await setDoc(doc(db, 'liveSessions', selectedClass.classId), {
+                        active: true,
+                        teacherLat: latitude,
+                        teacherLng: longitude,
+                        accuracy,
+                        classId: selectedClass.classId,
+                        date: attendanceDate,
+                        timestamp: new Date().toISOString(),
+                        sessionPin: newPin
+                    });
+                    setSessionPin(newPin);
                     setLiveSessionActive(true);
                     setRadarSearching(false);
-                    setStatus({ text: 'Radar Active. Radius: ~15m.', type: 'success' });
+                    setStatus({ text: `Radar Active. PIN: ${newPin}`, type: 'success' });
                 } catch(e) { setStatus({ text: 'Error: ' + e.message, type: 'error' }); setRadarSearching(false); }
             },
             (err) => { setStatus({ text: 'GPS Error: ' + err.message, type: 'error' }); setRadarSearching(false); },
@@ -220,13 +232,21 @@ export default function AttendancePage() {
         let sent = 0;
         for (const s of defaulters) {
             try {
-                await fetch('/api/whatsapp', { method: 'POST', headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ studentPhone: s.studentPhone||null, parentPhone: s.parentPhone||null, studentName: s.name||s.email, assignmentTitle: "ATTENDANCE WARNING", marks: { obtained: s.percentage, max: 100 }})
+                await fetch('/api/whatsapp', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        studentPhone: s.studentPhone||null,
+                        parentPhone: s.parentPhone||null,
+                        studentName: s.name||s.email,
+                        assignmentTitle: "ATTENDANCE CRITICAL WARNING",
+                        marks: { obtained: s.percentage, max: 100 }
+                    })
                 });
                 sent++;
             } catch(e) {}
         }
-        setStatus({ text: `Sent ${sent} warnings!`, type: 'success' });
+        setStatus({ text: `Sent ${sent} critical warnings to parents!`, type: 'success' });
         setIsSaving(false);
     };
 
@@ -327,7 +347,10 @@ export default function AttendancePage() {
             {liveSessionActive && (
                 <div className={styles.liveZone}>
                     <div className={styles.liveInfo}>
-                        <h4>Live Check-in Session</h4>
+                        <div className={styles.liveTitleRow}>
+                            <h4>Live Check-in Session</h4>
+                            <div className={styles.pinBadge}>PIN: {sessionPin || '....'}</div>
+                        </div>
                         <p>Geofence 15m radius. {geoVerifiedStudents.length} checked in.</p>
                         <div className={styles.checkinCards}>
                             {geoVerifiedStudents.map(s => (

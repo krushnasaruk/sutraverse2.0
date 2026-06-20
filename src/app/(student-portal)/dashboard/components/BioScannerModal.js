@@ -8,7 +8,9 @@ export default function BioScannerModal({
     setShowScanner,
     webcamRef,
     scanStatus,
-    handleFacialScanAndGeo
+    handleFacialScanAndGeo,
+    enteredPin,
+    setEnteredPin
 }) {
     if (!showScanner) return null;
 
@@ -17,6 +19,18 @@ export default function BioScannerModal({
             <div className={`${styles.modalContent} ${styles.scannerModal} glass-panel`}>
                 <h2>Bio-Metric Check-In</h2>
                 <p style={{marginBottom: '16px', color: 'var(--text-secondary)'}}>Scanning face and triangulating coordinates...</p>
+
+                <div className={styles.pinInputGroup} style={{ marginBottom: '20px' }}>
+                    <label style={{ display: 'block', fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '8px' }}>Enter Class Session PIN</label>
+                    <input
+                        type="text"
+                        maxLength={4}
+                        placeholder="0000"
+                        value={enteredPin}
+                        onChange={(e) => setEnteredPin(e.target.value)}
+                        style={{ width: '100%', padding: '12px', borderRadius: '12px', background: 'var(--bg-input)', border: '1px solid var(--border)', textAlign: 'center', fontSize: '1.5rem', fontWeight: 'bold', letterSpacing: '8px' }}
+                    />
+                </div>
 
                 <div className={styles.webcamWrapper}>
                     <Webcam

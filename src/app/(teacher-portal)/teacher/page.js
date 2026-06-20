@@ -119,85 +119,111 @@ export default function TeacherOverview() {
     return (
         <div className={styles.overviewPage}>
             <header className={styles.pageHeader}>
-                <div>
-                    <h1 className={styles.pageTitle}>Good {new Date().getHours() < 12 ? 'Morning' : new Date().getHours() < 17 ? 'Afternoon' : 'Evening'}, {user.name?.split(' ')[0] || 'Professor'}</h1>
-                    <p className={styles.pageSubtitle}>{selectedClass.classId} — {selectedClass.subject}</p>
+                <div className={styles.headerInfo}>
+                    <div className={styles.greetingRow}>
+                        <h1 className={styles.pageTitle}>Welcome back, {user.name?.split(' ')[0] || 'Professor'}</h1>
+                        <div className={styles.liveBadge}><span className={styles.pulseDot}></span> System Live</div>
+                    </div>
+                    <p className={styles.pageSubtitle}>Managing <strong>{selectedClass.classId}</strong> for <strong>{selectedClass.subject}</strong></p>
+                </div>
+                <div className={styles.quickAccessRow}>
+                    <Link href="/teacher/attendance" className={styles.quickActionBtn}>Start Lecture</Link>
+                    <Link href="/teacher/materials" className={styles.quickActionBtnSecondary}>Upload Notes</Link>
                 </div>
             </header>
 
             {/* Stats Bento Grid */}
             <div className={styles.statsGrid}>
                 <Link href="/teacher/attendance" className={styles.statCard}>
-                    <span className={styles.statIcon}>👥</span>
-                    <span className={styles.statValue}>{loadingStats ? '—' : stats.totalStudents}</span>
-                    <span className={styles.statLabel}>Total Students</span>
+                    <div className={styles.statIconWrap} style={{background: 'rgba(59, 130, 246, 0.1)', color: '#3b82f6'}}>👥</div>
+                    <div className={styles.statContent}>
+                        <span className={styles.statValue}>{loadingStats ? '...' : stats.totalStudents}</span>
+                        <span className={styles.statLabel}>Enrolled Students</span>
+                    </div>
                 </Link>
                 <Link href="/teacher/attendance" className={`${styles.statCard} ${styles.statHighlight}`}>
-                    <span className={styles.statIcon}>✅</span>
-                    <span className={styles.statValue}>{loadingStats ? '—' : stats.todayPresent}</span>
-                    <span className={styles.statLabel}>Present Today</span>
+                    <div className={styles.statIconWrap} style={{background: 'rgba(16, 185, 129, 0.1)', color: '#10b981'}}>✅</div>
+                    <div className={styles.statContent}>
+                        <span className={styles.statValue}>{loadingStats ? '...' : stats.todayPresent}</span>
+                        <span className={styles.statLabel}>Attended Today</span>
+                    </div>
                 </Link>
                 <Link href="/teacher/attendance" className={styles.statCard}>
-                    <span className={styles.statIcon}>📩</span>
-                    <span className={styles.statValue}>{loadingStats ? '—' : stats.pendingLeaves}</span>
-                    <span className={styles.statLabel}>Pending Leaves</span>
+                    <div className={styles.statIconWrap} style={{background: 'rgba(245, 158, 11, 0.1)', color: '#f59e0b'}}>📩</div>
+                    <div className={styles.statContent}>
+                        <span className={styles.statValue}>{loadingStats ? '...' : stats.pendingLeaves}</span>
+                        <span className={styles.statLabel}>Leave Requests</span>
+                    </div>
                 </Link>
                 <Link href="/teacher/deadlines" className={styles.statCard}>
-                    <span className={styles.statIcon}>📅</span>
-                    <span className={styles.statValue}>{loadingStats ? '—' : stats.upcomingDeadlines}</span>
-                    <span className={styles.statLabel}>Active Deadlines</span>
+                    <div className={styles.statIconWrap} style={{background: 'rgba(239, 68, 68, 0.1)', color: '#ef4444'}}>📅</div>
+                    <div className={styles.statContent}>
+                        <span className={styles.statValue}>{loadingStats ? '...' : stats.upcomingDeadlines}</span>
+                        <span className={styles.statLabel}>Active Deadlines</span>
+                    </div>
                 </Link>
             </div>
 
-            {/* Red List */}
-            {defaulters.length > 0 && (
-                <div className={styles.redListCard}>
-                    <div className={styles.redListHeader}>
-                        <div>
-                            <h3 className={styles.redListTitle}>
-                                <span className={styles.redDot}></span>
-                                Requires Attention
-                            </h3>
-                            <p className={styles.redListSub}>Students below 75% cumulative attendance</p>
+            <div className={styles.mainDashboardGrid}>
+                {/* Red List */}
+                <div className={styles.dashboardColumn}>
+                    <div className={styles.cardHeaderRow}>
+                        <h3>⚠️ Defaulter Watch</h3>
+                        <Link href="/teacher/attendance" className={styles.textLink}>Full Roster →</Link>
+                    </div>
+                    {defaulters.length > 0 ? (
+                        <div className={styles.defaulterList}>
+                            {defaulters.slice(0, 5).map(d => (
+                                <div key={d.email} className={styles.defaulterRow}>
+                                    <div className={styles.defInfo}>
+                                        <span className={styles.defName}>{d.name || d.email.split('@')[0]}</span>
+                                        <span className={styles.defEmail}>{d.email}</span>
+                                    </div>
+                                    <div className={`${styles.defStatus} ${d.percentage < 50 ? styles.statusCritical : styles.statusWarning}`}>
+                                        {d.percentage}%
+                                    </div>
+                                </div>
+                            ))}
+                            {defaulters.length > 5 && <p className={styles.moreCount}>+ {defaulters.length - 5} more students below 75%</p>}
                         </div>
-                        <Link href="/teacher/attendance" className={styles.viewAllLink}>View in Attendance →</Link>
-                    </div>
-                    <div className={styles.redListGrid}>
-                        {defaulters.slice(0, 6).map(d => (
-                            <div key={d.email} className={styles.defaulterCard}>
-                                <span className={styles.defaulterName}>{d.name || d.email.split('@')[0]}</span>
-                                <span className={styles.defaulterPct}>{d.percentage}%</span>
-                            </div>
-                        ))}
-                    </div>
+                    ) : (
+                        <div className={styles.emptyCardState}>
+                            <span className={styles.emptyIcon}>🎉</span>
+                            <p>No students below 75% attendance!</p>
+                        </div>
+                    )}
                 </div>
-            )}
 
-            {/* Quick Actions */}
-            <div className={styles.quickActionsGrid}>
-                {/* Announcement quick-post */}
-                <div className={styles.actionCard}>
-                    <h3 className={styles.actionTitle}>Quick Announcement</h3>
-                    <p className={styles.actionSub}>Post to all students in {selectedClass.classId}</p>
-                    <form onSubmit={handlePostAnnouncement} className={styles.announcementForm}>
-                        <textarea
-                            placeholder="Type your announcement..."
-                            value={announcementText}
-                            onChange={e => setAnnouncementText(e.target.value)}
-                            rows={3}
-                            className={styles.announcementInput}
-                            required
-                        />
-                        {status.text && (
-                            <p className={`${styles.statusMsg} ${status.type === 'error' ? styles.statusError : styles.statusSuccess}`}>
-                                {status.text}
-                            </p>
-                        )}
-                        <button type="submit" disabled={isSaving || !announcementText.trim()} className={styles.sendBtn}>
-                            {isSaving ? 'Sending...' : 'Send Announcement'}
-                        </button>
-                    </form>
+                {/* Quick Actions */}
+                <div className={styles.dashboardColumn}>
+                    <div className={styles.cardHeaderRow}>
+                        <h3>📢 Class Broadcast</h3>
+                    </div>
+                    <div className={styles.announcementCard}>
+                        <p className={styles.actionSub}>Send push notification to {selectedClass.classId} members</p>
+                        <form onSubmit={handlePostAnnouncement} className={styles.announcementForm}>
+                            <textarea
+                                placeholder="Example: Tomorrow's lecture will be held in Lab 4 instead of Room 202..."
+                                value={announcementText}
+                                onChange={e => setAnnouncementText(e.target.value)}
+                                rows={4}
+                                className={styles.announcementInput}
+                                required
+                            />
+                            {status.text && (
+                                <p className={`${styles.statusMsg} ${status.type === 'error' ? styles.statusError : styles.statusSuccess}`}>
+                                    {status.text}
+                                </p>
+                            )}
+                            <button type="submit" disabled={isSaving || !announcementText.trim()} className={styles.sendBtn}>
+                                {isSaving ? 'Broadcasting...' : '✨ Send to Class'}
+                            </button>
+                        </form>
+                    </div>
                 </div>
+            </div>
+        </div>
+    );
 
                 {/* Quick Links */}
                 <div className={styles.actionCard}>
