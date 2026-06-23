@@ -211,7 +211,7 @@ Ensure `react-markdown` is used without `rehype-raw` to prevent XSS from AI-gene
 </ReactMarkdown>
 ```
 
-Update README 14: Minor updates and formatting improvements.
+Update README 15: Minor updates and formatting improvements.
 
  
  
