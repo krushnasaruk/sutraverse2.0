@@ -26,8 +26,8 @@ jobs:
 
     - name: Generate Variable Commits
       run: |
-        # Generate random number between 12 and 20
-        NUM_COMMITS=$((12 + RANDOM % 9))
+        # Generate random number between 1 and 2
+        NUM_COMMITS=$((1 + RANDOM % 2))
         echo "Creating $NUM_COMMITS commits..."
         
         # Ensure directory for logging exists
