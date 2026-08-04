@@ -253,7 +253,7 @@ async function executeSummarizeQuestionPaper(args) {
         const base64Data = fileBuffer.toString('base64');
         
         // Use Gemini native Multimodal document understanding
-        const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
+        const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
         
         const prompt = `
         You are an academic college advisor. Summarize the provided engineering question paper PDF file.
@@ -514,7 +514,7 @@ Do NOT use tools for general knowledge questions like "What is gravity?" or "Who
         `;
 
         const model = genAI.getGenerativeModel({ 
-            model: "gemini-2.5-flash",
+            model: "gemini-1.5-flash",
             systemInstruction,
             tools: [{ functionDeclarations: [searchFilesDeclaration, searchNewsDeclaration, searchClubsDeclaration, searchYoutubeDeclaration, searchPyqDatabaseDeclaration, summarizeQuestionPaperDeclaration] }]
         });

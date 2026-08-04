@@ -35,7 +35,7 @@ export const handlePost_generatemcq = async (request) => {
         const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || '');
         // We use gemini-1.5-pro or flash with responseSchema to guarantee JSON output
         const model = genAI.getGenerativeModel({
-            model: "gemini-2.5-flash",
+            model: "gemini-1.5-flash",
             generationConfig: {
                 responseMimeType: "application/json",
                 responseSchema: {
@@ -171,7 +171,7 @@ export const handlePost_generatestudyguide = async (request) => {
 
         const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || '');
         const model = genAI.getGenerativeModel({
-            model: "gemini-2.5-flash",
+            model: "gemini-1.5-flash",
             generationConfig: {
                 responseMimeType: "application/json",
                 responseSchema: {
@@ -659,7 +659,7 @@ export const handlePost_summarizepdf = async (request) => {
 
         const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || '');
         const model = genAI.getGenerativeModel({
-            model: "gemini-2.5-flash",
+            model: "gemini-1.5-flash",
         });
 
         const prompt = `

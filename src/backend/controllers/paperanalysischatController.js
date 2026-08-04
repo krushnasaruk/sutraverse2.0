@@ -222,7 +222,7 @@ Ensure every equation, step, and derivation is perfectly human-readable in plain
 `;
 
             const model = genAI.getGenerativeModel({
-                model: "gemini-2.5-flash",
+                model: "gemini-1.5-flash",
                 systemInstruction
             });
 
