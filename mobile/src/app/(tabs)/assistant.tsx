@@ -155,8 +155,8 @@ If a student asks you to explain a concept, explain it clearly with analogies if
           <Text style={[
             styles.msgLine,
             { color: colors.textPrimary },
-            isHeading && styles.headingLine,
-          ]}>
+            isHeading ? styles.headingLine : null,
+          ] as any}>
             {isBullet ? '  •  ' : ''}
             {parts.map((part, pi) => (
               <Text key={pi} style={{ fontWeight: pi % 2 === 1 ? '600' : '400' }}>{part}</Text>
@@ -192,7 +192,7 @@ If a student asks you to explain a concept, explain it clearly with analogies if
             borderBottomWidth: StyleSheet.hairlineWidth,
             borderBottomColor: colors.dividerSoft
           }
-        ]}>
+        ] as any}>
           {Platform.OS === 'ios' && (
             <BlurView
               intensity={80}
@@ -202,7 +202,7 @@ If a student asks you to explain a concept, explain it clearly with analogies if
           )}
         </Animated.View>
         <View style={styles.topLeft}>
-          <View style={[styles.aiDot, { backgroundColor: colors.primary }]}>
+          <View style={[styles.aiDot, { backgroundColor: colors.primary }] as any}>
             <Ionicons name="sparkles" size={12} color="#fff" />
           </View>
           <View>
@@ -227,8 +227,8 @@ If a student asks you to explain a concept, explain it clearly with analogies if
         {/* Empty state — Apple feature-card style */}
         {messages.length === 0 && (
           <View style={styles.welcomeSection}>
-            <View style={[styles.welcomeCard, { backgroundColor: colors.bgCard, borderColor: colors.dividerSoft }]}>
-              <View style={[styles.welcomeIcon, { backgroundColor: colors.primary }]}>
+            <View style={[styles.welcomeCard, { backgroundColor: colors.bgCard, borderColor: colors.dividerSoft }] as any}>
+              <View style={[styles.welcomeIcon, { backgroundColor: colors.primary }] as any}>
                 <Ionicons name="sparkles" size={22} color="#fff" />
               </View>
               <Text style={[styles.welcomeTitle, { color: colors.textPrimary }]}>
@@ -245,7 +245,7 @@ If a student asks you to explain a concept, explain it clearly with analogies if
               {SUGGESTIONS.map((sug, i) => (
                 <TouchableOpacity
                   key={i}
-                  style={[styles.suggestChip, { backgroundColor: colors.bgCard, borderColor: colors.dividerSoft }]}
+                  style={[styles.suggestChip, { backgroundColor: colors.bgCard, borderColor: colors.dividerSoft }] as any}
                   onPress={() => handleSend(sug.query)}
                   activeOpacity={0.85}
                 >
@@ -260,9 +260,9 @@ If a student asks you to explain a concept, explain it clearly with analogies if
         {messages.map((msg, idx) => {
           const isUser = msg.role === 'user';
           return (
-            <View key={idx} style={[styles.msgRow, isUser ? styles.userRow : styles.modelRow]}>
+            <View key={idx} style={[styles.msgRow, isUser ? styles.userRow : styles.modelRow] as any}>
               {!isUser && (
-                <View style={[styles.msgAvatar, { backgroundColor: colors.primary }]}>
+                <View style={[styles.msgAvatar, { backgroundColor: colors.primary }] as any}>
                   <Ionicons name="sparkles" size={10} color="#fff" />
                 </View>
               )}
@@ -271,7 +271,7 @@ If a student asks you to explain a concept, explain it clearly with analogies if
                 isUser
                   ? [styles.userBubble, { backgroundColor: colors.primary }]
                   : [styles.modelBubble, { backgroundColor: colors.bgCard, borderColor: colors.dividerSoft }]
-              ]}>
+              ] as any}>
                 {isUser ? (
                   <Text style={styles.userText}>{msg.content}</Text>
                 ) : (
@@ -285,11 +285,11 @@ If a student asks you to explain a concept, explain it clearly with analogies if
         })}
 
         {loading && (
-          <View style={[styles.msgRow, styles.modelRow]}>
-            <View style={[styles.msgAvatar, { backgroundColor: colors.primary }]}>
+          <View style={[styles.msgRow, styles.modelRow] as any}>
+            <View style={[styles.msgAvatar, { backgroundColor: colors.primary }] as any}>
               <Ionicons name="sparkles" size={10} color="#fff" />
             </View>
-            <View style={[styles.msgBubble, styles.modelBubble, { backgroundColor: colors.bgCard, borderColor: colors.dividerSoft }]}>
+            <View style={[styles.msgBubble, styles.modelBubble, { backgroundColor: colors.bgCard, borderColor: colors.dividerSoft }] as any}>
               <View style={styles.modelInner}>
                 <TypingIndicator colors={colors} />
               </View>
@@ -303,8 +303,8 @@ If a student asks you to explain a concept, explain it clearly with analogies if
         backgroundColor: colors.canvas, 
         borderTopColor: colors.hairline,
         paddingBottom: isKeyboardVisible ? 16 : (Platform.OS === 'ios' ? 96 : 76)
-      }]}>
-        <View style={[styles.inputWrap, { backgroundColor: colors.bgMain, borderColor: colors.dividerSoft }]}>
+      }] as any}>
+        <View style={[styles.inputWrap, { backgroundColor: colors.bgMain, borderColor: colors.dividerSoft }] as any}>
           <TextInput
             style={[styles.inputField, { color: colors.textPrimary }]}
             placeholder="Ask anything about your studies..."
@@ -323,7 +323,7 @@ If a student asks you to explain a concept, explain it clearly with analogies if
           <View style={[
             styles.sendBtn,
             { backgroundColor: input.trim() && !loading ? colors.primary : colors.secondaryBg }
-          ]}>
+          ] as any}>
             <Ionicons name="arrow-up" size={20} color={input.trim() && !loading ? '#fff' : colors.textDisabled} />
           </View>
         </TouchableOpacity>
