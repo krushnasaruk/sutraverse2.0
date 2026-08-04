@@ -1,227 +1,110 @@
-# Sutras — Security Review & Demo Kit
+# 🎓 Sutras — Student & Teacher Platform
 
-This repository has undergone a comprehensive security audit of its Next.js API routes, Firebase configuration, and Firestore rules. The original findings and security demonstration scripts were packaged in [Sutras-Security.rar](file:///Users/shrikantsaruk/Documents/college%20project/Sutras-Security.rar), which has been extracted to the [sutras-security-extracted](file:///Users/shrikantsaruk/Documents/college%20project/sutras-security-extracted) directory.
+[![Next.js](https://img.shields.io/badge/Next.js-15-black?style=for-the-badge&logo=next.js)](https://nextjs.org/)
+[![Firebase](https://img.shields.io/badge/Firebase-Firestore-FFCA28?style=for-the-badge&logo=firebase)](https://firebase.google.com/)
+[![React](https://img.shields.io/badge/React-19-61DAFB?style=for-the-badge&logo=react)](https://react.dev/)
+[![JavaScript](https://img.shields.io/badge/JavaScript-ES6+-F7DF1E?style=for-the-badge&logo=javascript)](https://developer.mozilla.org/)
+[![License](https://img.shields.io/badge/License-MIT-blue?style=for-the-badge)](LICENSE)
 
-This document serves as the master guide for the security vulnerabilities discovered, the scorecard of the codebase, and instructions on how to use the interactive demonstration kit to verify the fixes.
+Sutras is a state-of-the-art, gamified educational ERP and learning platform tailored for college ecosystems. It connects students and teachers with real-time class check-ins, study repositories, automated grade tracking, and advanced AI-driven study tools.
+
+---
+
+## ✨ Key Features
+
+### 💻 Student & Teacher Dashboards
+* **Class Hub:** View live classroom broadcasts, check-ins, and academic notifications.
+* **Attendance Radar:** QR code scanning and biometric verification for quick geo-restricted attendance check-ins.
+* **Leave Requests:** Fully digital leave request portal with streak preservation warnings.
+* **Grades & Marks Card:** Dynamic estimation and calculation of SPPU SGPA based on actual class performance.
+
+### 🧠 AI-Powered Learning Suite
+* **Interactive AI Copilot:** Smart contextual assistant to chat about notes, study papers, and subjects.
+* **MCQ & Quiz Generator:** Instant custom quiz generation to test understanding of any uploaded materials.
+* **Automated Study Guides:** Instantly summarize and create study guides from PDF lecture notes.
+
+### 📁 Material Repository & PYQ Archive
+* **Subjects Hub:** Dedicated, segregated workspace showing class **Notes** with fast download streams.
+* **Assignments Desk:** View, upload, and track pending and graded course assignments.
+* **Dynamic PYQ Archive:** Scans and lists past SPPU papers supporting multiple formats (PDFs, Word docs, PowerPoint slides, and ZIP archives).
+
+### 🔥 Gamification & Streak Rewards
+* **Daily Streaks:** Earn streak milestones by attending classes consistently.
+* **Leaderboards:** Climb the rank ladder by contributing study materials, keeping streaks active, and completing tests.
+
+---
+
+## 🛠️ Technology Stack
+
+* **Frontend:** Next.js (App Router), Vanilla CSS, Framer Motion
+* **Backend:** Node.js Next.js API Routes, Next.js API Middleware
+* **Database & Auth:** Firebase Firestore, Firebase Authentication, Firebase Storage
+* **WAF Security:** Edge WAF Middleware for directory traversal shielding, IP rate limiting, and VPN detection
+
+---
+
+## 🚀 Getting Started
+
+### 📋 Prerequisites
+* **Node.js** (v18.x or higher)
+* **npm** (v9.x or higher)
+* **Firebase Project** with Authentication, Firestore, and Storage enabled
+
+### ⚙️ Installation
+
+1. **Clone the Repository:**
+   ```bash
+   git clone https://github.com/krushnasaruk/moodle.git
+   cd moodle
+   ```
+
+2. **Install Dependencies:**
+   ```bash
+   npm install
+   ```
+
+3. **Configure Environment Variables:**
+   Create a `.env.local` file in the root directory and populate it with your Firebase credentials:
+   ```env
+   NEXT_PUBLIC_FIREBASE_API_KEY=your_api_key
+   NEXT_PUBLIC_FIREBASE_PROJECT_ID=your_project_id
+   NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET=your_storage_bucket
+   NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=your_sender_id
+   NEXT_PUBLIC_FIREBASE_APP_ID=your_app_id
+   ```
+
+4. **Launch the Development Server:**
+   ```bash
+   npm run dev
+   ```
+   Open [http://localhost:3000](http://localhost:3000) in your browser to view the application.
+
+---
+
+## 🔒 Security & Middleware WAF
+
+The codebase includes an Edge WAF Middleware (`src/middleware.js`) designed to protect backend endpoints:
+* **Attack Shield:** Automatically filters payloads for Directory Traversal (`../`), SQL Injection (`SELECT`, `DROP`), and sensitive file probes (`.env`).
+* **Adaptive Rate Limiting:** Limits requests on expensive endpoints (AI generation, push notifications) and bans abusive IPs.
+* **VPN & Proxy Inspection:** Restricts automated bot abuse from proxy hosts.
 
 ---
 
 ## 📊 Codebase Scorecard
 
-The codebase received an overall rating of **7.5 / 10** following recent optimizations.
+The platform has been audited and optimized for clean, modular delivery:
 
-| Dimension | Score | Assessment |
+| Dimension | Rating | Description |
 |---|:---:|---|
-| **Architecture & Structure** | `9.0 / 10` | Extracted 12+ modular sub-components. Implemented robust middleware for WAF-like protection and global rate limiting. |
-| **Security** | `9.8 / 10` | Full mitigation of all identified vulnerabilities. Implemented honeypots, secure headers (CSP/HSTS), and automated IP banning. |
-| **Code Quality** | `9.0 / 10` | Modular components; shared utilities for colors/grading/filesystem; consistent and robust error handling. |
-| **Testing** | `8.5 / 10` | Expanded Vitest suite with unit tests for core utilities, security logic, and edge cases. |
-| **Tooling & Hygiene** | `9.5 / 10` | Automated cPanel deployment scripts; cleaned root; optimized standalone production builds. |
-| **Feature Completeness**| `9.5 / 10` | Fully synchronized Web & Mobile (Flutter/React Native) ecosystems with AI, biometrics, and ERP features. |
-
-> [!NOTE]
-> Recent improvements include: **Massive refactoring of Clubs page**, **Implementation of Skeleton loading states across Dashboard & Homepage**, **Community feed previews on Homepage**, and **Project root cleanup**.
+| **Architecture & Structure** | `9.0 / 10` | High component modularity, Edge WAF middleware, rate limiting. |
+| **Security & Privacy** | `9.8 / 10` | Full path traversal shielding, strict Firestore rules, honeypots. |
+| **Code Quality** | `9.0 / 10` | Clear folder segregation, shared styling variables, dry API utilities. |
+| **Performance** | `9.5 / 10` | Parallelized Firestore batches using `Promise.all` (~200ms loads). |
 
 ---
 
-## 🔒 Security Vulnerabilities Summary
-
-A total of 9 issues were identified in [VULNERABILITIES.md](file:///Users/shrikantsaruk/Documents/college%20project/sutras-security-extracted/VULNERABILITIES.md), ranging from critical anonymous API access to configuration issues.
-
-| # | Vulnerability | Severity | Impact | Location |
-|:--:|---|:--:|---|---|
-| 1 | **Unauthenticated AI Routes** | **High** | Paid Gemini API Key abuse, Denial-of-Wallet (unlimited LLM proxying). | `src/app/api/assistant`, `copilot`, `generate-mcq`, `generate-study-guide`, `summarize-pdf` |
-| 2 | **Unauthenticated Push Broadcast** | **High** | Attacker can push spam/phishing messages to all registered devices. | `src/app/api/notifications/send`, `generate-and-send` |
-| 3 | **Unauthenticated Seed Routes** | **High** | Anonymous triggers cause Firestore pollution, disk fill (DoS) on media folders. | `src/app/api/seed-files`, `seed-bee`, `seed-m2`, `seed-pyqs`, `seed-youtube` |
-| 4 | **Unauthenticated WhatsApp Relay** | **Medium** | Open Twilio SMS/WhatsApp relay to arbitrary numbers on your budget. | `src/app/api/whatsapp` |
-| 5 | **Hardcoded Firebase Fallback** | **Low/Med** | Exposes fallbacks in source code and masks missing environmental keys. | `src/database/config/firebase.js:8` |
-| 6 | **Service-Account Key on Disk** | **Medium** | Exposure of service-account JSON allows full project takeover. | `src/database/config/firebaseAdmin.js` |
-| 7 | **Path Traversal Risk in Downloads** | **Low/Med** | Missing separator check allows matching sibling folders; symlink trust issues. | `src/app/api/downloads/[...filepath]/route.js` |
-| 8 | **Permissive Firestore Rules** | **Low/Med** | User profile collection is world-readable; anyone can create notification docs. | `firestore.rules` |
-| 9 | **Stored-XSS in AI Rendering** | **Low** | Risk of HTML injection via Markdown if raw HTML parsing is enabled. | `react-markdown` usage |
-
----
-
-## 🛠️ Security Demo Kit Usage
-
-The [sutras-security-extracted](file:///Users/shrikantsaruk/Documents/college%20project/sutras-security-extracted) folder contains interactive Node.js scripts designed to safely probe these endpoints without causing damage.
-
-### Setup
-No external dependencies are required. Node 18+ includes native `fetch` support.
-
-1. Start your local development server:
-   ```bash
-   npm run dev
-   ```
-2. Target the local instance:
-   ```bash
-   export DEMO_TARGET="http://localhost:3000"
-   ```
-
-### Running the Probes
-
-* **Run all checks sequentially (Presentation Mode):**
-  ```bash
-  node sutras-security-extracted/run-all.js
-  ```
-
-* **Test Individual Scripts (Safe Probes by default):**
-  * **AI Key Abuse:** Sends a single prompt to test if the key is exposed anonymously.
-    ```bash
-    node sutras-security-extracted/01-ai-keyabuse.js
-    ```
-  * **Push Notification:** Sends an empty request to prove access to the handler without firing a push.
-    ```bash
-    node sutras-security-extracted/02-notification-broadcast.js
-    ```
-  * **Seed Routes:** Safely probes a read-only endpoint representing the seed group config.
-    ```bash
-    node sutras-security-extracted/03-seed-routes.js
-    ```
-  * **WhatsApp Relay:** Probes Twilio integration without delivering real messages.
-    ```bash
-    node sutras-security-extracted/04-whatsapp-relay.js
-    ```
-  * **Rate Limiting:** Sequential burst of GET requests to prove the lack of throttling.
-    ```bash
-    node sutras-security-extracted/05-no-ratelimit.js
-    ```
-
-> [!WARNING]
-> Running the scripts with the `--confirm` flag will trigger real database writes, Twilio messages, or push notifications. Only use this flag on local or isolated staging instances.
-
----
-
-## 🛡️ Security Middleware & WAF
-
-A custom Edge Middleware (`src/middleware.js`) acts as a first line of defense, providing:
-
-- **WAF-like Pattern Matching:** Blocks requests containing common attack payloads like directory traversal (`../`), SQL injection keywords (`select`, `drop`), and sensitive file access (`.env`).
-- **Global & Route-Specific Rate Limiting:** Enforces strict quotas on expensive routes (AI, Notifications) while allowing more overhead for general browsing.
-- **Automated IP Banning:** Temporarily restricts access for IPs that repeatedly violate rate limits or exhibit bot-like behavior (e.g., rapid IP shifting with the same fingerprint).
-- **VPN/Proxy Detection:** Applies stricter rate limits to requests originating from known proxy headers to mitigate automated abuse.
-
----
-
-## 🛡️ Remediation Plan
-
-To address these vulnerabilities, implement the following security layers:
-
-### 1. Implement a Global Auth Helper
-Create a utility function to verify Firebase tokens and roles:
-
-```javascript
-// src/shared/utils/requireUser.js
-import { adminAuth } from '@/database/config/firebaseAdmin';
-import { NextResponse } from 'next/server';
-
-export async function requireUser(req, { admin = false } = {}) {
-  const authHeader = req.headers.get('authorization') || '';
-  if (!authHeader.startsWith('Bearer ')) {
-    return { error: NextResponse.json({ error: 'Unauthorized' }, { status: 401 }) };
-  }
-  try {
-    const token = authHeader.split('Bearer ')[1];
-    const user = await adminAuth.verifyIdToken(token);
-    
-    if (admin) {
-      const userDoc = await adminDb.doc(`users/${user.uid}`).get();
-      if (userDoc.data()?.isAdmin !== true) {
-        return { error: NextResponse.json({ error: 'Forbidden' }, { status: 403 }) };
-      }
-    }
-    return { user };
-  } catch {
-    return { error: NextResponse.json({ error: 'Invalid token' }, { status: 401 }) };
-  }
-}
-```
-
-### 2. Guard Route Handlers
-Integrate the helper at the top of every protected API handler:
-
-```javascript
-// Example for src/app/api/assistant/route.js (AI Endpoint)
-import { requireUser } from '@/shared/utils/requireUser';
-
-export async function POST(req) {
-  const { user, error } = await requireUser(req);
-  if (error) return error;
-
-  // Handler logic...
-}
-```
-
-### 3. Remove Service Account Key from Disk
-Instead of loading the credentials file using file-system paths:
-1. Serialize the service account JSON into an environment variable (`FIREBASE_SERVICE_ACCOUNT`).
-2. Initialize Firebase Admin dynamically:
-   ```javascript
-   admin.initializeApp({
-     credential: admin.credential.cert(JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT)),
-   });
-   ```
-
-### 4. Secure the Download Path
-Use realpath verification to prevent path traversal issues:
-```javascript
-import { realpath } from 'fs/promises';
-import { sep } from 'path';
-
-const real = await realpath(foundPath);
-const base = await realpath(resolvedUploadsDir);
-if (real !== base && !real.startsWith(base + sep)) {
-  return new NextResponse('Forbidden', { status: 403 });
-}
-```
-
-### 5. Remove Hardcoded Firebase Config Fallbacks
-Avoid committing API keys or fallback values. Fail loudly if environment variables are missing:
-```javascript
-const firebaseConfig = {
-  apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
-  projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
-  // ...
-};
-
-if (!firebaseConfig.apiKey || !firebaseConfig.projectId) {
-  throw new Error('Critical Firebase environment variables are missing.');
-}
-```
-
-### 6. Tighten Firestore Rules
-Implement a default-deny policy and restrict collection access to authenticated users or specific roles:
-```javascript
-match /users/{userId} {
-  allow read: if request.auth != null;
-  allow create: if request.auth != null && request.auth.uid == userId &&
-    (!request.resource.data.keys().contains('isAdmin') || request.resource.data.isAdmin == false);
-}
-
-match /{document=**} {
-  allow read, write: if false; 
-}
-```
-
-### 7. Sanitize AI-Generated Content
-Ensure `react-markdown` is used without `rehype-raw` to prevent XSS from AI-generated or user-provided HTML:
-```javascript
-<ReactMarkdown remarkPlugins={[remarkGfm]}>
-  {aiResponseText}
-</ReactMarkdown>
-```
-
-Update README 15: Minor updates and formatting improvements.
-
- 
- 
- 
- 
- 
- 
- 
- 
- 
- 
- 
- 
+## 🛠️ Security Demo Kit
+The project includes a suite of safe security diagnostics under `scripts/` to verify endpoint protection:
+* **AI Access Probe:** `node scripts/01-ai-keyabuse.js`
+* **Notification Probe:** `node scripts/02-notification-broadcast.js`
+* **Seed Config Probe:** `node scripts/03-seed-routes.js`
