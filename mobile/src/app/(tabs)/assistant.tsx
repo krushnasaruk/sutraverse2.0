@@ -7,7 +7,7 @@ import { useAuth } from '../../context/AuthContext';
 import { useTheme } from '../../context/ThemeContext';
 import { BlurView } from 'expo-blur';
 
-const GEMINI_API_KEY = "AQ.Ab8RN6IivWVmq7QHAZ8oNl3EpALKmJzYY92dnrm0XJ2_AzMBtg";
+const GEMINI_API_KEY = process.env.EXPO_PUBLIC_GEMINI_API_KEY || "";
 const genAI = new GoogleGenerativeAI(GEMINI_API_KEY);
 
 interface ChatMessage {
