@@ -203,11 +203,33 @@ export default function DashboardPage() {
             if (!user.classId) return;
             setLoadingClassData(true);
             try {
-                // 1. Fetch entire attendance for the class to calc personal stats
                 const attQuery = query(collection(db, 'attendance'), where('classId', '==', user.classId));
-                const attSnap = await getDocs(attQuery);
+                const lrQuery = query(collection(db, 'leaveRequests'), where('studentEmail', '==', user.email));
+                const subQuery = query(collection(db, 'submissions'), where('studentEmail', '==', user.email));
+                const mcqSubQuery = query(collection(db, 'mcqSubmissions'), where('studentEmail', '==', user.email));
+                const sppuGradesQ = query(collection(db, 'sppuGrades'), where('studentEmail', '==', user.email));
+                const annQuery = query(collection(db, 'announcements'), where('classId', '==', user.classId));
+                const matQuery = query(collection(db, 'files'), where('classId', '==', user.classId));
+
+                const [
+                    attSnap,
+                    lrSnap,
+                    subSnap,
+                    mcqSubSnap,
+                    sppuGradesSnap,
+                    annSnap,
+                    matSnap
+                ] = await Promise.all([
+                    getDocs(attQuery),
+                    getDocs(lrQuery),
+                    getDocs(subQuery),
+                    getDocs(mcqSubQuery),
+                    getDocs(sppuGradesQ),
+                    getDocs(annQuery),
+                    getDocs(matQuery)
+                ]);
+
                 let p = 0, a = 0, l = 0, e = 0;
-                
                 const history = [];
 
                 attSnap.forEach(docSnap => {
@@ -240,41 +262,23 @@ export default function DashboardPage() {
                 const pct = total > 0 ? Math.round(((p + (l * 0.5) + e) / total) * 100) : 0;
                 if (!cancelled) setAttendanceStats({ present: p, absent: a, late: l, excused: e, total, percentage: pct });
 
-                // 1.5 Fetch My Leave Requests
-                const lrQuery = query(collection(db, 'leaveRequests'), where('studentEmail', '==', user.email));
-                const lrSnap = await getDocs(lrQuery);
                 const lrList = lrSnap.docs.map(d => ({ id: d.id, ...d.data() }));
                 lrList.sort((x, y) => new Date(y.timestamp) - new Date(x.timestamp));
                 if (!cancelled) setMyLeaveRequests(lrList);
 
-                // 1.6 Fetch My Submissions
-                const subQuery = query(collection(db, 'submissions'), where('studentEmail', '==', user.email));
-                const subSnap = await getDocs(subQuery);
                 const subList = subSnap.docs.map(d => ({ id: d.id, ...d.data() }));
                 if (!cancelled) setMySubmissions(subList);
 
-                // 1.6.5 Fetch My MCQ Submissions
-                const mcqSubQuery = query(collection(db, 'mcqSubmissions'), where('studentEmail', '==', user.email));
-                const mcqSubSnap = await getDocs(mcqSubQuery);
                 const mcqSubList = mcqSubSnap.docs.map(d => ({ id: d.id, ...d.data() }));
                 if (!cancelled) setMyMcqSubmissions(mcqSubList);
 
-                // 1.7 Fetch SPPU Grades
-                const sppuGradesQ = query(collection(db, 'sppuGrades'), where('studentEmail', '==', user.email));
-                const sppuGradesSnap = await getDocs(sppuGradesQ);
                 const sppuList = sppuGradesSnap.docs.map(d => ({ id: d.id, ...d.data() }));
                 if (!cancelled) setSppuGrades(sppuList);
 
-                // 2. Fetch Announcements
-                const annQuery = query(collection(db, 'announcements'), where('classId', '==', user.classId));
-                const annSnap = await getDocs(annQuery);
                 const annList = annSnap.docs.map(d => ({ id: d.id, ...d.data() }));
                 annList.sort((x, y) => (y.timestamp || '').localeCompare(x.timestamp || ''));
                 if (!cancelled) setAnnouncements(annList);
 
-                // 3. Fetch Class Uploads
-                const matQuery = query(collection(db, 'files'), where('classId', '==', user.classId));
-                const matSnap = await getDocs(matQuery);
                 const matList = matSnap.docs.map(d => ({ id: d.id, ...d.data() }));
                 matList.sort((x, y) => (y.createdAt || '').localeCompare(x.createdAt || ''));
                 if (!cancelled) setClassMaterials(matList);

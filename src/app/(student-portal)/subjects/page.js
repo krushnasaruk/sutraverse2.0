@@ -86,10 +86,10 @@ export default function SubjectsPage() {
             if (f.subject === 'Engineering Mathematics 1') f.subject = 'Engineering Mathematics I';
             if (f.subject === 'EG') f.subject = 'Engineering Graphics';
             if (f.subject === 'EM') f.subject = 'Engineering Mechanics';
-            if (f.subject === 'Basic Electronics Engineering' || f.subject === 'BXE') f.subject = 'BEE';
+            if (f.subject === 'BXE') f.subject = 'Basic Electronics Engineering';
             return { id: d.id, ...f };
           })
-          .filter(f => f.status === 'approved');
+          .filter(f => f.status === 'approved' && f.type === 'Notes');
         data.sort((a, b) => (b.createdAt || '').localeCompare(a.createdAt || ''));
         // Filter out files that don't exist on disk
         const verified = await filterAvailableFiles(data);

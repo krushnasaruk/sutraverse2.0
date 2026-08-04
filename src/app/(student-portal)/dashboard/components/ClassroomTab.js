@@ -43,8 +43,7 @@ export default function ClassroomTab({
                 </div>
 
                 <div className={styles.hubGrid}>
-                    {loadingClassData ? (
-                        <>
+                    {loadingClassData ? <>
                             <div style={{ gridColumn: '1 / -1' }}>
                                 <Skeleton width="100%" height="200px" borderRadius="16px" />
                             </div>
@@ -52,8 +51,7 @@ export default function ClassroomTab({
                                 <Skeleton width="100%" height="300px" borderRadius="16px" />
                             </div>
                         </>
-                    ) : (
-                        <>
+                     : <>
                             {activeLiveSession && (
                                 <div className={styles.liveSessionBanner} style={{ gridColumn: '1 / -1' }}>
                             <div className={styles.livePulseGeo}></div>
@@ -365,6 +363,8 @@ export default function ClassroomTab({
                             )}
                         </div>
                     </div>
+                </>
+            }
                 </div>
             </div>
         </div>

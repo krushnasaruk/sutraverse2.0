@@ -25,13 +25,21 @@ export default function TeacherOverview() {
             try {
                 // 1. Total students
                 const rosterQ = query(collection(db, 'roster'), where('classId', '==', selectedClass.classId), where('role', '==', 'student'));
-                const rosterSnap = await getDocs(rosterQ);
+                const attQ = query(collection(db, 'attendance'), where('classId', '==', selectedClass.classId));
+                const lrQ = query(collection(db, 'leaveRequests'), where('classId', '==', selectedClass.classId));
+                const dlQ = query(collection(db, 'deadlines'), where('classId', '==', selectedClass.classId));
+
+                const [rosterSnap, attSnap, lrSnap, dlSnap] = await Promise.all([
+                    getDocs(rosterQ),
+                    getDocs(attQ),
+                    getDocs(lrQ),
+                    getDocs(dlQ)
+                ]);
+
                 const totalStudents = rosterSnap.size;
 
                 // 2. Today's attendance
                 const today = new Date().toISOString().split('T')[0];
-                const attQ = query(collection(db, 'attendance'), where('classId', '==', selectedClass.classId));
-                const attSnap = await getDocs(attQ);
                 let todayPresent = 0;
                 const totalClasses = attSnap.size;
                 attSnap.forEach(d => {
@@ -42,14 +50,10 @@ export default function TeacherOverview() {
                 });
 
                 // 3. Pending leave requests
-                const lrQ = query(collection(db, 'leaveRequests'), where('classId', '==', selectedClass.classId));
-                const lrSnap = await getDocs(lrQ);
                 let pendingLeaves = 0;
                 lrSnap.forEach(d => { if (d.data().status === 'pending') pendingLeaves++; });
 
                 // 4. Upcoming deadlines
-                const dlQ = query(collection(db, 'deadlines'), where('classId', '==', selectedClass.classId));
-                const dlSnap = await getDocs(dlQ);
                 let upcomingDeadlines = 0;
                 dlSnap.forEach(d => { if (new Date(d.data().dueDate) > new Date()) upcomingDeadlines++; });
 
@@ -221,9 +225,6 @@ export default function TeacherOverview() {
                         </form>
                     </div>
                 </div>
-            </div>
-        </div>
-    );
 
                 {/* Quick Links */}
                 <div className={styles.actionCard}>

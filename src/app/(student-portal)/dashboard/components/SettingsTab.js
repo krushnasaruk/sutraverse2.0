@@ -1,7 +1,8 @@
 'use client';
 
 import { IconNotes } from '@/frontend/components/ui/Icons';
-import { COLLEGES, BRANCHES, YEARS, BANNER_PRESETS, getSubjects } from '@/shared/constants/subjectMap';
+import { COLLEGES, BRANCHES, YEARS } from '@/shared/constants/subjectMap';
+import { BANNER_PRESETS } from '@/shared/constants/bannerPresets';
 import Webcam from 'react-webcam';
 import styles from '../page.module.css';
 

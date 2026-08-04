@@ -17,18 +17,25 @@ var SUBJECT_MAP = {
     'engineering-mechanics': 'Engineering Mechanics',
     'electronics': 'Basic Electronics Engineering',
     'pps': 'Programming & Problem Solving',
-    'engineering-graphics': 'Engineering Graphics'
+    'engineering-graphics': 'Engineering Graphics',
+    'fpl': 'FPL',
+    'unsorted': 'Unsorted'
 };
 
-function getPdfFilesRecursively(dir, fileList = []) {
+const ALLOWED_EXTENSIONS = new Set(['.pdf', '.docx', '.doc', '.pptx', '.ppt', '.xlsx', '.xls', '.zip']);
+
+function getPyqFilesRecursively(dir, fileList = []) {
     if (!fs.existsSync(dir)) return fileList;
     const files = fs.readdirSync(dir);
     for (const file of files) {
         const filePath = path.join(dir, file);
         if (fs.statSync(filePath).isDirectory()) {
-            getPdfFilesRecursively(filePath, fileList);
-        } else if (file.toLowerCase().endsWith('.pdf')) {
-            fileList.push(filePath);
+            getPyqFilesRecursively(filePath, fileList);
+        } else {
+            const ext = path.extname(file).toLowerCase();
+            if (ALLOWED_EXTENSIONS.has(ext)) {
+                fileList.push(filePath);
+            }
         }
     }
     return fileList;
@@ -66,7 +73,7 @@ export const handleGet_listpapers = async (request) => {
 
         for (const folder of subjectFolders) {
             const folderPath = path.join(pyqsDir, folder);
-            const allPdfPaths = getPdfFilesRecursively(folderPath);
+            const allPdfPaths = getPyqFilesRecursively(folderPath);
 
             for (const absolutePath of allPdfPaths) {
                 const file = path.basename(absolutePath);

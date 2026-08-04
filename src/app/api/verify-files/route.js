@@ -36,7 +36,7 @@ function buildFileIndex(dir, maxDepth = 6, currentDepth = 0, index = { names: ne
 // Module-level cache to avoid rebuilding the index on every request
 let cachedIndex = null;
 let cacheTime = 0;
-const CACHE_TTL = 60000; // 1 minute cache
+const CACHE_TTL = 36000000; // 10 hours cache
 
 function getFileIndex(uploadsBase, appDir) {
     const now = Date.now();
@@ -82,7 +82,7 @@ function fileExists(relativePath, index, uploadsBase, nestedUnderscore, nestedDa
     }
 
     for (const p of candidates) {
-        if (index.paths.has(p)) return true;
+        if (existsSync(p)) return true;
     }
 
     // Strategy 2: Check if the filename exists anywhere (via the index)
