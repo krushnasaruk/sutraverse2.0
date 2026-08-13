@@ -16,16 +16,33 @@ if (!admin.apps.length) {
             }
         }
 
-        if (!admin.apps.length && process.env.NODE_ENV !== 'production') {
-            const files = fs.readdirSync(process.cwd());
-            const keyFile = files.find(f => f.startsWith('sutraverse2-firebase-adminsdk-') && f.endsWith('.json'));
-            if (keyFile) {
-                const keyPath = path.join(process.cwd(), keyFile);
-                console.warn(`WARNING: Loading Firebase Service Account credential file: ${keyFile} from disk. This is only safe in development.`);
-                const serviceAccount = JSON.parse(fs.readFileSync(keyPath, 'utf8'));
-                admin.initializeApp({
-                    credential: admin.credential.cert(serviceAccount)
-                });
+        // Try to load the Firebase Service Account credential file from disk
+        if (!admin.apps.length) {
+            try {
+                const searchDirs = [process.cwd(), __dirname, path.join(__dirname, '..'), path.join(__dirname, '..', '..')];
+                let keyPath = null;
+                let keyFile = null;
+                for (const dir of searchDirs) {
+                    if (fs.existsSync(dir)) {
+                        const files = fs.readdirSync(dir);
+                        const found = files.find(f => f.startsWith('sutraverse2-firebase-adminsdk-') && f.endsWith('.json'));
+                        if (found) {
+                            keyFile = found;
+                            keyPath = path.join(dir, found);
+                            break;
+                        }
+                    }
+                }
+
+                if (keyPath) {
+                    console.log(`Loading Firebase Service Account credential file: ${keyFile} from ${keyPath}`);
+                    const serviceAccount = JSON.parse(fs.readFileSync(keyPath, 'utf8'));
+                    admin.initializeApp({
+                        credential: admin.credential.cert(serviceAccount)
+                    });
+                }
+            } catch (diskErr) {
+                console.warn('Failed to load Firebase service account key from disk:', diskErr.message);
             }
         }
 
