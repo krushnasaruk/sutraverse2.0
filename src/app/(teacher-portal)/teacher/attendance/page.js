@@ -223,7 +223,7 @@ export default function AttendancePage() {
         const link = document.createElement("a");
         link.setAttribute("href", encodeURI(csv));
         link.setAttribute("download", `attendance_${selectedClass.classId}_${attendanceDate}.csv`);
-        document.body.appendChild(link); link.click(); document.body.removeChild(link);
+        document.body.appendChild(link); link.click(); if (link.parentNode) link.parentNode.removeChild(link);
     };
 
     const sendRedListWarning = async () => {

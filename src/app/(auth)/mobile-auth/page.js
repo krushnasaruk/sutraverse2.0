@@ -350,8 +350,9 @@ const styles = {
 };
 
 // Add standard keyframe animation for spinner
-if (typeof document !== 'undefined') {
+if (typeof document !== 'undefined' && !document.getElementById('spin-style-mobile-auth')) {
     const styleSheet = document.createElement('style');
+    styleSheet.id = 'spin-style-mobile-auth';
     styleSheet.innerText = `
         @keyframes spin {
             0% { transform: rotate(0deg); }

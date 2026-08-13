@@ -58,6 +58,24 @@ export default function RootLayout({ children }) {
           __html: `
             (function() {
               try {
+                if (typeof window !== 'undefined' && typeof Node !== 'undefined') {
+                  var origRemove = Node.prototype.removeChild;
+                  Node.prototype.removeChild = function(child) {
+                    if (child && child.parentNode !== this) {
+                      if (child.parentNode) return child.parentNode.removeChild(child);
+                      return child;
+                    }
+                    return origRemove.call(this, child);
+                  };
+                  var origInsert = Node.prototype.insertBefore;
+                  Node.prototype.insertBefore = function(newNode, refNode) {
+                    if (refNode && refNode.parentNode !== this) {
+                      if (refNode.parentNode) return refNode.parentNode.insertBefore(newNode, refNode);
+                      return this.appendChild(newNode);
+                    }
+                    return origInsert.call(this, newNode, refNode);
+                  };
+                }
                 var branding = localStorage.getItem('sutra_college_branding');
                 var root = document.documentElement;
                 
