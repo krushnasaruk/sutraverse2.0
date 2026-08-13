@@ -1,7 +1,7 @@
 import { initializeApp, getApps } from 'firebase/app';
 import { initializeAppCheck, ReCaptchaV3Provider } from 'firebase/app-check';
 import { getAuth, GoogleAuthProvider, browserLocalPersistence, setPersistence } from 'firebase/auth';
-import { initializeFirestore, persistentLocalCache, persistentMultipleTabManager, setLogLevel } from 'firebase/firestore';
+import { initializeFirestore, getFirestore, persistentLocalCache, setLogLevel } from 'firebase/firestore';
 import { getStorage } from 'firebase/storage';
 
 const firebaseConfig = {
@@ -13,6 +13,21 @@ const firebaseConfig = {
   appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID || "1:666020084296:web:0dd52b77ce6a245253b67d",
 };
 
+// Suppress internal Firestore primary tab lease warnings across multiple browser tabs / HMR
+if (typeof window !== 'undefined') {
+  const origConsoleError = console.error;
+  console.error = function (...args) {
+    const str = args.map(a => (a && typeof a === 'object' ? JSON.stringify(a) : String(a))).join(' ');
+    if (
+      str.includes('Failed to obtain primary lease') ||
+      str.includes('Backfill Indexes')
+    ) {
+      return;
+    }
+    origConsoleError.apply(console, args);
+  };
+}
+
 let app;
 let auth;
 let googleProvider;
@@ -20,7 +35,8 @@ let db;
 let storage;
 
 try {
-  app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApps()[0];
+  const isExistingApp = getApps().length > 0;
+  app = isExistingApp ? getApps()[0] : initializeApp(firebaseConfig);
 
   // Initialize App Check (Only in browser)
   if (typeof window !== 'undefined') {
@@ -44,12 +60,22 @@ try {
   googleProvider = new GoogleAuthProvider();
   googleProvider.setCustomParameters({ prompt: 'select_account' });
 
-  // Initialize Firestore with offline persistence for fast cached reads
-  db = initializeFirestore(app, {
-    localCache: persistentLocalCache({
-      tabManager: persistentMultipleTabManager()
-    })
-  });
+  // Initialize Firestore
+  if (typeof window !== 'undefined') {
+    if (isExistingApp) {
+      db = getFirestore(app);
+    } else {
+      try {
+        db = initializeFirestore(app, {
+          localCache: persistentLocalCache()
+        });
+      } catch (e) {
+        db = getFirestore(app);
+      }
+    }
+  } else {
+    db = getFirestore(app);
+  }
 
   // Suppress Firebase SDK internal connection warning logs (errors will still log)
   try {
@@ -60,12 +86,10 @@ try {
 
   storage = getStorage(app);
 } catch (error) {
-  // If Firestore was already initialized (HMR), fall back to getFirestore
-  if (error.code === 'failed-precondition' || error.message?.includes('already been called')) {
-    const { getFirestore } = require('firebase/firestore');
+  try {
     db = getFirestore(app);
     storage = getStorage(app);
-  } else {
+  } catch (fallbackErr) {
     console.warn('Firebase initialization failed:', error.message);
   }
 }
