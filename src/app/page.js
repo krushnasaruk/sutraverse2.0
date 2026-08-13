@@ -511,7 +511,7 @@ export default function HomePage() {
                     </div>
                     <div className={styles.postAuthorInfo}>
                       <div className={styles.postAuthorName}>{post.authorName}</div>
-                      <div className={styles.postTime}>Live</div>
+                      <div className={styles.postTime}>{formatNewsDate(post.timestamp)}</div>
                     </div>
                   </div>
                   <p className={styles.postContentPreview}>{post.content}</p>
